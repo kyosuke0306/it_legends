@@ -166,6 +166,9 @@ function addHair(head, style, hair, R) {
 async function loadGlb(url) {
   const gltf = await loader.loadAsync(url);
   const model = gltf.scene;
+  // Tripo のモデルは +X 向きで出てくるので、カメラ(+Z)側を向かせる
+  model.rotation.y = -Math.PI / 2;
+  model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const s = 2 / Math.max(size.y, 1e-6);
