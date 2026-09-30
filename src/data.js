@@ -199,7 +199,17 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf6d7c6, hairStyle: 'short', hairColor: 0x7a5a3c, shirt: 0x8a8f96 },
     // 写真はスーツ姿なので、おなじみの服装を指定してちびキャラ画像を作る
-    outfit: 'a plain heather gray crew-neck T-shirt, dark blue jeans and simple gray sneakers',
+    outfit: 'a plain dark navy zip-up hoodie over a gray T-shirt, dark blue jeans and simple gray sneakers',
+    // Facebook を作ったハーバードの寮の部屋で話す
+    show: {
+      stage: 'dorm',
+      props: ['dormRoom'],
+      lines: [
+        { text: '素早く動いて、壊せ。', sub: 'Move fast and break things.', prop: 'laptop', anim: 'agree' },
+        { text: '完璧を目指すより、まず終わらせろ。', sub: 'Done is better than perfect.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: 'いちばんのリスクは、リスクを取らないことだ。', sub: 'The biggest risk is not taking any risk.', prop: 'vr', anim: 'greet_01' },
+      ],
+    },
   },
 ];
 

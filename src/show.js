@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -240,7 +240,173 @@ const PROPS = {
     };
     return g;
   },
+
+  // ハーバードの寮の部屋（夜）：壁・床・ベッド・机、壁で光る Facebook の看板
+  dormRoom() {
+    const g = new THREE.Group();
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: dormWallTexture() }));
+    wall.position.set(0, 3, -2.5);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: floorTexture() }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, 1);
+    // 看板：青く光る「f」。後光を重ねて明るさを脈打たせる
+    const sign = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.05, 1.05),
+      new THREE.MeshBasicMaterial({ map: fLogoTexture(false), transparent: true, depthWrite: false }),
+    );
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.2, 2.2),
+      new THREE.MeshBasicMaterial({ map: fLogoTexture(true), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    );
+    sign.position.set(0, 2.75, -2.47);
+    glow.position.set(0, 2.75, -2.48);
+    g.add(wall, floor, glow, sign, bed(), desk());
+    g.renderOrder = -1;
+    g.userData.animate = (p, t) => {
+      glow.material.opacity = 0.6 + Math.sin(t * 1.6) * 0.25;
+    };
+    return g;
+  },
+
+  // ノートパソコン（画面は 2004 年の thefacebook）：セリフと一緒にキャラの横に出てくる
+  laptop() {
+    const g = new THREE.Group();
+    g.add(laptopModel());
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x + 0.95, 1.0 + Math.sin(t * 2.4) * 0.05, 0.3);
+      p.rotation.y = Math.sin(t * 1.2) * 0.35 - 0.25;
+      p.rotation.x = 0.25;
+    };
+    return g;
+  },
+
+  // VR ゴーグル：未来の話をするときに出てくる
+  vr() {
+    const g = new THREE.Group();
+    const dark = new THREE.MeshStandardMaterial({ color: 0x2b2d33, roughness: 0.45 });
+    const light = new THREE.MeshStandardMaterial({ color: 0xf2f2f4, roughness: 0.5 });
+    const shell = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(roundRect(0.46, 0.26, 0.1), { depth: 0.16, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 4, curveSegments: 16 }),
+      light,
+    );
+    shell.position.z = -0.08;
+    // 前面の黒いパネルと、映り込みの青い光
+    const face = new THREE.Mesh(new THREE.ShapeGeometry(roundRect(0.44, 0.24, 0.09), 16), new THREE.MeshStandardMaterial({ color: 0x0c0d10, roughness: 0.15, metalness: 0.3 }));
+    face.position.z = 0.111;
+    const shine = new THREE.Mesh(
+      new THREE.ShapeGeometry(roundRect(0.44, 0.24, 0.09), 16),
+      new THREE.MeshBasicMaterial({ map: shineTexture(), transparent: true, depthWrite: false, color: 0x9ecbff }),
+    );
+    fitUV(shine.geometry);
+    shine.position.z = 0.112;
+    // カメラの穴（4つ）
+    for (const [x, y] of [[-0.15, 0.06], [0.15, 0.06], [-0.15, -0.06], [0.15, -0.06]]) {
+      const cam = new THREE.Mesh(new THREE.CircleGeometry(0.018, 20), new THREE.MeshBasicMaterial({ color: 0x33363d }));
+      cam.position.set(x, y, 0.113);
+      g.add(cam);
+    }
+    // 頭にかけるバンド
+    const strap = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.022, 10, 40, Math.PI), dark);
+    strap.rotation.x = Math.PI / 2;
+    strap.rotation.z = Math.PI;
+    strap.scale.set(1.05, 1.35, 1);
+    strap.position.z = -0.12;
+    g.add(shell, face, shine, strap);
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x + 0.95, 1.2 + Math.sin(t * 2.4) * 0.05, 0.3);
+      p.rotation.y = Math.sin(t * 1.2) * 0.5 - 0.2;
+      p.rotation.x = 0.1;
+    };
+    return g;
+  },
 };
+
+// 寮のベッド（左奥）
+function bed() {
+  const g = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color: 0x6b4a32, roughness: 0.8 });
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.35, 1.1), wood);
+  frame.position.y = 0.2;
+  const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.2, 1.0), new THREE.MeshStandardMaterial({ color: 0xe8e4dc, roughness: 0.9 }));
+  mattress.position.y = 0.47;
+  const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.08, 1.06), new THREE.MeshStandardMaterial({ color: 0x8c1d2c, roughness: 0.9 }));
+  blanket.position.set(0.33, 0.6, 0);
+  const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.14, 0.75), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }));
+  pillow.position.set(-0.78, 0.64, 0);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 1.1), wood);
+  head.position.set(-1.1, 0.6, 0);
+  g.add(frame, mattress, blanket, pillow, head);
+  g.position.set(-2.6, 0, -1.85);
+  return g;
+}
+
+// 机と椅子、光るノートパソコン、電気スタンド（右奥）
+function desk() {
+  const g = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color: 0x8a6446, roughness: 0.7 });
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 0.75), wood);
+  top.position.y = 0.78;
+  g.add(top);
+  for (const [x, z] of [[-0.74, -0.32], [0.74, -0.32], [-0.74, 0.32], [0.74, 0.32]]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.78, 0.06), wood);
+    leg.position.set(x, 0.39, z);
+    g.add(leg);
+  }
+  const pc = laptopModel();
+  pc.scale.setScalar(0.85);
+  pc.position.set(-0.15, 0.81, 0.05);
+  pc.rotation.y = 0.25;
+  // 電気スタンド：暖かい光で机まわりを照らす
+  const metal = new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.4, metalness: 0.5 });
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.03, 24), metal);
+  base.position.set(0.55, 0.825, -0.2);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.5, 8), metal);
+  arm.position.set(0.55, 1.07, -0.2);
+  const shade = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.16, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0x1f5c3a, side: THREE.DoubleSide, roughness: 0.5 }));
+  shade.position.set(0.5, 1.33, -0.15);
+  shade.rotation.z = 0.5;
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffe2a8 }));
+  bulb.position.set(0.47, 1.28, -0.14);
+  const lamp = new THREE.PointLight(0xffc27a, 2.2, 3.5);
+  lamp.position.copy(bulb.position);
+  // 椅子
+  const chair = new THREE.Group();
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.5), metal);
+  seat.position.y = 0.48;
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.05), metal);
+  back.position.set(0, 0.75, 0.24);
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.46, 8), metal);
+  post.position.y = 0.23;
+  chair.add(seat, back, post);
+  chair.position.set(-0.2, 0, 0.6);
+  chair.rotation.y = 0.3;
+  g.add(pc, base, arm, shade, bulb, lamp, chair);
+  g.position.set(2.5, 0, -1.9);
+  g.rotation.y = -0.35;
+  return g;
+}
+
+// 銀色のノートパソコン（開いた状態、原点はキーボード面の中心）
+function laptopModel() {
+  const g = new THREE.Group();
+  const silver = new THREE.MeshStandardMaterial({ color: 0xc9ccd1, metalness: 0.5, roughness: 0.35 });
+  const W = 0.62;
+  const Dp = 0.42;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(W, 0.025, Dp), silver);
+  const keys = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.86, Dp * 0.45), new THREE.MeshStandardMaterial({ color: 0x2c2d31, roughness: 0.8 }));
+  keys.rotation.x = -Math.PI / 2;
+  keys.position.set(0, 0.0131, -0.05);
+  const lid = new THREE.Group();
+  const back = new THREE.Mesh(new THREE.BoxGeometry(W, 0.4, 0.018), silver);
+  back.position.y = 0.2;
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.9, 0.34), new THREE.MeshBasicMaterial({ map: thefacebookScreen() }));
+  screen.position.set(0, 0.2, 0.0095);
+  lid.add(back, screen);
+  lid.position.set(0, 0.012, -Dp / 2);
+  lid.rotation.x = -0.28;
+  g.add(base, keys, lid);
+  return g;
+}
 
 // 中心を原点にした角丸の四角形
 function roundRect(w, h, r) {
@@ -545,5 +711,191 @@ function shineTexture() {
   grad.addColorStop(1, 'rgba(255,255,255,0)');
   x.fillStyle = grad;
   x.fillRect(0, 0, 128, 256);
+  return canvasTexture(c);
+}
+
+// ---------- 寮の部屋のテクスチャ ----------
+// 夜の寮の壁：窓（星と月）、赤いペナント、コルクボード
+function dormWallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 878;
+  const x = c.getContext('2d');
+  const W = c.width;
+  const H = c.height;
+  const wall = x.createRadialGradient(W / 2, H * 0.35, 50, W / 2, H * 0.5, W * 0.55);
+  wall.addColorStop(0, '#3a4058');
+  wall.addColorStop(1, '#161a26');
+  x.fillStyle = wall;
+  x.fillRect(0, 0, W, H);
+  // 腰板
+  x.fillStyle = 'rgba(0,0,0,0.25)';
+  x.fillRect(0, H - 60, W, 60);
+  // 窓（左）：夜空と月
+  const wx = 560;
+  const wy = 230;
+  const ww = 250;
+  const wh = 300;
+  const sky = x.createLinearGradient(0, wy, 0, wy + wh);
+  sky.addColorStop(0, '#0b1a3f');
+  sky.addColorStop(1, '#23386b');
+  x.fillStyle = sky;
+  x.fillRect(wx, wy, ww, wh);
+  x.fillStyle = '#fff';
+  for (let i = 0; i < 26; i++) {
+    const sx = wx + ((i * 97) % ww);
+    const sy = wy + ((i * 53) % (wh * 0.7));
+    x.globalAlpha = 0.4 + ((i * 7) % 5) / 8;
+    x.fillRect(sx, sy, 3, 3);
+  }
+  x.globalAlpha = 1;
+  x.fillStyle = '#fdf3c8';
+  x.shadowColor = '#fdf3c8';
+  x.shadowBlur = 30;
+  x.beginPath();
+  x.arc(wx + ww * 0.7, wy + 80, 32, 0, Math.PI * 2);
+  x.fill();
+  x.shadowBlur = 0;
+  x.strokeStyle = '#d9d2c3';
+  x.lineWidth = 14;
+  x.strokeRect(wx, wy, ww, wh);
+  x.lineWidth = 8;
+  x.beginPath();
+  x.moveTo(wx + ww / 2, wy);
+  x.lineTo(wx + ww / 2, wy + wh);
+  x.moveTo(wx, wy + wh / 2);
+  x.lineTo(wx + ww, wy + wh / 2);
+  x.stroke();
+  // 赤いペナント（右上）
+  x.fillStyle = '#a51c30';
+  x.beginPath();
+  x.moveTo(1290, 190);
+  x.lineTo(1290, 300);
+  x.lineTo(1560, 245);
+  x.closePath();
+  x.fill();
+  x.fillStyle = '#fff';
+  x.font = 'bold 40px Georgia, serif';
+  x.textBaseline = 'middle';
+  x.fillText('2004', 1310, 247);
+  // コルクボードとメモ（右）
+  x.fillStyle = '#9c7446';
+  x.fillRect(1330, 360, 260, 170);
+  x.strokeStyle = '#5e4128';
+  x.lineWidth = 10;
+  x.strokeRect(1330, 360, 260, 170);
+  for (const [nx, ny, col] of [[1355, 380, '#fff7a8'], [1450, 395, '#ffffff'], [1520, 450, '#bfe3ff'], [1375, 455, '#ffd0d8']]) {
+    x.fillStyle = col;
+    x.fillRect(nx, ny, 60, 55);
+  }
+  // 部屋を暗めに
+  x.fillStyle = 'rgba(8,10,20,0.25)';
+  x.fillRect(0, 0, W, H);
+  return canvasTexture(c);
+}
+
+// 木の床
+function floorTexture() {
+  const c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 512;
+  const x = c.getContext('2d');
+  const n = 14;
+  for (let i = 0; i < n; i++) {
+    const l = 30 + ((i * 37) % 9);
+    x.fillStyle = `hsl(28, 32%, ${l}%)`;
+    x.fillRect((i * c.width) / n, 0, c.width / n, c.height);
+    x.fillStyle = 'rgba(0,0,0,0.35)';
+    x.fillRect((i * c.width) / n, 0, 2, c.height);
+  }
+  // 奥ほど暗く
+  const shade = x.createLinearGradient(0, 0, 0, c.height);
+  shade.addColorStop(0, 'rgba(5,6,12,0.75)');
+  shade.addColorStop(1, 'rgba(5,6,12,0.35)');
+  x.fillStyle = shade;
+  x.fillRect(0, 0, c.width, c.height);
+  return canvasTexture(c);
+}
+
+// Facebook の「f」マーク。blur=true なら後光用のぼかし
+function fLogoTexture(blur) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 512;
+  const x = c.getContext('2d');
+  const r = blur ? 130 : 230;
+  if (blur) x.filter = 'blur(40px)';
+  x.fillStyle = '#1877f2';
+  x.shadowColor = 'rgba(80,160,255,0.9)';
+  x.shadowBlur = blur ? 0 : 20;
+  x.beginPath();
+  x.arc(256, 256, r, 0, Math.PI * 2);
+  x.fill();
+  if (!blur) {
+    x.shadowBlur = 0;
+    x.fillStyle = '#fff';
+    x.font = 'bold 380px "Helvetica Neue", Arial, sans-serif';
+    x.textAlign = 'center';
+    x.textBaseline = 'alphabetic';
+    x.fillText('f', 276, 470);
+    // 円からはみ出た「f」の下側を切り落とす
+    x.globalCompositeOperation = 'destination-in';
+    x.beginPath();
+    x.arc(256, 256, r, 0, Math.PI * 2);
+    x.fill();
+  }
+  return canvasTexture(c);
+}
+
+// 2004 年ごろの thefacebook の画面
+function thefacebookScreen() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 330;
+  const x = c.getContext('2d');
+  x.fillStyle = '#ffffff';
+  x.fillRect(0, 0, 512, 330);
+  x.fillStyle = '#3b5998';
+  x.fillRect(0, 0, 512, 48);
+  x.fillStyle = '#fff';
+  x.font = 'bold 26px Tahoma, Verdana, sans-serif';
+  x.textBaseline = 'middle';
+  x.fillText('[ thefacebook ]', 16, 25);
+  x.font = '13px Tahoma, Verdana, sans-serif';
+  x.fillText('home   search   invite   logout', 300, 26);
+  // 左のメニュー
+  x.fillStyle = '#eceff5';
+  x.fillRect(0, 48, 120, 282);
+  x.fillStyle = '#3b5998';
+  x.font = '13px Tahoma, Verdana, sans-serif';
+  ['My Profile', 'My Friends', 'My Photos', 'My Groups', 'My Privacy'].forEach((t, i) => x.fillText(t, 14, 76 + i * 26));
+  // 本文
+  x.fillStyle = '#6d84b4';
+  x.fillRect(135, 60, 362, 26);
+  x.fillStyle = '#fff';
+  x.font = 'bold 15px Tahoma, Verdana, sans-serif';
+  x.fillText('Welcome to Thefacebook', 145, 74);
+  x.fillStyle = '#333';
+  x.font = '13px Tahoma, Verdana, sans-serif';
+  x.fillText('Thefacebook is an online directory that', 145, 108);
+  x.fillText('connects people through social networks', 145, 128);
+  x.fillText('at colleges.', 145, 148);
+  x.fillStyle = '#d8dfea';
+  x.fillRect(145, 172, 90, 110);
+  x.fillStyle = '#9aa7c2';
+  x.beginPath();
+  x.arc(190, 212, 22, 0, Math.PI * 2);
+  x.fill();
+  x.fillRect(160, 240, 60, 42);
+  x.fillStyle = '#3b5998';
+  x.font = 'bold 14px Tahoma, Verdana, sans-serif';
+  x.fillText('Mark Zuckerberg', 250, 190);
+  x.fillStyle = '#555';
+  x.font = '12px Tahoma, Verdana, sans-serif';
+  x.fillText('Harvard University', 250, 212);
+  x.fillText('Friends: 1,024', 250, 232);
+  x.fillStyle = '#3b5998';
+  x.fillRect(250, 252, 110, 26);
+  x.fillStyle = '#fff';
+  x.fillText('Add to Friends', 262, 266);
   return canvasTexture(c);
 }

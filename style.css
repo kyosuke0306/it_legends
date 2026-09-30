@@ -254,6 +254,9 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
   z-index: 3;
 }
 .stage-keynote .loading { color: #c9cbd3; }
+/* 夜の寮の部屋（show の stage: 'dorm'）。部屋は show.js の dormRoom で描く */
+.stage-wrap.stage-dorm { background: #10131d; }
+.stage-dorm .loading { color: #c9cbd3; }
 .spinner {
   width: 32px;
   height: 32px;
