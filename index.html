@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IT Legends</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>IT Legends</h1>
+      <nav>
+        <button class="tab active" data-view="gacha">ガチャ</button>
+        <button class="tab" data-view="zukan">図鑑 <span id="progress"></span></button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="view-gacha" class="view active">
+        <div class="stage-wrap">
+          <canvas id="gacha-canvas"></canvas>
+          <div id="gacha-placeholder" class="placeholder">ガチャを引いてITの偉人を集めよう！</div>
+        </div>
+        <div id="gacha-result" class="result hidden"></div>
+        <div id="gacha-list" class="pull-list"></div>
+        <div class="buttons">
+          <button id="pull1" class="pull">1回引く</button>
+          <button id="pull10" class="pull pull10">10連ガチャ</button>
+        </div>
+        <p class="rates">排出率　SSR 5% ／ SR 30% ／ R 65%</p>
+      </section>
+
+      <section id="view-zukan" class="view">
+        <div id="zukan-grid" class="grid"></div>
+      </section>
+    </main>
+
+    <dialog id="detail">
+      <button class="close" aria-label="閉じる">×</button>
+      <div class="detail-body">
+        <div class="stage-wrap small"><canvas id="detail-canvas"></canvas></div>
+        <div id="detail-info" class="info"></div>
+      </div>
+    </dialog>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
