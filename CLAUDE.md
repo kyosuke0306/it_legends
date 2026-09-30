@@ -35,12 +35,8 @@ ITの偉人をガチャで集めるブラウザゲーム。公開先: https://ky
 
 `pipeline/out/*.json` は Tripo のタスクID。スクリプトが再利用するので消さない（Git に入れている）。
 
-## 偉人ごとの状態（2026-09-30 時点、Tripo 残高 265）
+## 偉人ごとの状態（2026-09-30 時点、Tripo 残高 160）
 - **jobs**: 完成。高品質モデル＋骨組み＋動き4種類（greet_01, walk, fold_arms, agree）。基調講演風の暗いステージ、光る Apple ロゴ（assets/apple-logo.svg）、初代 iPhone、セリフ3つ
-- **zuckerberg**: 作り直し中（最新はブランチ `claude/vibrant-edison-z0qrof`、main 未反映）。
-  - Gemini 画像はパーカー版で確定（`pipeline/out/zuckerberg_chibi.png`）。服は data.js の `outfit` で指定（generate.mjs が Gemini に渡す）
-  - show は作成済み・画面確認済み（古いスーツのモデルで動作 OK）：`stage: 'dorm'`（夜の寮の部屋。壁に光る Facebook の「f」、thefacebook 画面のノートPC、ベッド、机）、小物 `laptop`・`vr`、セリフ3つ
-  - 次: `models/zuckerberg.glb` と `pipeline/out/zuckerberg_task.json` を消して `node pipeline/generate.mjs zuckerberg`（画像は作り直さない＝`--force` なし）→ `rig.mjs zuckerberg greet_01 walk fold_arms agree` → 動画で確認 → main へ
-  - 2026-09-30 時点で `TRIPO_API_KEY` が Tripo に認証失敗（code 1002）と言われて止まっていた。ユーザーが鍵を差し替え予定
+- **zuckerberg**: 完成。パーカー姿の高品質モデル＋骨組み＋動き4種類（greet_01, walk, fold_arms, agree）。夜の寮の部屋ステージ（`stage: 'dorm'`、光る Facebook の「f」、thefacebook 画面のノートPC、ベッド、机）、小物 `laptop`・`vr`、セリフ3つ。服は data.js の `outfit` で指定（generate.mjs が Gemini に渡す）
 - **turing**: 標準テクスチャの古いモデル。ユーザーは「最初の頃の画像の方が似ていた」と言っている
 - ほかの8人: 未生成（仮キャラ）
