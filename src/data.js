@@ -171,6 +171,23 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf6dac8, hairStyle: 'side', hairColor: 0x9a7a55, shirt: 0x6b8fb3, glasses: true },
   },
+  {
+    id: 'zuckerberg',
+    name: 'マーク・ザッカーバーグ',
+    nameEn: 'Mark Zuckerberg',
+    wiki: 'Mark_Zuckerberg',
+    years: '1984–',
+    rarity: 'R',
+    title: '世界をつなぐSNSをつくった人',
+    summary:
+      'ハーバード大学の寮の一室でFacebookを立ち上げ、世界中の人が友だちや家族とつながるSNSに育てました。のちに会社名をMetaに変え、VRやAIにも力を入れています。',
+    achievements: [
+      '大学の仲間とFacebookを立ち上げ（2004年）',
+      'InstagramやWhatsAppを買収し、数十億人が使うサービス群に',
+      '会社名をMetaに変え、VR・メタバースやAIの開発を進める（2021年）',
+    ],
+    look: { skin: 0xf6d7c6, hairStyle: 'short', hairColor: 0x7a5a3c, shirt: 0x8a8f96 },
+  },
 ];
 
 export const RARITY = {

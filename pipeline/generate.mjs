@@ -6,6 +6,7 @@
 //   オプション: --fetch-photo  写真が無ければ Wikipedia から取得
 //               --animate      Tripo でリギング＋待機モーションを付ける
 //               --force        生成済みでも作り直す
+//               --image-only   Gemini の画像だけ作る（Tripo のクレジットを使わずに見た目を確認）
 //
 // 必要な環境変数（.env に書けば自動で読み込む）: GEMINI_API_KEY, TRIPO_API_KEY
 import fs from 'node:fs/promises';
@@ -44,16 +45,25 @@ for (const legend of targets) {
   try {
     // Tripo のタスクが成功済みなら（ダウンロードだけ失敗した場合など）作り直さずに再利用する
     const taskPath = path.join(OUT, `${legend.id}_task.json`);
-    let task = flags.has('--force') ? null : await tripoReuse(taskPath);
+    let task = flags.has('--force') || flags.has('--image-only') ? null : await tripoReuse(taskPath);
     if (task) {
       console.log(`[${legend.id}] 生成済みの Tripo タスク ${task.task_id} を再利用`);
     } else {
-      console.log(`[${legend.id}] 写真を準備`);
-      const photo = await findPhoto(legend);
-
-      console.log(`[${legend.id}] Gemini でちびキャラ画像を生成`);
+      // --image-only で作って確認した画像があればそれを使う（--force か --image-only なら作り直す）
       const chibiPath = path.join(OUT, `${legend.id}_chibi.png`);
-      await fs.writeFile(chibiPath, await geminiChibi(photo, legend));
+      if (!flags.has('--force') && !flags.has('--image-only') && (await exists(chibiPath))) {
+        console.log(`[${legend.id}] 作成済みのちびキャラ画像を使用`);
+      } else {
+        console.log(`[${legend.id}] 写真を準備`);
+        const photo = await findPhoto(legend);
+
+        console.log(`[${legend.id}] Gemini でちびキャラ画像を生成`);
+        await fs.writeFile(chibiPath, await geminiChibi(photo, legend));
+      }
+      if (flags.has('--image-only')) {
+        console.log(`[${legend.id}] 画像だけ作成 → pipeline/out/${legend.id}_chibi.png`);
+        continue;
+      }
 
       console.log(`[${legend.id}] Tripo で3Dモデルを生成（数分かかります）`);
       const token = await tripoUpload(chibiPath);
@@ -114,7 +124,8 @@ async function geminiChibi(photoPath, legend) {
   const prompt = [
     `Turn the person in this photo (${legend.nameEn}) into a cute chibi 3D figure.`,
     'Very large head (about half of the total height) and a small body.',
-    'Keep the face recognizable: hairstyle, hair color and face shape must match the photo.',
+    'The face must clearly look like this specific person: keep the face shape, nose, mouth, eyebrows, hairstyle and hair color from the photo.',
+    'Give the figure natural, realistic eyes like in the photo, with whites, colored irises and eyelids. Do not use black dot eyes, bead eyes or button eyes.',
     'Add glasses or facial hair only if they are clearly visible in the photo; otherwise the figure has none.',
     'Full body, standing straight facing the camera in an A-pose, arms slightly away from the body, legs slightly apart.',
     'Soft vinyl toy style with simple clean shapes, even studio lighting, no shadows.',

@@ -1,1 +1,3 @@
 - turing: https://upload.wikimedia.org/wikipedia/commons/c/ce/Alan_turing_header.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Alan_Turing)
+- jobs: https://upload.wikimedia.org/wikipedia/commons/5/51/Steve_Jobs_Headshot_2010_%28cropped_4%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Steve_Jobs)
+- zuckerberg: https://upload.wikimedia.org/wikipedia/commons/0/0e/F20250904AH-2824_%2854778373111%29_%283x4_cropped_on_Zuckerberg_following_the_rule_of_thirds%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Mark_Zuckerberg)
