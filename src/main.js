@@ -137,8 +137,7 @@ async function openDetail(id) {
     <h3>何をした人？</h3>
     <p>${legend.summary}</p>
     <h3>おもな功績</h3>
-    <ul>${legend.achievements.map((a) => `<li>${a}</li>`).join('')}</ul>
-    <a href="https://ja.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(legend.name)}" target="_blank" rel="noopener">Wikipediaでもっと知る</a>`;
+    <ul>${legend.achievements.map((a) => `<li>${a}</li>`).join('')}</ul>`;
   dialog.showModal();
   detailStage ??= new Stage($('#detail-canvas'));
   detailStage.setCharacter(null);

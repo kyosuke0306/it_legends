@@ -199,7 +199,6 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
 .info h3 { font-size: 1rem; margin: 16px 0 4px; }
 .info p, .info li { line-height: 1.7; }
 .info ul { padding-left: 1.2em; margin: 0; }
-.info a { color: var(--accent); display: inline-block; margin-top: 12px; }
 
 /* キャラの吹き出し（show.js が位置を決める） */
 .bubble {
