@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
-// 設定は data.js の show: { lines: [{ text, sub?, prop? }], props?: [...] }
+// 設定は data.js の show: { lines: [{ text, sub?, prop?, anim? }], props?: [...] }
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
+//   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
 const SAY_TIME = 3.4; // 1セリフを表示する秒数
 const SPOTS = [0.55, -0.55, 0]; // 立ち止まって話す位置（x）
@@ -29,6 +30,10 @@ export class Show {
     stage.camera.position.set(0, 1.45, 6.2);
     if (stage.controls) stage.controls.update();
     else stage.camera.lookAt(0, 1, 0);
+    // 骨組み入りモデルなら、モデルの動き（歩く・腕組みなど）を切り替えて使う
+    this.mixer = obj.userData.mixer;
+    this.clips = obj.userData.clips ?? [];
+    this.mixer?.stopAllAction();
     this.beat = -1;
     this.nextBeat(stage.clock.elapsedTime);
   }
@@ -52,6 +57,20 @@ export class Show {
     this.walk = { from, to, start: t, end: t + Math.abs(to - from) / WALK_SPEED };
     this.sayEnd = this.walk.end + SAY_TIME;
     this.bubble.classList.add('hidden');
+    this.play('walk');
+  }
+
+  // モデルの動きをなめらかに切り替える（その動きが無ければ何もしない）
+  play(name, from = 0) {
+    const clip = this.mixer && this.clips.find((c) => c.name === name);
+    if (!clip) return;
+    const next = this.mixer.clipAction(clip);
+    if (next === this.action) return;
+    next.reset();
+    next.time = from;
+    next.fadeIn(0.3).play();
+    this.action?.fadeOut(0.3);
+    this.action = next;
   }
 
   update(t, dt) {
@@ -63,8 +82,9 @@ export class Show {
       // 歩く：進む向きを向いて、ひょこひょこ揺れる
       const u = (t - w.start) / (w.end - w.start);
       o.position.x = w.from + (w.to - w.from) * u;
-      o.position.y = Math.abs(Math.sin(t * 9)) * 0.06;
-      o.rotation.z = Math.sin(t * 9) * 0.05;
+      const rigged = this.action?.getClip().name === 'walk';
+      o.position.y = rigged ? 0 : Math.abs(Math.sin(t * 9)) * 0.06;
+      o.rotation.z = rigged ? 0 : Math.sin(t * 9) * 0.05;
       face = Math.sign(w.to - w.from) * (Math.PI / 2);
     } else if (t < this.sayEnd) {
       // 話す：カメラの方を向き、うなずくように軽く跳ねる
@@ -73,12 +93,13 @@ export class Show {
       if (line && this.bubble.classList.contains('hidden')) {
         this.bubble.innerHTML = `${line.text}${line.sub ? `<small>${line.sub}</small>` : ''}`;
         this.bubble.classList.remove('hidden');
+        if (line.anim) this.play(line.anim, line.animFrom);
         if (line.prop && this.props[line.prop]) {
           this.props[line.prop].userData.shown = true;
           this.props[line.prop].userData.popAt = t;
         }
       }
-      o.position.y = k < 0.35 ? Math.sin((k / 0.35) * Math.PI) * 0.12 : Math.abs(Math.sin(k * 2.2)) * 0.02;
+      o.position.y = this.action ? 0 : k < 0.35 ? Math.sin((k / 0.35) * Math.PI) * 0.12 : Math.abs(Math.sin(k * 2.2)) * 0.02;
       o.rotation.z *= 0.85;
       face = Math.atan2(cam.x - o.position.x, cam.z - o.position.z);
     } else {
@@ -86,6 +107,7 @@ export class Show {
       return;
     }
     o.rotation.y += angleDiff(face, o.rotation.y) * Math.min(dt * 8, 1);
+    this.mixer?.update(dt);
 
     this.updateProps(t);
     this.placeBubble();
@@ -151,7 +173,7 @@ const PROPS = {
     leaf.rotation.z = -0.5;
     g.add(body, stem, leaf);
     g.userData.animate = (p, t, o) => {
-      p.position.set(o.position.x - 0.75, 0.55 + Math.sin(t * 2) * 0.06, 0.2);
+      p.position.set(o.position.x - 1.0, 0.5 + Math.sin(t * 2) * 0.06, 0.2);
       p.rotation.y = t * 0.8;
     };
     return g;
@@ -170,7 +192,7 @@ const PROPS = {
     screen.position.z = 0.021;
     g.add(body, screen);
     g.userData.animate = (p, t, o) => {
-      p.position.set(o.position.x + 0.7, 1.15 + Math.sin(t * 2.4) * 0.05, 0.3);
+      p.position.set(o.position.x + 0.95, 1.1 + Math.sin(t * 2.4) * 0.05, 0.3);
       p.rotation.y = Math.sin(t * 1.2) * 0.5;
     };
     return g;

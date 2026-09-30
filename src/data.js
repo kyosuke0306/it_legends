@@ -158,9 +158,9 @@ export const LEGENDS = [
     show: {
       props: ['apple'],
       lines: [
-        { text: 'ハングリーであれ。愚かであれ。', sub: 'Stay hungry, stay foolish.' },
-        { text: 'もうひとつだけ…', sub: 'One more thing…', prop: 'phone' },
-        { text: '今日、Appleは電話を再発明する。' },
+        { text: 'ハングリーであれ。愚かであれ。', sub: 'Stay hungry, stay foolish.', anim: 'agree' },
+        { text: 'もうひとつだけ…', sub: 'One more thing…', prop: 'phone', anim: 'fold_arms', animFrom: 1.5 },
+        { text: '今日、Appleは電話を再発明する。', anim: 'greet_01' },
       ],
     },
   },

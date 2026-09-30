@@ -172,6 +172,7 @@ async function loadGlb(url) {
   // 金属・反射の設定があるとテカテカするので、つや消しにして画像の質感に寄せる
   model.traverse((o) => {
     if (!o.isMesh) return;
+    o.frustumCulled = false; // 骨で動くモデルが途中で消えないように
     for (const m of [o.material].flat()) {
       m.metalness = 0;
       m.roughness = 1;
@@ -193,6 +194,7 @@ async function loadGlb(url) {
     mixer.clipAction(gltf.animations[0]).play();
   }
   root.userData.mixer = mixer;
+  root.userData.clips = gltf.animations; // show.js が名前で動きを切り替える
   return root;
 }
 
