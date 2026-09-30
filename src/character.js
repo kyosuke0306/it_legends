@@ -169,6 +169,15 @@ async function loadGlb(url) {
   // Tripo のモデルは +X 向きで出てくるので、カメラ(+Z)側を向かせる
   model.rotation.y = -Math.PI / 2;
   model.updateMatrixWorld(true);
+  // 金属・反射の設定があるとテカテカするので、つや消しにして画像の質感に寄せる
+  model.traverse((o) => {
+    if (!o.isMesh) return;
+    for (const m of [o.material].flat()) {
+      m.metalness = 0;
+      m.roughness = 1;
+      m.metalnessMap = m.roughnessMap = null;
+    }
+  });
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const s = 2 / Math.max(size.y, 1e-6);

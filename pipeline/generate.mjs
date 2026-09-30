@@ -67,7 +67,13 @@ for (const legend of targets) {
 
       console.log(`[${legend.id}] Tripo で3Dモデルを生成（数分かかります）`);
       const token = await tripoUpload(chibiPath);
-      task = await tripoRun({ type: 'image_to_model', file: { type: 'png', file_token: token } });
+      // 高品質テクスチャ（+10クレジット）で Gemini 画像の質感に近づけ、PBR(金属・反射)は付けずテカリを防ぐ
+      task = await tripoRun({
+        type: 'image_to_model',
+        file: { type: 'png', file_token: token },
+        texture_quality: 'detailed',
+        pbr: false,
+      });
       await fs.writeFile(taskPath, JSON.stringify({ task_id: task.task_id }) + '\n');
     }
     let url = task.output.pbr_model || task.output.model;
