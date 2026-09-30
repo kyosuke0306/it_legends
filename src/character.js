@@ -197,6 +197,12 @@ async function loadGlb(url) {
 }
 
 export async function createCharacter(legend) {
+  const obj = await loadCharacter(legend);
+  obj.userData.show = legend.show; // ステージで歩いたりしゃべったりする設定（show.js）
+  return obj;
+}
+
+async function loadCharacter(legend) {
   const manifest = await loadManifest();
   if (manifest.includes(legend.id)) {
     try {

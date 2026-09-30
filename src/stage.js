@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { animateCharacter } from './character.js';
+import { Show } from './show.js';
 
 function setupScene(scene) {
   scene.add(new THREE.HemisphereLight(0xffffff, 0x8899bb, 1.6));
@@ -57,9 +58,13 @@ export class Stage {
 
   setCharacter(obj) {
     if (this.character) this.scene.remove(this.character);
+    this.show?.dispose();
+    this.show = null;
     this.character = obj;
     if (obj) {
       obj.scale.setScalar(1);
+      obj.position.set(0, 0, 0);
+      obj.rotation.set(0, 0, 0);
       this.scene.add(obj);
     }
   }
@@ -116,7 +121,12 @@ export class Stage {
     const dt = this.clock.getDelta();
     const t = this.clock.elapsedTime;
     if (this.capsule) this.updateCapsule(t);
-    if (this.character) {
+    if (this.character && !this.capsule && !this.show && this.character.userData.show) {
+      this.show = new Show(this, this.character, this.character.userData.show);
+    }
+    if (this.show) {
+      this.show.update(t, dt);
+    } else if (this.character) {
       animateCharacter(this.character, t, dt);
       if (!this.controls) this.character.rotation.y = Math.sin(t * 0.6) * 0.5;
     }

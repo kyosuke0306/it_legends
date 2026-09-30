@@ -1,5 +1,6 @@
 // 偉人データ。look はGLBモデルが無いときに使う仮の3Dキャラの見た目。
 // hairStyle: short | side | long | bun | bald | receding
+// show はステージでの動き・セリフ・小物（任意。src/show.js 参照）
 export const LEGENDS = [
   {
     id: 'lovelace',
@@ -153,6 +154,15 @@ export const LEGENDS = [
       'iPhoneを発表し、スマートフォンの時代を開いた（2007年）',
     ],
     look: { skin: 0xf0cfb8, hairStyle: 'short', hairColor: 0x4a4038, shirt: 0x111111, glasses: true, beard: true },
+    // 基調講演のようにステージを歩き回って話す
+    show: {
+      props: ['apple'],
+      lines: [
+        { text: 'ハングリーであれ。愚かであれ。', sub: 'Stay hungry, stay foolish.' },
+        { text: 'もうひとつだけ…', sub: 'One more thing…', prop: 'phone' },
+        { text: '今日、Appleは電話を再発明する。' },
+      ],
+    },
   },
   {
     id: 'gates',

@@ -200,3 +200,39 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
 .info p, .info li { line-height: 1.7; }
 .info ul { padding-left: 1.2em; margin: 0; }
 .info a { color: var(--accent); display: inline-block; margin-top: 12px; }
+
+/* キャラの吹き出し（show.js が位置を決める） */
+.bubble {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  width: max-content;
+  max-width: 92%;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #fff;
+  color: #22223a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  animation: bubble-pop 0.25s ease-out;
+  z-index: 2;
+}
+.bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  margin-left: -7px;
+  border: 7px solid transparent;
+  border-bottom: 0;
+  border-top-color: #fff;
+}
+.bubble small { display: block; font-weight: 400; color: #6b6b85; font-size: 0.75rem; }
+@keyframes bubble-pop {
+  from { transform: translate(-50%, -100%) scale(0.6); opacity: 0; }
+}
