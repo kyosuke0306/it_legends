@@ -268,14 +268,29 @@ const PROPS = {
     return g;
   },
 
-  // ノートパソコン（画面は 2004 年の thefacebook）：セリフと一緒にキャラの横に出てくる
+  // ノートパソコン（画面は 2004 年の thefacebook）：セリフと一緒にキャラの横に小さな机ごと出てくる
   laptop() {
     const g = new THREE.Group();
-    g.add(laptopModel());
+    const wood = new THREE.MeshStandardMaterial({ color: 0x8a6446, roughness: 0.7 });
+    const H = 0.72;
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.05, 0.55), wood);
+    top.position.y = H - 0.025;
+    g.add(top);
+    for (const [x, z] of [[-0.35, -0.23], [0.35, -0.23], [-0.35, 0.23], [0.35, 0.23]]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, H - 0.05, 0.05), wood);
+      leg.position.set(x, (H - 0.05) / 2, z);
+      g.add(leg);
+    }
+    const pc = laptopModel();
+    pc.position.y = H + 0.013;
+    g.add(pc);
     g.userData.animate = (p, t, o) => {
-      p.position.set(o.position.x + 0.95, 1.0 + Math.sin(t * 2.4) * 0.05, 0.3);
-      p.rotation.y = Math.sin(t * 1.2) * 0.35 - 0.25;
-      p.rotation.x = 0.25;
+      // 出てきたときのキャラの横に置いたら、あとは動かさない（床に置いた机なので）
+      if (p.userData.placedAt !== p.userData.popAt) {
+        p.userData.placedAt = p.userData.popAt;
+        p.position.set(o.position.x + 0.95, 0, 0.2);
+      }
+      p.rotation.y = -0.35;
     };
     return g;
   },
