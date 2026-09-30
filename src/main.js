@@ -60,8 +60,21 @@ async function pull(n) {
   document.querySelectorAll('.pull').forEach((b) => (b.disabled = false));
 }
 
+// 3Dモデルを読み込んでいる間、el の上に「読み込み中」を出す
+async function withLoading(el, promise) {
+  const box = document.createElement('div');
+  box.className = 'loading';
+  box.innerHTML = '<span class="spinner"></span>読み込み中…';
+  el.append(box);
+  try {
+    return await promise;
+  } finally {
+    box.remove();
+  }
+}
+
 async function showOnGachaStage({ legend, isNew }, withCapsule) {
-  const obj = await createCharacter(legend);
+  const obj = await withLoading($('#gacha-canvas').parentElement, createCharacter(legend));
   if (withCapsule) await gachaStage.reveal(obj, RARITY[legend.rarity].color);
   else gachaStage.setCharacter(obj);
   const el = $('#gacha-result');
@@ -106,7 +119,7 @@ async function renderZukan() {
     card.className = `card r-${legend.rarity} ${owned ? '' : 'locked'}`;
     card.innerHTML = `
       <span class="rarity r-${legend.rarity}">${legend.rarity}</span>
-      <div class="thumb"></div>
+      <div class="thumb"><span class="spinner"></span></div>
       <div class="name">${owned ? legend.name : '？？？'}</div>
       ${owned ? `<div class="count">×${owned}</div>` : ''}`;
     card.onclick = () => owned && openDetail(legend.id);
@@ -114,7 +127,7 @@ async function renderZukan() {
     thumbnailFor(legend).then((src) => {
       const img = new Image();
       img.src = src;
-      card.querySelector('.thumb').append(img);
+      card.querySelector('.thumb').replaceChildren(img);
     });
   }
 }
@@ -126,6 +139,7 @@ function updateProgress() {
 
 // ---------- 詳細 ----------
 let detailStage;
+let detailToken;
 async function openDetail(id) {
   const legend = byId[id];
   const dialog = $('#detail');
@@ -141,7 +155,9 @@ async function openDetail(id) {
   dialog.showModal();
   detailStage ??= new Stage($('#detail-canvas'));
   detailStage.setCharacter(null);
-  detailStage.setCharacter(await createCharacter(legend));
+  const token = (detailToken = {});
+  const obj = await withLoading($('#detail-canvas').parentElement, createCharacter(legend));
+  if (token === detailToken) detailStage.setCharacter(obj); // 読み込み中に別の偉人を開いたら古い方は出さない
 }
 
 $('#detail .close').onclick = () => $('#detail').close();

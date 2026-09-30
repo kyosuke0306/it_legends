@@ -35,6 +35,7 @@ node pipeline/generate.mjs --fetch-photo --animate # Tripo のリギング＋待
 
 - `--image-only` で Gemini の画像だけ作れます（Tripo のクレジットを使わずに見た目を確認し、よければ次の実行でその画像を3D化）
 - 3Dモデルは高品質テクスチャ・つや消しで作ります（1体 40 クレジット）
+- 保存時に `pipeline/optimize.mjs` で軽量化します（18MB → 1MB ほど）。`node pipeline/optimize.mjs models/<id>.glb` で個別にも実行できます
 - 写真は `pipeline/photos/<id>.jpg` に自分で置くこともできます（id は `src/data.js` を参照）
 - `--fetch-photo` で取得した写真の出典は `pipeline/photos/SOURCES.md` に記録されます。公開する場合は各画像のライセンスを確認してください
 - モーションが付いていないモデルは、ゲーム側で跳ねる・揺れる動きを付けます

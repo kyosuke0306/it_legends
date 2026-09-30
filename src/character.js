@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
-const loader = new GLTFLoader();
+// GLB は pipeline/optimize.mjs で meshopt 圧縮しているので、その展開器を設定する
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 let manifestPromise;
 
 // models/manifest.json に載っている偉人だけ GLB を読みにいく（404を出さないため）

@@ -13,6 +13,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeIO } from '@gltf-transform/core';
+import { optimizeGlb } from './optimize.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'pipeline/out');
@@ -58,6 +59,7 @@ mergeAnimations(doc, await Promise.all(files.slice(1).map((f) => io.read(f))));
 rebindHead(doc);
 const glb = path.join(ROOT, 'models', `${id}.glb`);
 await io.write(glb, doc);
+await optimizeGlb(glb);
 console.log(`[${id}] 完了 → models/${id}.glb（動き: ${doc.getRoot().listAnimations().map((a) => a.getName()).join(', ')}）`);
 
 // ---------- GLB の加工 ----------

@@ -13,6 +13,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LEGENDS } from '../src/data.js';
+import { optimizeGlb } from './optimize.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PHOTOS = path.join(ROOT, 'pipeline/photos');
@@ -93,6 +94,7 @@ for (const legend of targets) {
     const glb = await fetch(url);
     if (!glb.ok) throw new Error(`GLB のダウンロードに失敗 (${glb.status})`);
     await fs.writeFile(glbPath, Buffer.from(await glb.arrayBuffer()));
+    await optimizeGlb(glbPath);
     await addToManifest(legend.id);
     console.log(`[${legend.id}] 完了 → models/${legend.id}.glb`);
   } catch (e) {
