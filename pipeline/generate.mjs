@@ -114,7 +114,8 @@ async function geminiChibi(photoPath, legend) {
   const prompt = [
     `Turn the person in this photo (${legend.nameEn}) into a cute chibi 3D figure.`,
     'Very large head (about half of the total height) and a small body.',
-    'Keep the face recognizable: hairstyle, hair color, glasses, facial hair and face shape must match the photo.',
+    'Keep the face recognizable: hairstyle, hair color and face shape must match the photo.',
+    'Add glasses or facial hair only if they are clearly visible in the photo; otherwise the figure has none.',
     'Full body, standing straight facing the camera in an A-pose, arms slightly away from the body, legs slightly apart.',
     'Soft vinyl toy style with simple clean shapes, even studio lighting, no shadows.',
     'Plain pure white background, nothing else in the image, no text.',
