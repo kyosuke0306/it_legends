@@ -1,0 +1,9 @@
+{
+  "name": "it_legends",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npx http-server -p 8080 -c-1 .",
+    "generate": "node pipeline/generate.mjs"
+  }
+}

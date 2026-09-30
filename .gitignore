@@ -1,0 +1,6 @@
+.env
+node_modules/
+pipeline/out/
+pipeline/photos/*
+!pipeline/photos/.gitkeep
+!pipeline/photos/SOURCES.md
