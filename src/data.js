@@ -198,6 +198,8 @@ export const LEGENDS = [
       '会社名をMetaに変え、VR・メタバースやAIの開発を進める（2021年）',
     ],
     look: { skin: 0xf6d7c6, hairStyle: 'short', hairColor: 0x7a5a3c, shirt: 0x8a8f96 },
+    // 写真はスーツ姿なので、おなじみの服装を指定してちびキャラ画像を作る
+    outfit: 'a plain heather gray crew-neck T-shirt, dark blue jeans and simple gray sneakers',
   },
 ];
 
