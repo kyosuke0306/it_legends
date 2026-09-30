@@ -1,6 +1,9 @@
 .env
 node_modules/
-pipeline/out/
+# Tripo のタスクID（再利用してクレジットの二重消費を防ぐ）と確認済みの Gemini 画像は残す
+pipeline/out/*
+!pipeline/out/*.json
+!pipeline/out/*_chibi.png
 pipeline/photos/*
 !pipeline/photos/.gitkeep
 !pipeline/photos/SOURCES.md
