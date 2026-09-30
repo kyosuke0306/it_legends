@@ -37,6 +37,6 @@ ITの偉人をガチャで集めるブラウザゲーム。公開先: https://ky
 
 ## 偉人ごとの状態（2026-09-30 時点、Tripo 残高 160）
 - **jobs**: 完成。高品質モデル＋骨組み＋動き4種類（greet_01, walk, fold_arms, agree）。基調講演風の暗いステージ、光る Apple ロゴ（assets/apple-logo.svg）、初代 iPhone、セリフ3つ
-- **zuckerberg**: 完成。パーカー姿の高品質モデル＋骨組み＋動き4種類（greet_01, walk, fold_arms, agree）。夜の寮の部屋ステージ（`stage: 'dorm'`、光る Facebook の「f」、thefacebook 画面のノートPC、ベッド、机）、小物 `laptop`・`vr`、セリフ3つ。服は data.js の `outfit` で指定（generate.mjs が Gemini に渡す）
+- **zuckerberg**: 完成。パーカー姿の高品質モデル＋骨組み＋動き4種類（greet_01, walk, fold_arms, agree）。夜の寮の部屋ステージ（`stage: 'dorm'`、光る Facebook の「f」、thefacebook 画面のノートPC、ベッド、机）、小物 `laptop`（小さな机ごと床に置く）・`vr`（まだ宙に浮く）、セリフ3つ。服は data.js の `outfit` で指定（generate.mjs が Gemini に渡す）
 - **turing**: 標準テクスチャの古いモデル。ユーザーは「最初の頃の画像の方が似ていた」と言っている
 - ほかの8人: 未生成（仮キャラ）
