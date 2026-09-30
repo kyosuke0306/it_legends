@@ -5,7 +5,8 @@
   "scripts": {
     "start": "npx http-server -p 8080 -c-1 .",
     "generate": "node pipeline/generate.mjs",
-    "rig": "node pipeline/rig.mjs"
+    "rig": "node pipeline/rig.mjs",
+    "version": "node scripts/bump-version.mjs"
   },
   "devDependencies": {
     "@gltf-transform/cli": "^4.5.1",

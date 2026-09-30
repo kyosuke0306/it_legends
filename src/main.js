@@ -1,8 +1,10 @@
 import { LEGENDS, RARITY, byId } from './data.js';
 import { createCharacter } from './character.js';
 import { Stage, renderThumbnail } from './stage.js';
+import { VERSION } from './version.js';
 
 const $ = (s) => document.querySelector(s);
+document.getElementById('version').textContent = VERSION;
 const SAVE_KEY = 'it_legends.collection';
 
 // 所持状況 { id: 枚数 }
