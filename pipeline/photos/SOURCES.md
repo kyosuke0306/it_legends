@@ -1,0 +1,1 @@
+- turing: https://upload.wikimedia.org/wikipedia/commons/c/ce/Alan_turing_header.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Alan_Turing)

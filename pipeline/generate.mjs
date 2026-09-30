@@ -42,16 +42,24 @@ for (const legend of targets) {
     continue;
   }
   try {
-    console.log(`[${legend.id}] 写真を準備`);
-    const photo = await findPhoto(legend);
+    // Tripo のタスクが成功済みなら（ダウンロードだけ失敗した場合など）作り直さずに再利用する
+    const taskPath = path.join(OUT, `${legend.id}_task.json`);
+    let task = flags.has('--force') ? null : await tripoReuse(taskPath);
+    if (task) {
+      console.log(`[${legend.id}] 生成済みの Tripo タスク ${task.task_id} を再利用`);
+    } else {
+      console.log(`[${legend.id}] 写真を準備`);
+      const photo = await findPhoto(legend);
 
-    console.log(`[${legend.id}] Gemini でちびキャラ画像を生成`);
-    const chibiPath = path.join(OUT, `${legend.id}_chibi.png`);
-    await fs.writeFile(chibiPath, await geminiChibi(photo, legend));
+      console.log(`[${legend.id}] Gemini でちびキャラ画像を生成`);
+      const chibiPath = path.join(OUT, `${legend.id}_chibi.png`);
+      await fs.writeFile(chibiPath, await geminiChibi(photo, legend));
 
-    console.log(`[${legend.id}] Tripo で3Dモデルを生成（数分かかります）`);
-    const token = await tripoUpload(chibiPath);
-    let task = await tripoRun({ type: 'image_to_model', file: { type: 'png', file_token: token } });
+      console.log(`[${legend.id}] Tripo で3Dモデルを生成（数分かかります）`);
+      const token = await tripoUpload(chibiPath);
+      task = await tripoRun({ type: 'image_to_model', file: { type: 'png', file_token: token } });
+      await fs.writeFile(taskPath, JSON.stringify({ task_id: task.task_id }) + '\n');
+    }
     let url = task.output.pbr_model || task.output.model;
 
     if (flags.has('--animate')) {
@@ -66,7 +74,9 @@ for (const legend of targets) {
       url = task.output.model;
     }
 
-    await fs.writeFile(glbPath, Buffer.from(await (await fetch(url)).arrayBuffer()));
+    const glb = await fetch(url);
+    if (!glb.ok) throw new Error(`GLB のダウンロードに失敗 (${glb.status})`);
+    await fs.writeFile(glbPath, Buffer.from(await glb.arrayBuffer()));
     await addToManifest(legend.id);
     console.log(`[${legend.id}] 完了 → models/${legend.id}.glb`);
   } catch (e) {
@@ -137,6 +147,14 @@ async function tripoUpload(filePath) {
   const json = await res.json();
   if (json.code !== 0) throw new Error(`Tripo upload: ${json.message || res.status}`);
   return json.data.image_token;
+}
+
+async function tripoReuse(taskPath) {
+  const saved = JSON.parse(await fs.readFile(taskPath, 'utf8').catch(() => 'null'));
+  if (!saved) return null;
+  // ダウンロード URL は期限付きなので、タスクを取り直して新しい URL を得る
+  const s = await (await fetch(`${TRIPO}/task/${saved.task_id}`, { headers: { Authorization: `Bearer ${TRIPO_KEY}` } })).json();
+  return s.data?.status === 'success' ? s.data : null;
 }
 
 async function tripoRun(body) {
