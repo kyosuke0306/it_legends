@@ -13,6 +13,7 @@ ITの偉人をガチャで集めるブラウザゲーム。公開先: https://ky
 - Node の fetch はプロキシを通らないので `NODE_USE_ENV_PROXY=1 node ...` で実行する
 - 必要なホスト: en.wikipedia.org, upload.wikimedia.org, generativelanguage.googleapis.com, api.tripo3d.ai, tripo-data.rg1.data.tripo3d.com（Tripo の GLB 配信）
 - 残高確認: `curl -sS -H "Authorization: Bearer $TRIPO_API_KEY" https://api.tripo3d.ai/v2/openapi/user/balance`
+- Playwright の npm 版はブラウザのバージョンが合わないので `executablePath: '/opt/pw-browsers/chromium'` を指定する
 - 画面確認は Playwright（Chromium は `--use-gl=angle --use-angle=swiftshader`）。CDN の three.js は `npm i three@0.170.0` したものを route で差し替えると確実
 
 ## 3Dキャラを作る流れ（ジョブズで確立）
@@ -36,6 +37,10 @@ ITの偉人をガチャで集めるブラウザゲーム。公開先: https://ky
 
 ## 偉人ごとの状態（2026-09-30 時点、Tripo 残高 265）
 - **jobs**: 完成。高品質モデル＋骨組み＋動き4種類（greet_01, walk, fold_arms, agree）。基調講演風の暗いステージ、光る Apple ロゴ（assets/apple-logo.svg）、初代 iPhone、セリフ3つ
-- **zuckerberg**: 標準テクスチャの古いモデル（つや消しのみ）。骨組み・show なし。Gemini 画像は紺のスーツ姿（`pipeline/out/zuckerberg_chibi.png`）
+- **zuckerberg**: 作り直し中（ブランチ `claude/zuckerberg-3d-avatar-2xd9de`、main 未反映）。
+  - Gemini 画像はパーカー版で確定（`pipeline/out/zuckerberg_chibi.png`）。服は data.js の `outfit` で指定（generate.mjs が Gemini に渡す）
+  - show は作成済み・画面未確認：`stage: 'dorm'`（夜の寮の部屋。壁に光る Facebook の「f」、thefacebook 画面のノートPC、ベッド、机）、小物 `laptop`・`vr`、セリフ3つ
+  - 次: `models/zuckerberg.glb` と `pipeline/out/zuckerberg_task.json` を消して `node pipeline/generate.mjs zuckerberg`（画像は作り直さない＝`--force` なし）→ `rig.mjs zuckerberg greet_01 walk fold_arms agree` → 動画で確認 → main へ
+  - 2026-09-30 時点で `TRIPO_API_KEY` が Tripo に認証失敗（code 1002）と言われて止まっていた。ユーザーが鍵を差し替え予定
 - **turing**: 標準テクスチャの古いモデル。ユーザーは「最初の頃の画像の方が似ていた」と言っている
 - ほかの8人: 未生成（仮キャラ）
