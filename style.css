@@ -236,3 +236,6 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
 @keyframes bubble-pop {
   from { transform: translate(-50%, -100%) scale(0.6); opacity: 0; }
 }
+
+/* 基調講演のような暗いステージ（show の stage: 'keynote'） */
+.stage-wrap.stage-keynote { background: radial-gradient(circle at 50% 30%, #2b2f38 0%, #0b0c10 70%); }

@@ -156,7 +156,8 @@ export const LEGENDS = [
     look: { skin: 0xf0cfb8, hairStyle: 'short', hairColor: 0x4a4038, shirt: 0x111111, glasses: true, beard: true },
     // 基調講演のようにステージを歩き回って話す
     show: {
-      props: ['apple'],
+      stage: 'keynote',
+      props: ['appleLogo'],
       lines: [
         { text: 'ハングリーであれ。愚かであれ。', sub: 'Stay hungry, stay foolish.', anim: 'agree' },
         { text: 'もうひとつだけ…', sub: 'One more thing…', prop: 'phone', anim: 'fold_arms', animFrom: 1.5 },

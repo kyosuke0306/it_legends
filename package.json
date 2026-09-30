@@ -4,6 +4,10 @@
   "type": "module",
   "scripts": {
     "start": "npx http-server -p 8080 -c-1 .",
-    "generate": "node pipeline/generate.mjs"
+    "generate": "node pipeline/generate.mjs",
+    "rig": "node pipeline/rig.mjs"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.5.1"
   }
 }
