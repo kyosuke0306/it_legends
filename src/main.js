@@ -93,6 +93,38 @@ function fillThumbs(root) {
   root.querySelectorAll('img[data-thumb]').forEach((img) => thumbnailFor(byId[img.dataset.thumb]).then((src) => (img.src = src)));
 }
 
+// ---------- タイトルの背景：奥へ流れる光の格子（タイトルが見えている間だけ動かす） ----------
+(function titleGrid() {
+  const svg = $('#title-grid');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const line = (x1, y1, x2, y2) => {
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', x1);
+    l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2);
+    l.setAttribute('y2', y2);
+    svg.append(l);
+    return l;
+  };
+  // 地平線の真ん中から手前に広がる線
+  for (let i = -10; i <= 10; i++) line(200, 0, 200 + i * 90, 400);
+  // 横の線（奥ほどつまって見えるように2乗で並べる）。少しずつ手前に流す
+  const rows = Array.from({ length: 12 }, () => line(0, 0, 400, 0));
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const draw = (t) => {
+    const phase = still ? 0 : (t / 2600) % 1;
+    rows.forEach((l, i) => {
+      const y = 400 * ((i + phase) / rows.length) ** 2;
+      l.setAttribute('y1', y);
+      l.setAttribute('y2', y);
+    });
+    if (!$('#start').classList.contains('hidden')) requestAnimationFrame(draw);
+    else setTimeout(() => requestAnimationFrame(draw), 1000);
+  };
+  requestAnimationFrame(draw);
+})();
+
 // ---------- タイトル → 名前 → 会社 → 職種 ----------
 const steps = [...document.querySelectorAll('#start .step')];
 let at = 0;

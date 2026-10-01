@@ -4,29 +4,29 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>IT Legends</title>
-    <meta name="theme-color" content="#14123a" />
-    <link rel="icon" href="assets/favicon.png?v=2" />
-    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2" />
-    <link rel="stylesheet" href="style.css?v=1.0.43" />
+    <meta name="theme-color" content="#04060d" />
+    <link rel="icon" href="assets/favicon.png?v=3" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=3" />
+    <link rel="stylesheet" href="style.css?v=1.0.44" />
     <script type="importmap">
       {
         "imports": {
           "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-          "./src/character.js": "./src/character.js?v=1.0.43",
-          "./src/cloud.js": "./src/cloud.js?v=1.0.43",
-          "./src/data.js": "./src/data.js?v=1.0.43",
-          "./src/firebase-config.js": "./src/firebase-config.js?v=1.0.43",
-          "./src/game/names.js": "./src/game/names.js?v=1.0.43",
-          "./src/game/rules.js": "./src/game/rules.js?v=1.0.43",
-          "./src/game/state.js": "./src/game/state.js?v=1.0.43",
-          "./src/icons.js": "./src/icons.js?v=1.0.43",
-          "./src/main.js": "./src/main.js?v=1.0.43",
-          "./src/office.js": "./src/office.js?v=1.0.43",
-          "./src/outfits.js": "./src/outfits.js?v=1.0.43",
-          "./src/show.js": "./src/show.js?v=1.0.43",
-          "./src/stage.js": "./src/stage.js?v=1.0.43",
-          "./src/version.js": "./src/version.js?v=1.0.43"
+          "./src/character.js": "./src/character.js?v=1.0.44",
+          "./src/cloud.js": "./src/cloud.js?v=1.0.44",
+          "./src/data.js": "./src/data.js?v=1.0.44",
+          "./src/firebase-config.js": "./src/firebase-config.js?v=1.0.44",
+          "./src/game/names.js": "./src/game/names.js?v=1.0.44",
+          "./src/game/rules.js": "./src/game/rules.js?v=1.0.44",
+          "./src/game/state.js": "./src/game/state.js?v=1.0.44",
+          "./src/icons.js": "./src/icons.js?v=1.0.44",
+          "./src/main.js": "./src/main.js?v=1.0.44",
+          "./src/office.js": "./src/office.js?v=1.0.44",
+          "./src/outfits.js": "./src/outfits.js?v=1.0.44",
+          "./src/show.js": "./src/show.js?v=1.0.44",
+          "./src/stage.js": "./src/stage.js?v=1.0.44",
+          "./src/version.js": "./src/version.js?v=1.0.44"
         }
       }
     </script>
@@ -35,8 +35,9 @@
     <!-- タイトル → 名前 → 会社 → 職種（main.js の showTitle / initStart） -->
     <section id="start" class="start hidden">
       <div class="step title-step active" data-step="0">
-        <div class="title-art"></div>
+        <div class="title-art"><svg class="title-grid" id="title-grid" viewBox="0 0 400 400" preserveAspectRatio="none" aria-hidden="true"></svg></div>
         <div class="title-text">
+          <svg class="title-emblem" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="tneon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ef0ff"/><stop offset="1" stop-color="#8b5cff"/></linearGradient></defs><polygon points="60,6 107,33 107,87 60,114 13,87 13,33" fill="none" stroke="url(#tneon)" stroke-width="4" stroke-linejoin="round"/><g fill="none" stroke="#e9fbff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M46 44l-16 16 16 16M74 44l16 16-16 16"/><path d="M65 38l-10 44" stroke="url(#tneon)"/></g></svg>
           <h1>IT LEGENDS</h1>
           <p>伝説のIT会社をつくれ</p>
         </div>
@@ -126,6 +127,6 @@
 
     <div id="version"></div>
 
-    <script type="module" src="src/main.js?v=1.0.43"></script>
+    <script type="module" src="src/main.js?v=1.0.44"></script>
   </body>
 </html>

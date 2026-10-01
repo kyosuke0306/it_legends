@@ -75,10 +75,23 @@ button:disabled { cursor: default; }
 
 /* タイトル */
 .title-step { max-width: none; padding: 0; position: relative; color: #fff; }
-.title-step { background: #0b0a24; }
-/* 絵はボタンの上で終わるように置く（人物がボタンに隠れないように） */
-.title-art { position: absolute; left: 0; right: 0; top: 0; bottom: calc(170px + env(safe-area-inset-bottom)); background: url(assets/title.webp) center bottom / cover no-repeat; }
-.title-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 10, 36, 0.7) 0%, rgba(11, 10, 36, 0) 30%, rgba(11, 10, 36, 0) 85%, #0b0a24 100%); }
+.title-step { background: #04060d; }
+/* タイトルの背景（コードで描く。近未来的に）：紫と水色のにじむ光、奥へ流れる光の格子、地平線の光の線 */
+.title-art {
+  position: absolute; inset: 0; overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 28%, rgba(139, 92, 255, 0.32), transparent 70%),
+    radial-gradient(ellipse 60% 30% at 50% 58%, rgba(62, 240, 255, 0.16), transparent 70%),
+    #04060d;
+}
+.title-grid { position: absolute; left: 0; right: 0; bottom: 0; height: 52%; width: 100%; -webkit-mask-image: linear-gradient(to top, #000 35%, transparent 100%); mask-image: linear-gradient(to top, #000 35%, transparent 100%); }
+.title-grid line { stroke: #3ef0ff; stroke-opacity: 0.5; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.title-art::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 52%; height: 2px;
+  background: linear-gradient(90deg, transparent, #3ef0ff 30%, #8b5cff 70%, transparent);
+  box-shadow: 0 0 22px 2px rgba(62, 240, 255, 0.6);
+}
+.title-emblem { display: block; width: 92px; height: 92px; margin: 0 auto 22px; filter: drop-shadow(0 0 14px rgba(62, 240, 255, 0.55)); }
 .title-text { position: relative; text-align: center; padding-top: max(16vh, calc(env(safe-area-inset-top) + 60px)); }
 .title-text h1 {
   margin: 0;
@@ -86,15 +99,15 @@ button:disabled { cursor: default; }
   font-weight: 900;
   letter-spacing: 0.08em;
   line-height: 1;
-  background: linear-gradient(180deg, #fff 30%, #ffd27a 100%);
+  background: linear-gradient(180deg, #ffffff 35%, #9fe9ff 75%, #b59bff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 18px rgba(170, 120, 255, 0.7));
+  filter: drop-shadow(0 0 16px rgba(62, 240, 255, 0.45));
 }
-.title-text p { margin: 14px 0 0; letter-spacing: 0.3em; font-size: 0.85rem; opacity: 0.85; }
+.title-text p { margin: 14px 0 0; letter-spacing: 0.3em; font-size: 0.85rem; color: #9fe9ff; opacity: 0.85; }
 .title-actions { position: relative; margin-top: auto; padding: 0 24px calc(32px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.title-actions .big { margin: 0; background: linear-gradient(90deg, #7b3cff, #c94dff); box-shadow: 0 8px 30px rgba(140, 70, 255, 0.5); letter-spacing: 0.2em; }
+.title-actions .big { margin: 0; background: linear-gradient(90deg, #22c8ff, #8b5cff); box-shadow: 0 8px 30px rgba(62, 200, 255, 0.35); letter-spacing: 0.2em; }
 .title-actions .big.sub { background: rgba(255, 255, 255, 0.1); box-shadow: none; border: 1px solid rgba(255, 255, 255, 0.35); backdrop-filter: blur(6px); }
 .title-msg { min-height: 1.2em; font-size: 0.85rem; opacity: 0.8; }
 .title-ver { font-size: 0.7rem; opacity: 0.45; letter-spacing: 0.05em; }
