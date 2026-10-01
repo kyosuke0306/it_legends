@@ -492,6 +492,8 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .stage-dorm .loading { color: #c9cbd3; }
 .stage-wrap.stage-msoffice { background: #0f1522; }
 .stage-msoffice .loading { color: #c9cbd3; }
+.stage-wrap.stage-garage { background: #1a1714; }
+.stage-garage .loading { color: #c9cbd3; }
 .spinner {
   width: 32px;
   height: 32px;

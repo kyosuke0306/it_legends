@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -405,6 +405,114 @@ const PROPS = {
       p.position.set(o.position.x + 0.9, 1.25 + Math.sin(t * 2.2) * 0.05, 0.3);
       earth.rotation.y = t * 0.6;
       earth.rotation.z = 0.4;
+    };
+    return g;
+  },
+
+  // Amazon を始めたガレージ：シャッターの壁、積んだ段ボール、壁で光るオレンジの矢印の笑顔
+  garage() {
+    const g = new THREE.Group();
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: garageWallTexture() }));
+    wall.position.set(0, 3, -2.5);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: concreteTexture() }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, 1);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), new THREE.MeshBasicMaterial({ map: smileTexture(false), transparent: true, depthWrite: false }));
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(3, 1.6),
+      new THREE.MeshBasicMaterial({ map: smileTexture(true), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    );
+    sign.position.set(0.9, 2.15, -2.47); // 吹き出しに隠れないよう、少し低く右寄りに
+    glow.position.set(0.9, 2.15, -2.48);
+    g.add(wall, floor, glow, sign);
+    // 左右に積んだ段ボール箱
+    const card = new THREE.MeshStandardMaterial({ color: 0xb98a55, roughness: 0.9 });
+    const tape = new THREE.MeshStandardMaterial({ color: 0xd9c08f, roughness: 0.6 });
+    for (const [x, y, z, s, r] of [[-2.3, 0.3, -1.6, 0.6, 0.1], [-2.3, 0.85, -1.55, 0.5, -0.2], [-1.75, 0.25, -1.8, 0.5, 0.3], [2.2, 0.3, -1.7, 0.6, -0.15], [2.3, 0.85, -1.7, 0.5, 0.25], [1.7, 0.2, -1.4, 0.4, 0.5]]) {
+      const box = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), card);
+      box.position.set(x, y, z);
+      box.rotation.y = r;
+      const t = new THREE.Mesh(new THREE.BoxGeometry(s * 1.01, 0.02, s * 0.18), tape);
+      t.position.set(x, y + s / 2, z);
+      t.rotation.y = r;
+      g.add(box, t);
+    }
+    // 天井の裸電球
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffe2a8 }));
+    bulb.position.set(-0.9, 3.4, -1);
+    const lamp = new THREE.PointLight(0xffc27a, 3, 6);
+    lamp.position.copy(bulb.position);
+    g.add(bulb, lamp);
+    g.renderOrder = -1;
+    g.userData.animate = (p, t) => {
+      glow.material.opacity = 0.55 + Math.sin(t * 1.5) * 0.25;
+    };
+    return g;
+  },
+
+  // ドアの板で作った机（Amazon の創業時の有名な机）と古いモニター：横に出てくる
+  doorDesk() {
+    const g = new THREE.Group();
+    const wood = new THREE.MeshStandardMaterial({ color: 0xc9a77a, roughness: 0.7 });
+    const H = 0.72;
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.04, 0.55), wood);
+    door.position.y = H - 0.02;
+    // ドアだったしるしのドアノブの穴
+    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.045, 16), new THREE.MeshStandardMaterial({ color: 0x8a8f96, metalness: 0.7, roughness: 0.3 }));
+    knob.position.set(0.48, H - 0.02, 0.18);
+    g.add(door, knob);
+    // 脚は角材を組んだもの
+    const leg = new THREE.MeshStandardMaterial({ color: 0x8a6446, roughness: 0.8 });
+    for (const [x, z] of [[-0.48, -0.22], [0.48, -0.22], [-0.48, 0.22], [0.48, 0.22]]) {
+      const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, H - 0.04, 0.06), leg);
+      l.position.set(x, (H - 0.04) / 2, z);
+      g.add(l);
+    }
+    const beige = new THREE.MeshStandardMaterial({ color: 0xdcd3bd, roughness: 0.6 });
+    const crt = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.32, 0.34), beige);
+    crt.position.set(-0.15, H + 0.16, -0.06);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.23), new THREE.MeshBasicMaterial({ map: bookshopScreen() }));
+    screen.position.set(-0.15, H + 0.17, 0.111);
+    const book = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.28), new THREE.MeshStandardMaterial({ color: 0x2f5d8a, roughness: 0.6 }));
+    book.position.set(0.3, H + 0.025, 0.02);
+    book.rotation.y = 0.3;
+    g.add(crt, screen, book);
+    g.userData.animate = (p, t, o) => {
+      if (p.userData.placedAt !== p.userData.popAt) {
+        p.userData.placedAt = p.userData.popAt;
+        p.position.set(o.position.x + 1.05, 0, 0.2);
+      }
+      p.rotation.y = -0.35;
+    };
+    return g;
+  },
+
+  // 宇宙ロケット（ブルーオリジン）：失敗と発明の話のときに、手の横に浮かんで火をふく
+  rocket() {
+    const g = new THREE.Group();
+    const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f4, roughness: 0.35 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.42, 24), white);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.07, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), white);
+    nose.scale.y = 1.6;
+    nose.position.y = 0.21;
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.072, 0.03, 24), new THREE.MeshStandardMaterial({ color: 0x2c4f9e }));
+    ring.position.y = 0.08;
+    g.add(body, nose, ring);
+    for (let i = 0; i < 3; i++) {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.1, 0.07), new THREE.MeshStandardMaterial({ color: 0x2c4f9e }));
+      const a = (i / 3) * Math.PI * 2;
+      fin.position.set(Math.sin(a) * 0.09, -0.17, Math.cos(a) * 0.09);
+      fin.rotation.y = a;
+      g.add(fin);
+    }
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.22, 16), new THREE.MeshBasicMaterial({ color: 0xffa83a, transparent: true, opacity: 0.9 }));
+    flame.rotation.x = Math.PI;
+    flame.position.y = -0.32;
+    g.add(flame);
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x + 0.9, 1.25 + Math.sin(t * 2.6) * 0.06, 0.3);
+      p.rotation.z = Math.sin(t * 1.3) * 0.12;
+      flame.scale.y = 0.8 + Math.abs(Math.sin(t * 18)) * 0.5;
     };
     return g;
   },
@@ -1088,5 +1196,126 @@ function earthTexture() {
   x.fillStyle = '#eef4ff';
   x.fillRect(0, 0, 512, 12);
   x.fillRect(0, 244, 512, 12);
+  return canvasTexture(c);
+}
+
+// ガレージの奥の壁：波打つシャッターと工具の棚
+function garageWallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 878;
+  const x = c.getContext('2d');
+  const W = c.width;
+  const H = c.height;
+  const wall = x.createRadialGradient(W / 2, H * 0.35, 60, W / 2, H * 0.5, W * 0.55);
+  wall.addColorStop(0, '#5a5348');
+  wall.addColorStop(1, '#1d1a16');
+  x.fillStyle = wall;
+  x.fillRect(0, 0, W, H);
+  // シャッター（中央）
+  const sx = 560;
+  const sw = 920;
+  for (let y = 120; y < H - 60; y += 26) {
+    x.fillStyle = 'rgba(255,255,255,0.05)';
+    x.fillRect(sx, y, sw, 13);
+    x.fillStyle = 'rgba(0,0,0,0.18)';
+    x.fillRect(sx, y + 13, sw, 4);
+  }
+  x.strokeStyle = 'rgba(0,0,0,0.4)';
+  x.lineWidth = 14;
+  x.strokeRect(sx, 110, sw, H - 170);
+  // 左の工具をかける板
+  x.fillStyle = '#6e5a40';
+  x.fillRect(200, 250, 260, 200);
+  x.fillStyle = 'rgba(0,0,0,0.35)';
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 5; j++) x.fillRect(222 + i * 40, 270 + j * 38, 6, 6);
+  x.fillStyle = '#9aa0a8';
+  x.fillRect(250, 290, 12, 110);
+  x.fillRect(310, 300, 50, 12);
+  x.fillRect(390, 290, 10, 90);
+  x.fillStyle = 'rgba(8,10,20,0.25)';
+  x.fillRect(0, 0, W, H);
+  return canvasTexture(c);
+}
+
+// コンクリートの床
+function concreteTexture() {
+  const c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 512;
+  const x = c.getContext('2d');
+  x.fillStyle = '#5b5852';
+  x.fillRect(0, 0, c.width, c.height);
+  for (let i = 0; i < 900; i++) {
+    x.fillStyle = `rgba(${i % 2 ? '255,255,255' : '0,0,0'},0.05)`;
+    x.fillRect((i * 97) % c.width, (i * 53) % c.height, 4, 4);
+  }
+  // 油じみ
+  x.fillStyle = 'rgba(0,0,0,0.2)';
+  x.beginPath();
+  x.ellipse(620, 300, 120, 50, 0.2, 0, Math.PI * 2);
+  x.fill();
+  const shade = x.createLinearGradient(0, 0, 0, c.height);
+  shade.addColorStop(0, 'rgba(5,6,12,0.75)');
+  shade.addColorStop(1, 'rgba(5,6,12,0.3)');
+  x.fillStyle = shade;
+  x.fillRect(0, 0, c.width, c.height);
+  return canvasTexture(c);
+}
+
+// オレンジの矢印の笑顔（A から Z へ）。blur=true なら後光用のぼかし
+function smileTexture(blur) {
+  const c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 512;
+  const x = c.getContext('2d');
+  if (blur) x.filter = 'blur(40px)';
+  x.strokeStyle = '#ff9900';
+  x.fillStyle = '#ff9900';
+  x.lineCap = 'round';
+  x.lineWidth = blur ? 90 : 56;
+  x.shadowColor = 'rgba(255,170,60,0.9)';
+  x.shadowBlur = blur ? 0 : 24;
+  x.beginPath();
+  x.moveTo(180, 230);
+  x.quadraticCurveTo(512, 470, 830, 230);
+  x.stroke();
+  if (!blur) {
+    // 矢じり
+    x.beginPath();
+    x.moveTo(890, 170);
+    x.lineTo(900, 300);
+    x.lineTo(770, 250);
+    x.closePath();
+    x.fill();
+  }
+  return canvasTexture(c);
+}
+
+// 1995年ごろのネットの本屋の画面
+function bookshopScreen() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 368;
+  const x = c.getContext('2d');
+  x.fillStyle = '#ffffff';
+  x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = '#1b3f8c';
+  x.font = 'bold 34px Georgia, serif';
+  x.fillText("Earth's Biggest", 24, 52);
+  x.fillText('Bookstore', 24, 92);
+  x.fillStyle = '#c45a00';
+  x.font = '24px Georgia, serif';
+  x.fillText('1 million titles', 24, 132);
+  x.fillStyle = '#1a55c8';
+  x.font = '22px "Times New Roman", serif';
+  ['Search books', 'Best sellers', 'Shopping cart'].forEach((s, i) => {
+    x.fillText(s, 40, 186 + i * 40);
+    x.fillRect(40, 190 + i * 40, x.measureText(s).width, 2);
+  });
+  for (let i = 0; i < 3; i++) {
+    x.fillStyle = ['#7a3b2e', '#2e5a7a', '#5a7a2e'][i];
+    x.fillRect(330 + i * 52, 170, 40, 120);
+  }
   return canvasTexture(c);
 }

@@ -260,6 +260,16 @@ export const LEGENDS = [
     look: { skin: 0xf2d2bc, hairStyle: 'bald', hairColor: 0x6b5a48, shirt: 0x8fb0d8 },
     // おなじみの、シャツにジャケットの姿で作る
     outfit: 'a light blue button-down shirt with an open collar, a navy blue blazer, navy chino pants and brown leather shoes',
+    // Amazon を始めたガレージで話す
+    show: {
+      stage: 'garage',
+      props: ['garage'],
+      lines: [
+        { text: 'ビジョンには頑固に、細かいことには柔軟に。', sub: 'Be stubborn on vision, flexible on details.', prop: 'doorDesk', anim: 'agree' },
+        { text: 'いつだって「1日目」だ。', sub: "It's always Day 1.", anim: 'fold_arms', animFrom: 1.5 },
+        { text: '失敗と発明は、切り離せない双子だ。', sub: 'Failure and invention are inseparable twins.', prop: 'rocket', anim: 'greet_01' },
+      ],
+    },
   },
 ];
 
