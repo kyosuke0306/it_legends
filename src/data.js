@@ -283,6 +283,25 @@ export const LEGENDS = [
       ],
     },
   },
+  {
+    id: 'maezawa',
+    name: '前澤友作',
+    nameEn: 'Yusaku Maezawa',
+    wiki: 'Yusaku_Maezawa',
+    years: '1975–',
+    rarity: 'R',
+    title: '服をネットで買う時代をつくった人',
+    summary:
+      'CDの通信販売から始めた会社で、服をネットで買えるお店ZOZOTOWNを開き、日本一のファッション通販に育てました。会社を売ったあと、民間人として宇宙ステーションに行きました。',
+    achievements: [
+      'ファッション通販サイトZOZOTOWNを開設（2004年）',
+      '体のサイズを測る服ZOZOSUITを発表（2018年）',
+      '日本の民間人として初めて国際宇宙ステーションに滞在（2021年）',
+    ],
+    look: { skin: 0xf2d0b8, hairStyle: 'side', hairColor: 0x3a2a20, shirt: 0x1f2d55 },
+    // 宇宙ステーションに行ったときの紺のフライトスーツで作る（文字やマークは付けない）
+    outfit: 'a navy blue astronaut flight suit jumpsuit with a few simple white and red stripes across the chest, without any logos, patches or text, and white sneakers',
+  },
 ];
 
 // rarity はレジェンドの並び順だけに使う（画面にランクは出さない。ユーザー指示 2026-10-01）

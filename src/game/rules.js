@@ -328,5 +328,17 @@ export const LEGEND_RULES = {
     quitText: '「宇宙ロケットの会社に専念する」と去った',
     scene: '段ボール箱の山の前で、大きな声で笑う男がいる…',
   },
+  maezawa: {
+    stats: { idea: 85, tech: 55, plan: 75, talk: 90 },
+    meet: { cat: { web: 20 }, products: 3 },
+    hint: 'Web の仕事を 20 回こなし、製品を 3 つ出すと…',
+    join: 0.4,
+    // お金配りで有名なので、臨時収入が2倍
+    ability: { incomeGenre: { web: 0.4 }, luck: 1 },
+    abilityText: 'Web の収入 +40%  臨時収入 2倍',
+    quit: 30,
+    quitText: '「宇宙へ行く」と言って会社を去った',
+    scene: '水玉もようの全身スーツを手に、にこにこしている男がいる…',
+  },
 };
 

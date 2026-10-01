@@ -90,10 +90,10 @@ function perksOf(m) {
 
 // 会社にいるだけで効くもの
 export function companyEffects(s) {
-  const e = { income: 0, offers: 0, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, statAll: {}, incomeGenre: {} };
+  const e = { income: 0, offers: 0, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, luck: 0, statAll: {}, incomeGenre: {} };
   for (const m of s.members) {
     const p = perksOf(m);
-    for (const k of ['income', 'offers', 'nextTrend', 'hireCost', 'xpAll', 'decaySlow']) e[k] += p[k] ?? 0;
+    for (const k of ['income', 'offers', 'nextTrend', 'hireCost', 'xpAll', 'decaySlow', 'luck']) e[k] += p[k] ?? 0;
     for (const [k, v] of Object.entries(p.statAll ?? {})) e.statAll[k] = (e.statAll[k] ?? 0) + v;
     for (const [k, v] of Object.entries(p.incomeGenre ?? {})) e.incomeGenre[k] = (e.incomeGenre[k] ?? 0) + v;
   }
@@ -519,7 +519,7 @@ function rollWalkOffer(s, t) {
 function rollLuck(s, t, ev) {
   if (!activityRoll(s, 'luck')) return;
   const L = pick(s, R.LUCKS);
-  const money = round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * between(s, ...L.amount));
+  const money = round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * between(s, ...L.amount) * (1 + companyEffects(s).luck));
   s.money += money;
   addLog(s, t, `${L.title}  +${money.toLocaleString('ja-JP')}円`, 'good');
   ev.push({ type: 'luck', title: L.title, money });
