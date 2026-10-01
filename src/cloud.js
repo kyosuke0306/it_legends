@@ -162,10 +162,10 @@ export async function login() {
   try {
     await auth.signInWithPopup(a, provider);
   } catch (e) {
-    if (e.code === 'auth/popup-blocked' && !ready) {
-      // 読み込みを待つ間にブラウザが窓を止めた。次のタップではすぐ開ける
-      status('もう一度タップ', 'login');
-    } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
+    if (e.code === 'auth/popup-blocked') {
+      // ブラウザが窓を止めた。ページを切り替える方法は iPhone の Safari では結果が戻らないので使わず、もう一度押してもらう
+      status(ready ? 'ポップアップを許可して再タップ' : 'もう一度タップ', 'login');
+    } else if (e.code === 'auth/operation-not-supported-in-this-environment') {
       flag.set(true); // 戻ってきたときに Firebase を読み込むため
       sessionStorage.setItem(REDIRECT, '1');
       await auth.signInWithRedirect(a, provider);
