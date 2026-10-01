@@ -91,6 +91,8 @@ function fillThumbs(root) {
 }
 
 // ---------- はじめの画面（タイトル → 名前 → 会社 → 職種） ----------
+// 職種の見た目：'icon'（線のアイコン）か '3d'（Gemini で作った3Dの絵）。アドレスに ?jobart=3d を付けると3Dで見られる
+const JOB_ART = new URLSearchParams(location.search).get('jobart') === '3d' ? '3d' : 'icon';
 function showStart() {
   $('#start').classList.remove('hidden');
   $('#game').classList.add('hidden');
@@ -120,8 +122,8 @@ function showStart() {
   const box = $('#start-jobs');
   box.innerHTML = Object.entries(R.JOBS)
     .map(
-      ([id, j]) => `<button class="job" data-job="${id}" style="--c:${hex(j.shirt)}">
-        <span class="job-ic">${icon(`job_${id}`)}</span>
+      ([id, j]) => `<button class="job art-${JOB_ART}" data-job="${id}" style="--c:${hex(j.shirt)}">
+        ${JOB_ART === '3d' ? `<img src="assets/jobs/${id}.webp" alt="">` : `<span class="job-ic">${icon(`job_${id}`)}</span>`}
         <b>${j.full}</b><small>${j.perkText}</small>
       </button>`,
     )

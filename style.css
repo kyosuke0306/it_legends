@@ -109,9 +109,12 @@ button:disabled { cursor: default; }
 /* 職種 */
 .jobs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0 90px; }
 .job { display: flex; flex-direction: column; align-items: center; gap: 4px; border: 2px solid transparent; border-radius: 18px; background: var(--panel); padding: 16px 4px 12px; text-align: center; }
-.job-ic { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; margin-bottom: 6px; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
-.job-ic .ic { width: 30px; height: 30px; stroke-width: 1.6; }
-.job.active .job-ic { background: var(--c); color: #fff; }
+.job-ic { display: grid; place-items: center; height: 52px; margin-bottom: 4px; color: var(--c); }
+.job-ic .ic { width: 42px; height: 42px; stroke-width: 1.5; }
+.job.active { background: color-mix(in srgb, var(--accent) 8%, var(--panel)); }
+/* 3Dの絵で表示するとき（?jobart=3d） */
+.job.art-3d { padding-top: 0; overflow: hidden; }
+.job.art-3d img { width: 100%; aspect-ratio: 1; display: block; margin-bottom: 4px; }
 .job b { font-size: 0.78rem; line-height: 1.25; }
 .job small { color: var(--muted); font-size: 0.68rem; padding: 0 4px; }
 .job.active { border-color: var(--accent); box-shadow: 0 6px 18px rgba(91, 91, 240, 0.3); transform: translateY(-2px); }
