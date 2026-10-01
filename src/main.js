@@ -1,6 +1,7 @@
 // 画面まわり。ゲームの中身は game/state.js、数字は game/rules.js
 // 文字は少なく、アイコンと数字で見せる（絵文字は使わない。アイコンは icons.js）
-import { LEGENDS, RARITY, byId } from './data.js';
+import { LEGENDS, byId } from './data.js';
+const LEGEND_COLOR = 0xf0b93a; // レジェンドはランクを付けず、みんな同じ金色（ユーザー指示 2026-10-01）
 import { createCharacter, preloadCharacters, thumbnailUrl } from './character.js';
 import { Stage, renderThumbnail } from './stage.js';
 import { Office } from './office.js';
@@ -66,11 +67,11 @@ function dur(ms) {
   return h % 24 ? `${Math.floor(h / 24)}日${h % 24}時間` : `${Math.floor(h / 24)}日`;
 }
 const val = (name, text, cls = '') => `<span class="val ${cls}">${icon(name)}${text}</span>`;
-const jobShort = (m) => (m.kind === 'legend' ? byId[m.legend].rarity : R.JOBS[m.job].name);
+const jobShort = (m) => (m.kind === 'legend' ? 'レジェンド' : R.JOBS[m.job].name);
 const perkText = (m) => (m.kind === 'legend' ? R.LEGEND_RULES[m.legend].abilityText : R.JOBS[m.job].perkText);
 const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
 function avatar(m) {
-  if (m.kind === 'legend') return `<span class="av legend" style="--c:${RARITY[byId[m.legend].rarity].css}"><img data-thumb="${m.legend}" alt=""></span>`;
+  if (m.kind === 'legend') return `<span class="av legend" style="--c:var(--gold)"><img data-thumb="${m.legend}" alt=""></span>`;
   const c = m.kind === 'hero' ? 'var(--accent)' : hex(R.JOBS[m.job].shirt);
   return `<span class="av ${m.kind === 'temp' ? 'temp' : ''}" style="--c:${c}">${esc(m.name.replace(/\s.*/, '').slice(0, 1))}</span>`;
 }
@@ -581,7 +582,7 @@ function thumbnailFor(legend) {
 }
 function renderLegends() {
   const owned = G.ownedLegends(S);
-  const order = { R: 0, SR: 1, SSR: 2 };
+  const order = { R: 0, SR: 1, SSR: 2 }; // 並び順だけに使う（会いやすい人から）。画面にランクは出さない
   $('#zukan-grid').innerHTML = [...LEGENDS]
     .sort((a, b) => order[a.rarity] - order[b.rarity])
     .map((l) => {
@@ -593,8 +594,7 @@ function renderLegends() {
         : `<div class="conds">${G.meetProgress(S, l.id)
             .map((c) => `<div class="cond ${c.ok ? 'ok' : ''}"><span>${esc(c.label)}</span><i><b style="width:${pct(c.ratio)}"></b></i></div>`)
             .join('')}</div>`;
-      return `<button class="card r-${l.rarity} ${has ? '' : left ? 'left' : 'locked'}" data-id="${l.id}">
-        <span class="rarity r-${l.rarity}">${l.rarity}</span>
+      return `<button class="card ${has ? '' : left ? 'left' : 'locked'}" data-id="${l.id}">
         <div class="thumb"><img data-thumb="${l.id}" alt=""></div>
         ${has ? `<div class="name">${l.name}</div>` : left ? `<div class="name">${l.name}</div><div class="left-tag">${icon('back')}辞任</div>` : conds}
       </button>`;
@@ -612,12 +612,12 @@ async function showOnDetail(legend, { reveal = false } = {}) {
   detailStage.setCharacter(null);
   const token = (detailToken = {});
   const p = createCharacter(legend);
-  if (reveal) return detailStage.reveal(p, RARITY[legend.rarity].color);
+  if (reveal) return detailStage.reveal(p, LEGEND_COLOR);
   const obj = await p;
   if (token === detailToken) detailStage.setCharacter(obj);
 }
 function legendHead(legend) {
-  return `<span class="rarity r-${legend.rarity}">${legend.rarity}</span><h2>${legend.name}</h2><div class="sub">${legend.title}</div>`;
+  return `<h2>${legend.name}</h2><div class="sub">${legend.title}</div>`;
 }
 function openLegend(id) {
   const legend = byId[id];

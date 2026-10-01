@@ -285,6 +285,7 @@ export const LEGENDS = [
   },
 ];
 
+// rarity はレジェンドの並び順だけに使う（画面にランクは出さない。ユーザー指示 2026-10-01）
 export const RARITY = {
   SSR: { rate: 0.05, color: 0xffc83d, css: '#ffc83d' },
   SR: { rate: 0.3, color: 0xb57bff, css: '#b57bff' },

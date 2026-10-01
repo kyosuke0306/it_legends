@@ -366,10 +366,7 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 /* ---------- 偉人 ---------- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .card { position: relative; border: 2px solid; border-radius: 16px; background: var(--panel); padding: 8px; text-align: center; }
-.card.r-SSR { border-color: var(--ssr); }
-.card.r-SR { border-color: var(--sr); }
-.card.r-R { border-color: var(--r); }
-.card .rarity { position: absolute; top: 6px; left: 6px; font-size: 0.7rem; }
+.card { border-color: color-mix(in srgb, var(--gold) 70%, transparent); }
 .card .thumb { aspect-ratio: 1; display: grid; place-items: center; }
 .card .thumb img { width: 100%; height: 100%; }
 .card.locked { cursor: default; }
@@ -381,10 +378,6 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 .cond b { display: block; height: 100%; background: var(--muted); }
 .cond.ok { color: var(--ok); }
 .cond.ok b { background: var(--ok); }
-.rarity { display: inline-block; font-weight: 900; border-radius: 6px; padding: 1px 8px; color: #22223a; font-size: 0.75rem; }
-.rarity.r-SSR { background: var(--ssr); }
-.rarity.r-SR { background: var(--sr); color: #fff; }
-.rarity.r-R { background: var(--r); }
 
 /* ---------- ダイアログ ---------- */
 dialog { border: 0; border-radius: 20px; padding: 16px; width: min(760px, calc(100% - 24px)); max-height: calc(100% - 24px); background: var(--panel); color: var(--text); }
