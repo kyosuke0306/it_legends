@@ -24,7 +24,7 @@ export const JOBS = {
 
 // 会社の広さ。cap は入れる人数（自分も含む）、tier は受けられる仕事の大きさ
 export const OFFICES = [
-  { name: '自宅の部屋', cap: 2, cost: 0, rep: 0, floor: 0xd8c3a5, wall: 0xf1e6d6 },
+  { name: '自宅の部屋', cap: 2, cost: 0, rep: 0, floor: 0xa89474, wall: 0xcfc3a6 }, // 古くて薄汚れた部屋
   { name: 'ガレージ', cap: 4, cost: 300_000, rep: 30, floor: 0x9a9a9a, wall: 0xc9c2b4 },
   { name: '小さな事務所', cap: 7, cost: 2_000_000, rep: 150, floor: 0xb59a76, wall: 0xeeeeea },
   { name: 'オフィスビル', cap: 12, cost: 15_000_000, rep: 600, floor: 0x8f9bab, wall: 0xe4e8ef },

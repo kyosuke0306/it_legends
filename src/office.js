@@ -157,7 +157,9 @@ export class Office {
     const o = OFFICES[level];
     const room = new THREE.Group();
     // 部屋の広さは人数に合わせて広げる
-    const w = 3 + Math.ceil(Math.sqrt(o.cap)) * 1.3;
+    // 最初の自宅の部屋だけは、狭くて散らかった部屋にする
+    const home = level === 0;
+    const w = home ? 3.6 : 3 + Math.ceil(Math.sqrt(o.cap)) * 1.3;
     const d = w * 0.75;
     this.size = { w, d };
     const floor = new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, d), mat(o.floor));
@@ -173,11 +175,16 @@ export class Office {
     const win = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.4, 0.6), new THREE.MeshBasicMaterial({ color: 0xbfe3ff }));
     win.position.set(w * 0.15, 1.0, -d / 2 + 0.06);
     room.add(win);
+    if (home) {
+      win.scale.set(0.6, 0.8, 1);
+      win.material.color.set(0x9fb4c2); // くもった窓
+      room.add(messyRoom(w, d));
+    }
     // 机（定員の数だけ、奥に並べる）
     this.desks = [];
     const cols = Math.ceil(Math.sqrt(o.cap * 1.5));
     const rows = Math.ceil(o.cap / cols);
-    const deskMat = mat(0xe8d5b5);
+    const deskMat = mat(home ? 0x7a6450 : 0xe8d5b5); // 自宅は古い木の机
     const pcMat = mat(0x2a2a33);
     const screenMat = new THREE.MeshBasicMaterial({ color: 0x8fd3ff });
     for (let i = 0; i < o.cap; i++) {
@@ -206,7 +213,7 @@ export class Office {
     const path = new THREE.Mesh(new THREE.BoxGeometry(w + 2, 0.09, 0.5), mat(level <= 1 ? 0xe6d6b0 : 0x9a9aa6));
     path.position.set(0, -0.05, d / 2 + out * 0.55);
     room.add(ground, path);
-    for (const tx of [-w * 0.42, w * 0.3]) {
+    for (const tx of home ? [-w / 2 - 0.45, w / 2 + 0.35] : [-w * 0.42, w * 0.3]) { // 自宅は散らかった物が木で隠れないよう外側に
       const tree = new THREE.Group();
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.5, 8), mat(0x8a5a3a));
       trunk.position.y = 0.25;
@@ -238,7 +245,7 @@ export class Office {
     legR.position.z = 0.38;
     board.add(frame, face, legL, legR);
     const bx = -w / 2 + 0.35;
-    const bz = 0;
+    const bz = home ? 0.25 : 0; // 自宅は布団をよけて手前に
     board.position.set(bx, 0, bz);
     board.visible = false;
     room.add(board);
@@ -255,10 +262,12 @@ export class Office {
     this.scene.add(room);
     this.room = room;
     // 外の道まで入るように、少し引いて見下ろす
-    this.camera.position.set(w * 0.3, w * 1.0, w * 1.7);
+    // 自宅は狭いので、部屋全体が入るようにカメラは広さのわりに引いておく
+    const cw = Math.max(w, 4.6);
+    this.camera.position.set(cw * 0.3, cw * 1.0, cw * 1.7);
     this.controls.target.set(0, 0.2, out * 0.4);
-    this.controls.minDistance = w * 0.6;
-    this.controls.maxDistance = w * 3;
+    this.controls.minDistance = cw * 0.6;
+    this.controls.maxDistance = cw * 3;
     this.controls.update();
   }
 
@@ -414,4 +423,92 @@ export class Office {
     animateCharacter(p.obj, t + p.holder.id, dt);
     if (!moving && !mixer) p.obj.userData.parts && (p.obj.position.y *= 0.3); // 止まっているときは跳ねを小さく
   }
+}
+
+// 自宅の部屋の散らかりよう：しみ、はがれた壁紙、敷きっぱなしの布団、脱いだ服の山、段ボール、ピザの箱、カップ麺、ゴミ袋、裸電球
+function messyRoom(w, d) {
+  const g = new THREE.Group();
+  const flat = (geo, color, x, z, ry = 0) => {
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, depthWrite: false }));
+    m.rotation.set(-Math.PI / 2, 0, ry);
+    m.position.set(x, 0.006, z);
+    return m;
+  };
+  // 床のしみ
+  for (const [x, z, r] of [[-0.6, 0.3, 0.22], [0.9, 0.6, 0.16], [0.2, -0.2, 0.12], [-1.2, 0.9, 0.18]]) g.add(flat(new THREE.CircleGeometry(r, 16), 0x5a4630, x * (w / 3.6), z));
+  // 壁のしみとはがれた壁紙
+  const wallAt = (geo, color, x, y) => {
+    const m = new THREE.Mesh(geo, mat(color));
+    m.position.set(x, y, -d / 2 + 0.056);
+    return m;
+  };
+  g.add(wallAt(new THREE.CircleGeometry(0.18, 14), 0xb3a27e, -w * 0.3, 1.2), wallAt(new THREE.PlaneGeometry(0.22, 0.3), 0xc7b998, w * 0.38, 0.55));
+  const peel = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.26), mat(0xeae0c8, { side: THREE.DoubleSide }));
+  peel.position.set(w * 0.38 + 0.06, 0.62, -d / 2 + 0.12);
+  peel.rotation.set(0, -0.6, 0.15);
+  g.add(peel);
+  // 敷きっぱなしの布団（左奥）と、くしゃくしゃの掛け布団
+  const futon = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.08, 1.0), mat(0xd8d2c4));
+  futon.position.set(-w / 2 + 0.48, 0.04, -d / 2 + 0.6);
+  const blanket = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), mat(0x6f8fb5));
+  blanket.scale.set(1.1, 0.35, 1.3);
+  blanket.position.set(-w / 2 + 0.5, 0.12, -d / 2 + 0.8);
+  const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.07, 0.22), mat(0xf0ead8));
+  pillow.position.set(-w / 2 + 0.48, 0.11, -d / 2 + 0.25);
+  pillow.rotation.y = 0.25;
+  g.add(futon, blanket, pillow);
+  // 脱いだ服の山
+  for (const [c, dx, dz, s] of [[0x3d4f6b, 0, 0, 1], [0xa33b3b, 0.1, 0.06, 0.8], [0x55605a, -0.08, 0.08, 0.7], [0xe2dccb, 0.02, -0.05, 0.6]]) {
+    const cloth = new THREE.Mesh(new THREE.SphereGeometry(0.16 * s, 8, 6), mat(c));
+    cloth.scale.set(1.3, 0.45, 1);
+    cloth.position.set(w / 2 - 0.55 + dx, 0.05 + s * 0.03, d / 2 - 0.5 + dz);
+    g.add(cloth);
+  }
+  // 段ボール箱（右奥に積んである）
+  const card = mat(0xb88a52);
+  for (const [x, y, z, s, ry] of [[w / 2 - 0.35, 0.17, -d / 2 + 0.35, 0.34, 0.1], [w / 2 - 0.4, 0.45, -d / 2 + 0.38, 0.26, -0.3], [w / 2 - 0.75, 0.13, -d / 2 + 0.3, 0.26, 0.4]]) {
+    const box = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), card);
+    box.position.set(x, y, z);
+    box.rotation.y = ry;
+    const tape = new THREE.Mesh(new THREE.BoxGeometry(s * 1.01, 0.012, 0.06), mat(0xd8c49a));
+    tape.position.set(x, y + s / 2, z);
+    tape.rotation.y = ry;
+    g.add(box, tape);
+  }
+  // 床に置いたピザの箱とカップ麺
+  const pizza = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.035, 0.34), mat(0xe9e1cf));
+  pizza.position.set(0.15, 0.02, d / 2 - 0.45);
+  pizza.rotation.y = 0.5;
+  const lid = new THREE.Mesh(new THREE.CircleGeometry(0.1, 14), mat(0xc23b2b));
+  lid.rotation.set(-Math.PI / 2, 0, 0);
+  lid.position.set(0.15, 0.04, d / 2 - 0.45);
+  g.add(pizza, lid);
+  for (const [x, z, tip] of [[-0.3, d / 2 - 0.35, 0], [-0.15, d / 2 - 0.25, 1.4], [w / 2 - 0.9, 0.1, 0]]) {
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.045, 0.1, 12), mat(0xf4f0e6));
+    cup.position.set(x, tip ? 0.05 : 0.05, z);
+    cup.rotation.z = tip;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.061, 0.055, 0.03, 12), mat(0xd23b3b));
+    band.position.copy(cup.position);
+    band.rotation.z = tip;
+    g.add(cup, band);
+  }
+  // ゴミ袋（左手前）
+  const bag = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), mat(0x2b2f33));
+  bag.scale.set(1, 1.2, 1);
+  bag.position.set(-w / 2 + 0.3, 0.2, d / 2 - 0.35);
+  const knot = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.12, 8), mat(0x2b2f33));
+  knot.position.set(-w / 2 + 0.3, 0.46, d / 2 - 0.35);
+  g.add(bag, knot);
+  // 床をはう配線
+  const cable = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.012, 6, 24, Math.PI * 1.3), mat(0x222222));
+  cable.rotation.x = -Math.PI / 2;
+  cable.position.set(0.5, 0.012, -0.1);
+  g.add(cable);
+  // 天井からぶら下がる裸電球
+  const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.5, 6), mat(0x222222));
+  cord.position.set(0, 1.85, -0.2);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffe7a3 }));
+  bulb.position.set(0, 1.56, -0.2);
+  g.add(cord, bulb);
+  return g;
 }
