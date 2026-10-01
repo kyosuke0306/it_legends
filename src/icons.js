@@ -25,6 +25,16 @@ const P = {
   level: '<path d="M6 18l6-6 6 6M6 12l6-6 6 6"/>',
   move: '<path d="M4 12h13M13 7l5 5-5 5"/><path d="M20 5v14"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  // 職種
+  job_se: '<rect x="3.5" y="4" width="7" height="5" rx="1"/><rect x="13.5" y="4" width="7" height="5" rx="1"/><rect x="8.5" y="15" width="7" height="5" rx="1"/><path d="M7 9v3h10V9M12 12v3"/>',
+  job_pg: '<path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.5 5l-3 14"/>',
+  job_infra: '<rect x="4" y="3.5" width="16" height="7" rx="1.5"/><rect x="4" y="13.5" width="16" height="7" rx="1.5"/><path d="M7.5 7h.01M7.5 17h.01M11 7h5.5M11 17h5.5"/>',
+  job_designer: '<path d="M12 3.5l6 8-6 9-6-9z"/><path d="M12 11.5v4M6 11.5h12"/><circle cx="12" cy="11.5" r="1"/>',
+  job_data: '<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx="0.6"/><rect x="10.5" y="8" width="3" height="10" rx="0.6"/><rect x="15.5" y="4.5" width="3" height="13.5" rx="0.6"/>',
+  job_pm: '<rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 4.5V3h6v1.5M8.5 10l1.5 1.5 2.5-2.5M14 10.5h2M8.5 15.5l1.5 1.5 2.5-2.5M14 16h2"/>',
+  job_gm: '<path d="M5 20.5V4"/><path d="M5 4.5h11l-2.5 3.5L16 11.5H5"/>',
+  job_consul: '<path d="M9 17.5h6M10 20.5h4"/><path d="M12 3.5a5.5 5.5 0 0 0-3.2 10c.5.4.7 1 .7 1.6v.4h5v-.4c0-.6.3-1.2.7-1.6A5.5 5.5 0 0 0 12 3.5z"/>',
+  job_sales: '<path d="M4 10v4h3l6 4V6L7 10z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>',
   back: '<path d="M15 5l-7 7 7 7"/>',
   wallet: '<rect x="3.5" y="6.5" width="17" height="12" rx="2"/><path d="M16 12.5h1.5"/><path d="M3.5 9.5h17"/>',
 };

@@ -120,8 +120,8 @@ function showStart() {
   const box = $('#start-jobs');
   box.innerHTML = Object.entries(R.JOBS)
     .map(
-      ([id, j]) => `<button class="job" data-job="${id}">
-        <img src="assets/jobs/${id}.webp" alt="" loading="lazy">
+      ([id, j]) => `<button class="job" data-job="${id}" style="--c:${hex(j.shirt)}">
+        <span class="job-ic">${icon(`job_${id}`)}</span>
         <b>${j.full}</b><small>${j.perkText}</small>
       </button>`,
     )
