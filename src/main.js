@@ -217,7 +217,9 @@ function renderHeader() {
   $('#rep').innerHTML = val('star', S.rep);
   $('#dot-office').classList.toggle('on', Boolean(S.encounter));
   $('#dot-team').classList.toggle('on', S.candidates.some((c) => c.walkin));
-  $('#dot-work').classList.toggle('on', G.freeMembers(S).length > 0 && S.offers.length > 0);
+  // 仕事タブを最後に開いたあとに新しい依頼が届いていて、手の空いている人がいるときだけ（開くと消える）
+  const arrived = (o) => o.expiresAt - R.OFFER_LIFE;
+  $('#dot-work').classList.toggle('on', G.freeMembers(S).length > 0 && S.offers.some((o) => arrived(o) > (S.workSeenAt ?? 0)));
 }
 function renderAll() {
   if (!S || $('#game').classList.contains('hidden')) return; // タイトル画面にいる間は描かない
@@ -279,6 +281,8 @@ function renderOffice() {
 
 // ----- 仕事 -----
 function renderWork() {
+  S.workSeenAt = Date.now(); // 仕事タブを見た（通知の点を消す）
+  renderHeader();
   const byIdM = (id) => S.members.find((m) => m.id === id);
   const running = S.tasks
     .map(
