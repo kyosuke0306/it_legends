@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -331,6 +331,80 @@ const PROPS = {
       p.position.set(o.position.x + 0.95, 1.2 + Math.sin(t * 2.4) * 0.05, 0.3);
       p.rotation.y = Math.sin(t * 1.2) * 0.5 - 0.2;
       p.rotation.x = 0.1;
+    };
+    return g;
+  },
+
+  // 初期の Microsoft の夜のオフィス：壁・床・壁で光る4色の窓のマーク
+  msOffice() {
+    const g = new THREE.Group();
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: msWallTexture() }));
+    wall.position.set(0, 3, -2.5);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: floorTexture() }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, 1);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.15), new THREE.MeshBasicMaterial({ map: windowLogoTexture(false), transparent: true, depthWrite: false }));
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.4, 2.4),
+      new THREE.MeshBasicMaterial({ map: windowLogoTexture(true), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    );
+    sign.position.set(0, 2.75, -2.47);
+    glow.position.set(0, 2.75, -2.48);
+    g.add(wall, floor, glow, sign);
+    g.renderOrder = -1;
+    g.userData.animate = (p, t) => {
+      glow.material.opacity = 0.55 + Math.sin(t * 1.4) * 0.25;
+    };
+    return g;
+  },
+
+  // 1980年代のパソコン（ベージュの本体とブラウン管、画面は MS-DOS）：小さな机ごと横に出てくる
+  retroPC() {
+    const g = new THREE.Group();
+    const wood = new THREE.MeshStandardMaterial({ color: 0x8a6446, roughness: 0.7 });
+    const H = 0.72;
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, 0.6), wood);
+    top.position.y = H - 0.025;
+    g.add(top);
+    for (const [x, z] of [[-0.41, -0.26], [0.41, -0.26], [-0.41, 0.26], [0.41, 0.26]]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, H - 0.05, 0.05), wood);
+      leg.position.set(x, (H - 0.05) / 2, z);
+      g.add(leg);
+    }
+    const beige = new THREE.MeshStandardMaterial({ color: 0xd9cfb6, roughness: 0.6 });
+    // 本体（横置き）と、その上のブラウン管
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.12, 0.42), beige);
+    box.position.set(0, H + 0.06, -0.05);
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.015, 0.01), new THREE.MeshBasicMaterial({ color: 0x3a3a3a }));
+    slot.position.set(0.15, H + 0.07, 0.165);
+    const crt = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.36, 0.36), beige);
+    crt.position.set(0, H + 0.12 + 0.18, -0.08);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.26), new THREE.MeshBasicMaterial({ map: dosScreen() }));
+    screen.position.set(0, H + 0.3, 0.101);
+    const kb = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.025, 0.16), beige);
+    kb.position.set(0, H + 0.013, 0.2);
+    kb.rotation.x = 0.06;
+    g.add(box, slot, crt, screen, kb);
+    g.userData.animate = (p, t, o) => {
+      if (p.userData.placedAt !== p.userData.popAt) {
+        p.userData.placedAt = p.userData.popAt;
+        p.position.set(o.position.x + 1, 0, 0.2);
+      }
+      p.rotation.y = -0.35;
+    };
+    return g;
+  },
+
+  // 地球儀：財団で世界の健康に取り組む話のときに、手の横に浮かぶ
+  globe() {
+    const g = new THREE.Group();
+    const earth = new THREE.Mesh(new THREE.SphereGeometry(0.2, 40, 24), new THREE.MeshStandardMaterial({ map: earthTexture(), roughness: 0.7 }));
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.235, 32, 16), new THREE.MeshBasicMaterial({ color: 0x7fc8ff, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false }));
+    g.add(earth, halo);
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x + 0.9, 1.25 + Math.sin(t * 2.2) * 0.05, 0.3);
+      earth.rotation.y = t * 0.6;
+      earth.rotation.z = 0.4;
     };
     return g;
   },
@@ -912,5 +986,107 @@ function thefacebookScreen() {
   x.fillRect(250, 252, 110, 26);
   x.fillStyle = '#fff';
   x.fillText('Add to Friends', 262, 266);
+  return canvasTexture(c);
+}
+
+// 初期の Microsoft の夜のオフィスの壁：紺色の壁に、窓のブラインドとホワイトボード
+function msWallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 878;
+  const x = c.getContext('2d');
+  const W = c.width;
+  const H = c.height;
+  const wall = x.createRadialGradient(W / 2, H * 0.35, 50, W / 2, H * 0.5, W * 0.55);
+  wall.addColorStop(0, '#34405a');
+  wall.addColorStop(1, '#131925');
+  x.fillStyle = wall;
+  x.fillRect(0, 0, W, H);
+  x.fillStyle = 'rgba(0,0,0,0.25)';
+  x.fillRect(0, H - 60, W, 60);
+  // 左の窓：夜の街の明かりとブラインド
+  const wx = 470;
+  const wy = 220;
+  const ww = 300;
+  const wh = 320;
+  x.fillStyle = '#0d1630';
+  x.fillRect(wx, wy, ww, wh);
+  for (let i = 0; i < 40; i++) {
+    x.fillStyle = i % 3 ? '#f5d58a' : '#9ec3ff';
+    x.globalAlpha = 0.35 + ((i * 7) % 5) / 10;
+    x.fillRect(wx + ((i * 71) % (ww - 10)), wy + wh * 0.45 + ((i * 37) % (wh * 0.5)), 6, 8);
+  }
+  x.globalAlpha = 1;
+  x.fillStyle = 'rgba(200,205,215,0.18)';
+  for (let y = wy; y < wy + wh; y += 18) x.fillRect(wx, y, ww, 7);
+  x.strokeStyle = '#5a6275';
+  x.lineWidth = 10;
+  x.strokeRect(wx, wy, ww, wh);
+  // 右のホワイトボード：プログラムの走り書き
+  const bx = 1290;
+  const by = 230;
+  x.fillStyle = '#d9dde4';
+  x.fillRect(bx, by, 330, 220);
+  x.strokeStyle = '#7d8494';
+  x.lineWidth = 8;
+  x.strokeRect(bx, by, 330, 220);
+  x.fillStyle = '#2d4f9a';
+  x.font = 'bold 30px "Courier New", monospace';
+  ['10 PRINT "HELLO"', '20 GOTO 10', 'BASIC 4K', 'DOS 1.0'].forEach((s, i) => x.fillText(s, bx + 24, by + 52 + i * 44));
+  x.fillStyle = 'rgba(8,10,20,0.25)';
+  x.fillRect(0, 0, W, H);
+  return canvasTexture(c);
+}
+
+// 4色の窓のマーク（赤・緑・青・黄）。blur=true なら後光用のぼかし
+function windowLogoTexture(blur) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 512;
+  const x = c.getContext('2d');
+  if (blur) x.filter = 'blur(40px)';
+  const s = blur ? 120 : 200;
+  const gap = blur ? 10 : 16;
+  const colors = ['#f25022', '#7fba00', '#00a4ef', '#ffb900'];
+  colors.forEach((col, i) => {
+    x.fillStyle = col;
+    x.shadowColor = col;
+    x.shadowBlur = blur ? 0 : 24;
+    x.fillRect(256 - s - gap / 2 + (i % 2) * (s + gap), 256 - s - gap / 2 + Math.floor(i / 2) * (s + gap), s, s);
+  });
+  return canvasTexture(c);
+}
+
+// MS-DOS の画面（黒地に灰色の文字）
+function dosScreen() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 392;
+  const x = c.getContext('2d');
+  x.fillStyle = '#05070a';
+  x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = '#c8c8c8';
+  x.font = 'bold 28px "Courier New", monospace';
+  ['MS-DOS Version 1.25', '(C)Copyright 1981', '', 'A>dir', ' COMMAND  COM', ' BASIC    COM', '', 'A>_'].forEach((s, i) => x.fillText(s, 22, 44 + i * 42));
+  return canvasTexture(c);
+}
+
+// 地球：海の青に、緑の大陸をざっくり
+function earthTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#2b6fd6';
+  x.fillRect(0, 0, 512, 256);
+  x.fillStyle = '#4fae5a';
+  const blobs = [[90, 80, 55, 40], [120, 160, 30, 50], [250, 70, 45, 30], [270, 150, 35, 55], [380, 80, 80, 40], [420, 175, 30, 22]];
+  for (const [cx, cy, rx, ry] of blobs) {
+    x.beginPath();
+    x.ellipse(cx, cy, rx, ry, 0.3, 0, Math.PI * 2);
+    x.fill();
+  }
+  x.fillStyle = '#eef4ff';
+  x.fillRect(0, 0, 512, 12);
+  x.fillRect(0, 244, 512, 12);
   return canvasTexture(c);
 }

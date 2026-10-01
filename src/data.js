@@ -183,6 +183,16 @@ export const LEGENDS = [
     look: { skin: 0xf6dac8, hairStyle: 'side', hairColor: 0x9a7a55, shirt: 0x6b8fb3, glasses: true },
     // おなじみの、襟つきシャツにセーターの姿で作る
     outfit: 'a light blue collared button-down shirt under a navy blue V-neck sweater, beige chino pants and brown loafers',
+    // 初期の Microsoft の夜のオフィスで話す
+    show: {
+      stage: 'msoffice',
+      props: ['msOffice'],
+      lines: [
+        { text: 'すべての机と家庭に、コンピューターを。', sub: 'A computer on every desk and in every home.', prop: 'retroPC', anim: 'agree' },
+        { text: '成功は、最低の教師だ。', sub: 'Success is a lousy teacher.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: 'すべての命は、等しい価値を持つ。', sub: 'All lives have equal value.', prop: 'globe', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'zuckerberg',
