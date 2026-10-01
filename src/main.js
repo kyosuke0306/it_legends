@@ -594,12 +594,16 @@ function tick() {
   if (!S) return;
   const ev = G.advance(S, Date.now());
   if (ev.length) {
-    if (ev.some((e) => e.type === 'encounter')) notice(`${icon('spark', 'big-ic spin')}<h2>誰かが現れた</h2>`);
-    else if (ev.some((e) => e.type === 'walkin')) notice(`${icon('people', 'big-ic')}<h2>面接に来た</h2><p class="muted">${esc(ev.find((e) => e.type === 'walkin').name)}</p>`);
-    else if (ev.some((e) => e.type === 'luck')) {
-      const l = ev.find((e) => e.type === 'luck');
-      notice(`${icon('coin', 'big-ic')}<h2>${esc(l.title)}</h2><div class="welcome">${val('coin', `+${yen(l.money)}`, 'ok')}</div>`);
-    }
+    // 起きたことを1つのポップアップにまとめて出す
+    const parts = [];
+    if (ev.some((e) => e.type === 'encounter')) parts.push(`${icon('spark', 'big-ic spin')}<h2>誰かが現れた</h2>`);
+    const w = ev.find((e) => e.type === 'walkin');
+    if (w) parts.push(`${icon('people', 'big-ic')}<h2>面接に来た</h2><p class="muted">${esc(w.name)}</p>`);
+    const l = ev.find((e) => e.type === 'luck');
+    if (l) parts.push(`${icon('coin', 'big-ic')}<h2>${esc(l.title)}</h2><div class="welcome">${val('coin', `+${yen(l.money)}`, 'ok')}</div>`);
+    const done = resultsHtml(ev);
+    if (done) parts.push(done);
+    if (parts.length) notice(parts.join('<hr class="nsep">'));
     commit();
   } else {
     renderHeader();
@@ -607,23 +611,39 @@ function tick() {
   }
 }
 
+// 終わった仕事・発売した製品・レベルアップ（開いている間に起きたとき、ポップアップで見せる）
+function resultsHtml(ev, { head = true } = {}) {
+  const tasks = ev.filter((e) => e.type === 'task');
+  const prods = ev.filter((e) => e.type === 'product');
+  const levels = ev.filter((e) => e.type === 'level');
+  if (!tasks.length && !prods.length && !levels.length) return '';
+  const rows = [
+    ...tasks.slice(0, 5).map(
+      (t) => `<div class="result ${t.ok ? 'ok' : 'bad'}">${icon(t.ok ? 'check' : 'error')}<b>${esc(t.title)}</b>
+        <span class="vals">${val('coin', `+${yen(t.money)}`, t.ok ? 'ok' : '')}${t.rep ? val('star', `+${t.rep}`) : ''}</span></div>`,
+    ),
+    tasks.length > 5 ? `<div class="muted">+${tasks.length - 5}</div>` : '',
+    ...prods.map((p) => `<div class="result ok">${icon('box')}<b>${esc(p.name)}</b><span class="vals">${rating(p.q)}</span></div>`),
+    levels.length ? `<div class="vals center">${levels.map((x) => val('level', `${esc(x.name)} Lv${x.level}`)).join('')}</div>` : '',
+  ];
+  const list = `<div class="results">${rows.join('')}</div>`;
+  return head ? `${icon(tasks.some((t) => t.ok) || prods.length ? 'check' : 'task', 'big-ic done-ic')}<h2>完了</h2>${list}` : list;
+}
+
 // 留守の間に起きたこと
 function welcomeBack(ev, away) {
   if (away < 10 * 60000) return;
-  const tasks = ev.filter((e) => e.type === 'task');
   const rows = [];
-  if (tasks.length) rows.push(val('task', `${tasks.filter((e) => e.ok).length}/${tasks.length}`, 'ok'));
-  const levels = ev.filter((e) => e.type === 'level').length;
-  if (levels) rows.push(val('level', `+${levels}`));
-  const prods = ev.filter((e) => e.type === 'product').length;
-  if (prods) rows.push(val('box', `+${prods}`));
-  const luck = ev.filter((e) => e.type === 'luck').reduce((a, e) => a + e.money, 0); // 臨時収入も含める
-  const net = (ev.income ?? 0) - (ev.salary ?? 0) + luck;
+  // お金の増減の合計（製品の収入・給料・臨時収入・仕事の報酬）
+  const gained = ev.filter((e) => e.type === 'luck' || e.type === 'task').reduce((a, e) => a + e.money, 0);
+  const net = (ev.income ?? 0) - (ev.salary ?? 0) + gained;
   if (Math.abs(net) >= 1) rows.push(val('coin', `${net >= 0 ? '+' : ''}${yen(net)}`, net >= 0 ? 'ok' : 'bad'));
   if (ev.some((e) => e.type === 'encounter')) rows.push(val('spark', '誰かが現れた', 'legend'));
   if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '面接に来た', 'legend'));
-  if (!rows.length) return;
-  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>`);
+  // 終わった仕事は1つずつ（resultsHtml の一覧だけを使う）
+  const done = resultsHtml(ev, { head: false });
+  if (!rows.length && !done) return;
+  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${done}`);
 }
 
 // ---------- ログイン（Google で保存・同期。src/cloud.js） ----------

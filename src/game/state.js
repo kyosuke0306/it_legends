@@ -205,7 +205,7 @@ function finishTask(s, task, t, ev) {
   for (const m of team) m.busy = null;
   s.tasks = s.tasks.filter((x) => x !== task);
   addLog(s, t, ok ? `${task.title}  成功` : `${task.title}  失敗`, ok ? 'good' : 'bad');
-  ev.push({ type: 'task', ok, money, title: task.title });
+  ev.push({ type: 'task', ok, money, rep: ok ? task.rep : 0, title: task.title });
 }
 
 export const xpNeed = (level) => Math.round(12 * level ** 1.6);

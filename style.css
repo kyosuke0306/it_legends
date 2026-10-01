@@ -386,6 +386,14 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 #notice { max-width: 340px; text-align: center; }
 #notice h2 { margin: 6px 0 2px; }
 .big-ic { width: 40px; height: 40px; color: #9a5cf0; }
+.done-ic { color: var(--ok); }
+.results { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 4px; text-align: left; }
+.result { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--text) 5%, transparent); }
+.result > .ic { color: var(--ok); }
+.result.bad > .ic { color: var(--bad); }
+.result b { font-size: 0.88rem; }
+.result .vals { grid-column: 2; }
+.nsep { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
 .welcome { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 16px 0 4px; font-size: 1.1rem; font-weight: 700; }
 #settings { max-width: 420px; padding-top: 48px; } /* 右上の閉じるボタンと1行目が重ならないように */
 .set-row { display: flex; align-items: center; gap: 10px; padding: 14px 4px; border-bottom: 1px solid var(--line); }
