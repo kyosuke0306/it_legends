@@ -207,7 +207,7 @@ export const LEGEND_RULES = {
   lovelace: {
     stats: { idea: 100, tech: 80, plan: 85, talk: 75 },
     meet: { legends: 8 },
-    hint: '偉人が 8 人以上集まると…',
+    hint: 'レジェンドが 8 人以上集まると…',
     join: 0.2,
     ability: { teamQuality: 0.8, decaySlow: 0.5 },
     abilityText: '製品の出来 +80%  収入が長持ち',

@@ -354,7 +354,7 @@ export function meetProgress(s, id) {
   if (meet.tasks) add('仕事', s.counts.tasks, meet.tasks);
   if (meet.products) add('製品', s.counts.products, meet.products);
   if (meet.staff) add('社員', s.members.filter((m) => m.kind === 'staff').length, meet.staff);
-  if (meet.legends) add('偉人', ownedLegends(s).size, meet.legends);
+  if (meet.legends) add('レジェンド', ownedLegends(s).size, meet.legends);
   return out;
 }
 
@@ -405,10 +405,16 @@ export function setActivity(s, id) {
   s.activity = id;
   return true;
 }
-// いまの過ごし方で、その出来事が起きるか
+// CEO が仕事・開発を任されている間は、過ごし方はできない。終わる時刻を返す（手が空いていれば 0）
+export function ceoBusyUntil(s) {
+  const hero = s.members.find((m) => m.kind === 'hero');
+  if (!hero?.busy) return 0;
+  return [...s.tasks, ...s.devs].find((x) => x.id === hero.busy)?.endsAt ?? 0;
+}
+// いまの過ごし方で、その出来事が起きるか（CEO の手が空いているときだけ）
 function activityRoll(s, event) {
   const a = R.ACTIVITIES[s.activity];
-  return a?.event === event && rand(s) < a.perHour;
+  return a?.event === event && !ceoBusyUntil(s) && rand(s) < a.perHour;
 }
 
 function rollLuck(s, t, ev) {

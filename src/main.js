@@ -252,13 +252,16 @@ function renderOffice() {
   if (enc) $('#go-encounter').onclick = openEncounter;
   // CEO の過ごし方（いつもどれか1つ）。右下の小さなアイコンは、それで起きる出来事
   const EVENT_ICON = { legend: 'spark', luck: 'coin', walkin: 'people' };
+  // CEO が仕事中は選べない（仕事が終わるまでの時間を上に出す）
+  const busyUntil = G.ceoBusyUntil(S);
+  $('#activity').classList.toggle('locked', Boolean(busyUntil));
   $('#activity').innerHTML = Object.entries(R.ACTIVITIES)
     .map(
-      ([id, a]) => `<button class="act ${S.activity === id ? 'active' : ''}" data-act="${id}">
+      ([id, a]) => `<button class="act ${S.activity === id ? 'active' : ''}" data-act="${id}" ${busyUntil ? 'disabled' : ''}>
         ${icon(a.icon, 'act-ic')}<span>${a.name}</span>${icon(EVENT_ICON[a.event], `act-ev ev-${a.event}`)}
       </button>`,
     )
-    .join('');
+    .join('') + (busyUntil ? `<div class="act-lock"><span class="pill">${icon('task')}<span data-left="${busyUntil}"></span></span></div>` : '');
   $('#activity').querySelectorAll('[data-act]').forEach((b) => (b.onclick = () => G.setActivity(S, b.dataset.act) && commit()));
   const next = R.OFFICES[S.office + 1];
   if (next) {
@@ -674,7 +677,7 @@ async function decide(remote) {
   G.migrate(remote);
   if (!S) return 'remote';
   if (remote.seed === S.seed) return (remote.savedAt ?? 0) >= (S.savedAt ?? 0) ? 'remote' : 'local';
-  const desc = (s) => `${s.company}  ${yen(s.money)}  偉人${legendCount(s)}`;
+  const desc = (s) => `${s.company}  ${yen(s.money)}  レジェンド${legendCount(s)}`;
   return confirm(`クラウドの記録を使いますか？\n\nクラウド：${desc(remote)}\nこの端末：${desc(S)}`) ? 'remote' : 'local';
 }
 

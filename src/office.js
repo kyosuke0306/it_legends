@@ -1,5 +1,5 @@
 // 会社の画面の3D。社員と偉人が事務所にいて、仕事中の人は机に向かい、手が空いている人は歩き回る
-// CEO（主人公）はいつも、選んだ過ごし方をする（散歩＝外の道を歩く／ネット＝自分の机でPC／勉強会＝ホワイトボードの前で話す）
+// CEO（主人公）は手が空いていると、選んだ過ごし方をする（散歩＝外の道を歩く／ネット＝自分の机でPC／勉強会＝ホワイトボードの前で話す）
 // 面接に来た人は、事務所の前の道で待っている
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -271,8 +271,8 @@ export class Office {
   // 1人ぶんの動き：仕事中は机へ、そうでなければ部屋をぶらぶら
   step(p, t, dt) {
     if (!p.obj) return;
-    // CEO はいつも、選んだ過ごし方をする（仕事を任せていても。過ごし方の出来事はいつでも起きるので、見た目もそれに合わせる）
-    const plan = p.hero ? this.activity : null;
+    // CEO は手が空いていると、選んだ過ごし方をする（仕事中は過ごし方はできない）
+    const plan = p.hero && !p.busy ? this.activity : null;
     const pos = p.holder.position;
     if (plan === 'walk') {
       // 散歩：事務所を出て道に出て、右の画面の外へ。しばらくして左から戻ってきて、また右へ
@@ -291,7 +291,7 @@ export class Office {
       pos.copy(this.spots.door);
       p.target = null;
     }
-    const atDesk = (p.busy && !plan) || plan === 'net';
+    const atDesk = p.busy || plan === 'net';
     const goal = atDesk ? p.desk : plan === 'meetup' ? this.spots.board : p.target;
     let moving = false;
     if (goal) {
