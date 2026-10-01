@@ -410,9 +410,16 @@ export function setActivity(s, id) {
 }
 // CEO が仕事・開発を任されている間は、過ごし方はできない。終わる時刻を返す（手が空いていれば 0）
 export function ceoBusyUntil(s) {
+  return ceoWork(s)?.endsAt ?? 0;
+}
+// CEO がいま任されている仕事か開発（なければ null）。画面に名前を出すため title を付けて返す
+export function ceoWork(s) {
   const hero = s.members.find((m) => m.kind === 'hero');
-  if (!hero?.busy) return 0;
-  return [...s.tasks, ...s.devs].find((x) => x.id === hero.busy)?.endsAt ?? 0;
+  if (!hero?.busy) return null;
+  const task = s.tasks.find((x) => x.id === hero.busy);
+  if (task) return { title: task.title, endsAt: task.endsAt };
+  const dev = s.devs.find((x) => x.id === hero.busy);
+  return dev ? { title: R.GENRES[dev.genre].name, endsAt: dev.endsAt } : null;
 }
 // いまの過ごし方で、その出来事が起きるか（CEO の手が空いているときだけ）
 function activityRoll(s, event) {

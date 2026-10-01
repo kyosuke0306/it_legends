@@ -253,7 +253,8 @@ function renderOffice() {
   // CEO の過ごし方（いつもどれか1つ）。右下の小さなアイコンは、それで起きる出来事
   const EVENT_ICON = { legend: 'spark', luck: 'coin', walkin: 'people' };
   // CEO が仕事中は選べない（仕事が終わるまでの時間を上に出す）
-  const busyUntil = G.ceoBusyUntil(S);
+  const work = G.ceoWork(S);
+  const busyUntil = work?.endsAt ?? 0;
   $('#activity').classList.toggle('locked', Boolean(busyUntil));
   $('#activity').innerHTML = Object.entries(R.ACTIVITIES)
     .map(
@@ -261,7 +262,7 @@ function renderOffice() {
         ${icon(a.icon, 'act-ic')}<span>${a.name}</span>${icon(EVENT_ICON[a.event], `act-ev ev-${a.event}`)}
       </button>`,
     )
-    .join('') + (busyUntil ? `<div class="act-lock"><span class="pill">${icon('task')}<span data-left="${busyUntil}"></span></span></div>` : '');
+    .join('') + (busyUntil ? `<div class="act-lock"><span class="pill">${icon('task')}<span class="what">${esc(work.title)}</span><span class="left" data-left="${busyUntil}"></span></span></div>` : '');
   $('#activity').querySelectorAll('[data-act]').forEach((b) => (b.onclick = () => G.setActivity(S, b.dataset.act) && commit()));
   const next = R.OFFICES[S.office + 1];
   if (next) {

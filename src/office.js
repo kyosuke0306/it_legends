@@ -5,10 +5,17 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildChibi, createCharacter, animateCharacter } from './character.js';
 import { byId as LEGEND_BY_ID } from './data.js';
-import { OFFICES } from './game/rules.js';
+import { OFFICES, JOBS } from './game/rules.js';
+import { displayName } from './game/state.js';
+import { dress } from './outfits.js';
 
 const mat = (color, opts) => new THREE.MeshToonMaterial({ color, ...opts });
 const SPEED = 0.45;
+// タップしたときに出す名前と職種
+function labelOf(m) {
+  if (m.kind === 'legend') return { name: m.name, sub: LEGEND_BY_ID[m.legend].title };
+  return { name: displayName(m), sub: JOBS[m.job].full };
+}
 const GUEST_LOOKS = [
   { skin: 0xf6d7c3, hairColor: 0x2a1d14, shirt: 0x5b8bd0, hairStyle: 'side' },
   { skin: 0xc68e64, hairColor: 0x1d1a1a, shirt: 0xd07a5b, hairStyle: 'long' },
@@ -36,6 +43,17 @@ export class Office {
     this.guests = []; // 勉強会に来た人（勉強会のときだけ）
     this.visitor = null; // 面接に来た人 { id, holder }
     this.clock = new THREE.Clock();
+    // 人をタップすると名前と職種を出す（ドラッグで向きを変えたときは出さない）
+    this.tag = document.createElement('div');
+    this.tag.className = 'person-tag';
+    canvas.parentElement.append(this.tag);
+    this.tagged = null;
+    let down = null;
+    canvas.addEventListener('pointerdown', (e) => (down = [e.clientX, e.clientY]));
+    canvas.addEventListener('pointerup', (e) => {
+      if (down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) < 8) this.pick(e);
+      down = null;
+    });
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
   }
@@ -74,6 +92,7 @@ export class Office {
       }
       p.busy = Boolean(m.busy);
       p.hero = m.kind === 'hero';
+      p.label = labelOf(m);
       p.desk = this.desks[i % this.desks.length];
     });
     this.activity = state.activity;
@@ -111,8 +130,9 @@ export class Office {
     holder.position.copy(this.spots.door);
     holder.rotation.y = Math.PI; // 事務所のほうを向く
     this.scene.add(holder);
-    this.visitor = { id: c.id, holder };
-    const obj = buildChibi({ hairStyle: 'short', ...c.look });
+    this.visitor = { id: c.id, holder, label: { name: c.name, sub: `${JOBS[c.job].full}・面接` } };
+    holder.userData.label = this.visitor.label;
+    const obj = dress(buildChibi({ hairStyle: 'short', ...c.look, glasses: c.look.glasses || ['data', 'consul'].includes(c.job) }), c.job);
     obj.scale.setScalar(0.55);
     holder.add(obj);
     holder.userData.obj = obj;
@@ -120,7 +140,8 @@ export class Office {
 
   async makeBody(m) {
     if (m.kind === 'legend') return createCharacter(LEGEND_BY_ID[m.legend]);
-    return buildChibi({ hairStyle: 'short', ...m.look });
+    // 職種ごとの小物を付ける（データ分析とコンサルはメガネ）。CEO は金のネクタイと頭の上の印
+    return dress(buildChibi({ hairStyle: 'short', ...m.look, glasses: m.look.glasses || ['data', 'consul'].includes(m.job) }), m.job, { ceo: m.kind === 'hero' });
   }
 
   buildRoom(level) {
@@ -239,6 +260,42 @@ export class Office {
     return new THREE.Vector3((Math.random() - 0.5) * (w - 1.2), 0, (Math.random() - 0.1) * (d / 2 - 0.4));
   }
 
+  // タップした人を探して、名前と職種を3秒出す
+  pick(e) {
+    const r = this.canvas.getBoundingClientRect();
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), this.camera);
+    const targets = [...this.people.values()].filter((p) => p.holder.visible).map((p) => [p.holder, p.label]);
+    if (this.visitor) targets.push([this.visitor.holder, this.visitor.label]);
+    let best = null;
+    for (const [holder, label] of targets) {
+      const hit = ray.intersectObject(holder, true)[0];
+      if (hit && (!best || hit.distance < best.d)) best = { holder, label, d: hit.distance };
+    }
+    clearTimeout(this.tagTimer);
+    this.tagged = best;
+    if (!best) return this.tag.classList.remove('show');
+    this.tag.innerHTML = `<b></b><small></small>`;
+    this.tag.querySelector('b').textContent = best.label.name;
+    this.tag.querySelector('small').textContent = best.label.sub;
+    this.tag.classList.add('show');
+    this.tagTimer = setTimeout(() => {
+      this.tagged = null;
+      this.tag.classList.remove('show');
+    }, 3000);
+  }
+
+  // 名前の札を、その人の頭の上に合わせる
+  placeTag() {
+    if (!this.tagged) return;
+    const v = new THREE.Vector3();
+    this.tagged.holder.getWorldPosition(v);
+    v.y += 1.35;
+    v.project(this.camera);
+    this.tag.style.left = `${((v.x + 1) / 2) * this.canvas.clientWidth}px`;
+    this.tag.style.top = `${((1 - v.y) / 2) * this.canvas.clientHeight}px`;
+  }
+
   resize() {
     const w = this.canvas.clientWidth;
     const h = this.canvas.clientHeight;
@@ -257,7 +314,15 @@ export class Office {
     // 画面に出ていないとき（ほかのタブ・裏に回したとき）は描かない（電池と処理を節約）
     if (document.hidden || !this.canvas.offsetParent || !this.resize()) return;
     const t = this.clock.elapsedTime;
-    for (const p of this.people.values()) this.step(p, t, dt);
+    for (const p of this.people.values()) {
+      this.step(p, t, dt);
+      const mark = p.obj?.userData.ceoMark;
+      if (mark) {
+        mark.rotation.y = t * 1.5;
+        mark.position.y = 2.25 + Math.sin(t * 2) * 0.06;
+      }
+    }
+    this.placeTag();
     for (const g of [...this.guests, this.visitor?.holder]) {
       const obj = g?.userData.obj;
       if (!obj) continue;
