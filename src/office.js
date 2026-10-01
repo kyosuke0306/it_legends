@@ -216,7 +216,10 @@ export class Office {
     room.add(board);
     this.board = board;
     this.spots = {
-      walk: [new THREE.Vector3(-w * 0.36, 0, pathZ), new THREE.Vector3(w * 0.36, 0, pathZ)],
+      pathZ,
+      // 散歩：画面の外（左右の先）まで道を歩いていく
+      farLeft: new THREE.Vector3(-w * 1.1, 0, pathZ),
+      farRight: new THREE.Vector3(w * 1.1, 0, pathZ),
       board: new THREE.Vector3(bx + 0.35, 0, bz + 0.15),
       guests: [0, 1, 2].map((k) => new THREE.Vector3(bx + 1.25 + (k % 2) * 0.3, 0, bz - 0.55 + k * 0.55)),
       door: new THREE.Vector3(w * 0.12, 0, pathZ + 0.05),
@@ -270,10 +273,26 @@ export class Office {
     if (!p.obj) return;
     // CEO は手が空いていると、選んだ過ごし方をする
     const plan = p.hero && !p.busy ? this.activity : null;
-    if (plan === 'walk' && !p.target) p.target = this.spots.walk[(p.leg = ((p.leg ?? 0) + 1) % 2)];
+    const pos = p.holder.position;
+    if (plan === 'walk') {
+      // 散歩：事務所を出て道に出て、右の画面の外へ。しばらくして左から戻ってきて、また右へ
+      if (p.away > 0) {
+        if ((p.away -= dt) > 0) return;
+        pos.copy(this.spots.farLeft);
+        p.holder.visible = true;
+        p.target = this.spots.farRight;
+      } else if (!p.target) {
+        p.target = pos.z < this.spots.pathZ - 0.1 ? new THREE.Vector3(pos.x, 0, this.spots.pathZ) : this.spots.farRight;
+      }
+    } else if (!p.holder.visible) {
+      // 散歩の途中でほかの過ごし方に変えたら、事務所の前の道から戻ってくる
+      p.holder.visible = true;
+      p.away = 0;
+      pos.copy(this.spots.door);
+      p.target = null;
+    }
     const atDesk = p.busy || plan === 'net';
     const goal = atDesk ? p.desk : plan === 'meetup' ? this.spots.board : p.target;
-    const pos = p.holder.position;
     let moving = false;
     if (goal) {
       const dx = goal.x - pos.x;
@@ -289,6 +308,12 @@ export class Office {
         p.holder.rotation.y = Math.PI; // 机（奥）のほうを向く
       } else if (plan === 'meetup') {
         p.holder.rotation.y = Math.PI / 2; // 勉強会に来た人のほうを向く
+      } else if (plan === 'walk') {
+        if (goal === this.spots.farRight) {
+          p.holder.visible = false; // 画面の外を歩いている
+          p.away = 4 + Math.random() * 6;
+        }
+        p.target = null;
       } else {
         p.target = null;
         p.wait = 1.5 + Math.random() * 4;
