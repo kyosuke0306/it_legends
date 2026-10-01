@@ -39,11 +39,12 @@ function save() {
   } catch {}
   cloud.changed();
 }
+// 裏に回ったら保存して通信を切り、戻ったらつなぎ直す（通信を少なくする）
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     save();
-    cloud.flush();
-  }
+    cloud.sleep();
+  } else cloud.wake();
 });
 
 // ---------- 表示の小道具 ----------

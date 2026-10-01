@@ -47,7 +47,7 @@ IT会社を育てる放置ゲーム（2026-10-01 にガチャから作り変え�
 - 社員の見た目は職種ごとに小物で変える（src/outfits.js、職種の絵に合わせた）: SE＝社員証、プログラマー＝ヘッドホン、インフラ＝黄色いヘルメット、デザイナー＝ベレー帽、データ分析＝白衣とメガネ、PM＝クリップボード、GM・コンサル＝ネクタイ（コンサルはメガネも）、営業＝ネクタイとかばん。CEO は職種の小物に加えて金のネクタイと、頭の上でゆっくり回る金の印。3Dの人をタップすると名前と職種の札が3秒出る（面接に来た人は「職種・面接」）。CEO が仕事中は過ごし方のボタンの上に仕事の名前と残り時間が出る
 - 自社製品は投資。赤字はありだが会社はつぶれない
 - 画面は事務所の3D（社員と偉人が歩き回る、仕事中は机へ。手前に外の道と木）。`src/office.js`
-- 記録: localStorage ＋ Google ログイン（`src/cloud.js`。kyosuke0306/money_manage の sync.js と同じ方式: Firebase 12.18.0 を gstatic CDN から、Firestore `users/{uid}` に `{ data: JSONの文字列, updatedAt, device }`、onSnapshot でほかの端末の変更を反映）。Firebase は画面が落ち着いてから先読みする（押してから読むと iPhone の Safari でログインの窓が止められるため）。設定は `src/firebase-config.js`（プロジェクト itlegends-45d70）。この作業環境からは Google のログイン画面に行けないので、同期は偽の Firebase で2台の端末を再現して確認している
+- 記録: localStorage ＋ Google ログイン（`src/cloud.js`。kyosuke0306/money_manage の sync.js と同じ方式: Firebase 12.18.0 を gstatic CDN から、Firestore `users/{uid}` に `{ data: JSONの文字列, updatedAt, device }`、onSnapshot でほかの端末の変更を反映）。通信を少なくするため（ユーザー指示）、画面が裏に回ったら保存してから Firestore の通信を切り（cloud.sleep: 受け取りの窓口を閉じて disableNetwork）、戻ったらつなぎ直す（cloud.wake）。保存は操作から10秒待ってまとめ、中身が前回と同じなら送らない。偽の Firebase で順番を確かめた。Firebase は画面が落ち着いてから先読みする（押してから読むと iPhone の Safari でログインの窓が止められるため）。設定は `src/firebase-config.js`（プロジェクト itlegends-45d70）。この作業環境からは Google のログイン画面に行けないので、同期は偽の Firebase で2台の端末を再現して確認している
 - バランス確認は、1日3回のぞく自動プレイのシミュレーションで行った（効率的に遊んで11人そろうのに約3か月）
 
 ## 画面の作り（2026-10-01 時点、v13）

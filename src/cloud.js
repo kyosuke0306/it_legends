@@ -2,6 +2,7 @@
 // - 記録は Firestore の users/<ユーザーID> に { data: 記録のJSON, updatedAt, device } で保存
 // - ほかの端末で保存された内容は onSnapshot で受け取って反映する
 // - Firebase の部品は、画面の表示が終わって落ち着いてから読み込む（ゲームの表示を遅らせない）
+// - 通信を少なくするため、画面が裏に回ったら保存してから通信を切り、戻ったらつなぎ直す（sleep / wake）
 import { FIREBASE_CONFIG } from './firebase-config.js';
 
 const SDK = 'https://www.gstatic.com/firebasejs/12.18.0/';
@@ -20,6 +21,8 @@ let user = null;
 let unsubscribe = null;
 let timer = null;
 let dirty = false;
+let asleep = false; // 裏に回って通信を切っているか
+let lastSent = ''; // 最後に保存した中身（同じなら送らない）
 
 export const currentUser = () => user;
 const status = (text, cls) => hooks?.onStatus(text, cls);
@@ -65,13 +68,18 @@ async function upload() {
   timer = null;
   if (!user || !dirty) return;
   dirty = false;
+  // 保存した時刻だけが違うときは送らない
+  const state = hooks.getState();
+  const same = JSON.stringify({ ...state, savedAt: 0, time: 0 });
+  if (same === lastSent) return status('保存済み', 'ok');
   status('保存中', 'busy');
   try {
     await fb.store.setDoc(fb.store.doc(fb.db, 'users', user.uid), {
-      data: JSON.stringify(hooks.getState()),
+      data: JSON.stringify(state),
       updatedAt: Date.now(),
       device,
     });
+    lastSent = same;
     status('保存済み', 'ok');
   } catch (e) {
     console.error(e);
@@ -86,11 +94,9 @@ export function changed() {
   dirty = true;
   status('保存中', 'busy');
   clearTimeout(timer);
-  timer = setTimeout(upload, 2000);
+  timer = setTimeout(upload, 10000); // 続けて操作したときは1回にまとめる（裏に回るときはすぐ保存する）
 }
 
-// すぐ保存する（画面を閉じるときなど）
-export const flush = () => upload();
 
 async function onUser(u) {
   user = u;
@@ -121,20 +127,44 @@ async function onUser(u) {
       status('保存済み', 'ok');
     }
     hooks.onSynced?.();
-    // ほかの端末で保存された内容を反映する
-    unsubscribe = store.onSnapshot(ref, (s) => {
-      if (!s.exists() || s.metadata.hasPendingWrites) return;
-      const d = s.data();
-      if (d.device === device) return;
-      const st = parse(d.data);
-      if (!st) return;
-      hooks.applyState(st);
-      status('保存済み', 'ok');
-    });
+    if (!asleep) listen();
   } catch (e) {
     console.error(e);
     status('読み込めません', 'error');
   }
+}
+
+// ほかの端末で保存された内容を受け取って反映する（つないだ直後にも最新の内容が1回届く）
+function listen() {
+  if (unsubscribe || !user) return;
+  unsubscribe = fb.store.onSnapshot(fb.store.doc(fb.db, 'users', user.uid), (s) => {
+    if (!s.exists() || s.metadata.hasPendingWrites) return;
+    const d = s.data();
+    if (d.device === device) return;
+    const st = parse(d.data);
+    if (!st) return;
+    hooks.applyState(st);
+    status('保存済み', 'ok');
+  });
+}
+
+// 画面が裏に回ったとき：いまの記録を保存してから、通信を切る
+export async function sleep() {
+  if (!fb || asleep) return;
+  asleep = true;
+  await upload();
+  if (!asleep) return; // 保存している間に画面に戻ってきた
+  unsubscribe?.();
+  unsubscribe = null;
+  await fb.store.disableNetwork(fb.db).catch(() => {});
+}
+
+// 画面に戻ってきたとき：つなぎ直して、ほかの端末の変更を受け取る
+export async function wake() {
+  if (!fb || !asleep) return;
+  asleep = false;
+  await fb.store.enableNetwork(fb.db).catch(() => {});
+  listen();
 }
 
 function parse(json) {
