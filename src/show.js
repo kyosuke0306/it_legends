@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -611,6 +611,67 @@ const PROPS = {
     g.userData.animate = (p, t, o) => {
       p.position.set(o.position.x + 0.9, 1.3 + Math.sin(t * 2.4) * 0.05, 0.3);
       p.rotation.y = Math.sin(t * 1.2) * 0.6;
+    };
+    return g;
+  },
+
+  // 国際宇宙ステーションの中：丸い窓の外に青い地球と星、白い壁の手すり。小物がふわふわ浮かぶ
+  iss() {
+    const g = new THREE.Group();
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: issWallTexture() }));
+    wall.position.set(0, 3, -2.5);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: issFloorTexture() }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, 1);
+    g.add(wall, floor);
+    // 無重力で浮かぶ水の玉とペン（左奥）
+    const water = new THREE.Mesh(new THREE.SphereGeometry(0.07, 20, 14), new THREE.MeshStandardMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.7, roughness: 0.1 }));
+    const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.18, 8), new THREE.MeshStandardMaterial({ color: 0xe0563a }));
+    g.add(water, pen);
+    g.renderOrder = -1;
+    g.userData.animate = (p, t) => {
+      water.position.set(-1.9 + Math.sin(t * 0.5) * 0.15, 1.6 + Math.sin(t * 0.8) * 0.12, -1.2);
+      water.scale.set(1 + Math.sin(t * 3) * 0.08, 1 - Math.sin(t * 3) * 0.08, 1);
+      pen.position.set(-1.4 + Math.cos(t * 0.4) * 0.1, 1.1 + Math.sin(t * 0.6) * 0.1, -0.9);
+      pen.rotation.set(t * 0.7, 0, t * 0.5);
+    };
+    return g;
+  },
+
+  // ZOZOSUIT（体のサイズを測る水玉もようの全身スーツ）：横にふわっと浮かんで、ゆっくり回る
+  zozosuit() {
+    const g = new THREE.Group();
+    const m = new THREE.MeshStandardMaterial({ map: dotsTexture(), roughness: 0.6 });
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.22, 6, 16), m);
+    body.position.y = 0.05;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.08, 20, 14), m);
+    head.position.y = 0.3;
+    g.add(body, head);
+    for (const s of [-1, 1]) {
+      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.2, 4, 10), m);
+      arm.position.set(s * 0.16, 0.06, 0);
+      arm.rotation.z = s * 0.35;
+      const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.22, 4, 10), m);
+      leg.position.set(s * 0.06, -0.25, 0);
+      g.add(arm, leg);
+    }
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x + 0.9, 1.15 + Math.sin(t * 1.8) * 0.06, 0.3);
+      p.rotation.y = t * 0.8;
+      p.rotation.z = Math.sin(t * 1.1) * 0.15;
+    };
+    return g;
+  },
+
+  // 月：「月に行きます」のときに頭の横に浮かぶ
+  moon() {
+    const g = new THREE.Group();
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(0.2, 40, 24), new THREE.MeshStandardMaterial({ map: moonTexture(), roughness: 0.9 }));
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.235, 32, 16), new THREE.MeshBasicMaterial({ color: 0xfff2c8, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
+    g.add(moon, halo);
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x - 0.85, 1.35 + Math.sin(t * 2.2) * 0.05, 0.3); // 先に出た ZOZOSUIT と重ならないよう反対側に
+      moon.rotation.y = t * 0.4;
     };
     return g;
   },
@@ -1479,6 +1540,133 @@ function soundLogoTexture(blur) {
       x.quadraticCurveTo(256, y - 512 * k * 0.13, 256 + 512 * k * 0.42, y + 512 * k * 0.08);
       x.stroke();
     });
+  }
+  return canvasTexture(c);
+}
+
+// 宇宙ステーションの壁：白いパネルと手すり、丸い窓が2つ（外は星と青い地球）
+function issWallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 878;
+  const x = c.getContext('2d');
+  const W = c.width;
+  const H = c.height;
+  const wall = x.createRadialGradient(W / 2, H * 0.4, 80, W / 2, H * 0.5, W * 0.6);
+  wall.addColorStop(0, '#d9dee6');
+  wall.addColorStop(1, '#6f7884');
+  x.fillStyle = wall;
+  x.fillRect(0, 0, W, H);
+  // パネルのつなぎ目
+  x.strokeStyle = 'rgba(40,50,60,0.25)';
+  x.lineWidth = 4;
+  for (let i = 1; i < 8; i++) {
+    x.beginPath();
+    x.moveTo((W / 8) * i, 0);
+    x.lineTo((W / 8) * i, H);
+    x.stroke();
+  }
+  x.beginPath();
+  x.moveTo(0, H * 0.78);
+  x.lineTo(W, H * 0.78);
+  x.stroke();
+  // 手すり（黄色）
+  x.fillStyle = '#d8b23a';
+  x.fillRect(120, H * 0.7, 420, 14);
+  x.fillRect(W - 540, H * 0.7, 420, 14);
+  // 丸い窓
+  const star = (cx, cy, r) => {
+    x.save();
+    x.beginPath();
+    x.arc(cx, cy, r, 0, Math.PI * 2);
+    x.clip();
+    x.fillStyle = '#03050c';
+    x.fillRect(cx - r, cy - r, r * 2, r * 2);
+    for (let i = 0; i < 70; i++) {
+      x.fillStyle = `rgba(255,255,255,${0.4 + ((i * 37) % 60) / 100})`;
+      x.fillRect(cx - r + ((i * 97) % (r * 2)), cy - r + ((i * 53) % (r * 2)), 3, 3);
+    }
+    // 下から見える青い地球のふち
+    const earth = x.createRadialGradient(cx, cy + r * 1.9, r * 0.9, cx, cy + r * 1.9, r * 1.35);
+    earth.addColorStop(0, '#2c6fd6');
+    earth.addColorStop(0.85, '#5fb0ff');
+    earth.addColorStop(1, 'rgba(160,220,255,0)');
+    x.fillStyle = earth;
+    x.beginPath();
+    x.arc(cx, cy + r * 1.9, r * 1.35, 0, Math.PI * 2);
+    x.fill();
+    x.fillStyle = 'rgba(255,255,255,0.5)';
+    x.beginPath();
+    x.ellipse(cx - r * 0.3, cy + r * 0.75, r * 0.25, r * 0.06, -0.2, 0, Math.PI * 2);
+    x.fill();
+    x.restore();
+    x.strokeStyle = '#4a525e';
+    x.lineWidth = 26;
+    x.beginPath();
+    x.arc(cx, cy, r + 13, 0, Math.PI * 2);
+    x.stroke();
+  };
+  star(W * 0.3, H * 0.42, 190);
+  star(W * 0.72, H * 0.42, 190);
+  return canvasTexture(c);
+}
+function issFloorTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#8a929c';
+  x.fillRect(0, 0, 512, 256);
+  x.strokeStyle = 'rgba(30,36,44,0.35)';
+  x.lineWidth = 3;
+  for (let i = 0; i <= 8; i++) {
+    x.beginPath();
+    x.moveTo(i * 64, 0);
+    x.lineTo(i * 64, 256);
+    x.stroke();
+  }
+  for (let j = 0; j <= 4; j++) {
+    x.beginPath();
+    x.moveTo(0, j * 64);
+    x.lineTo(512, j * 64);
+    x.stroke();
+  }
+  x.fillStyle = 'rgba(255,255,255,0.25)';
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 4; j++) x.fillRect(i * 64 + 6, j * 64 + 6, 4, 4);
+  return canvasTexture(c);
+}
+// ZOZOSUIT の水玉もよう（黒地に白い点）
+function dotsTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#16171b';
+  x.fillRect(0, 0, 256, 256);
+  x.fillStyle = '#f4f4f4';
+  for (let i = 0; i < 8; i++)
+    for (let j = 0; j < 8; j++) {
+      x.beginPath();
+      x.arc(16 + i * 32 + (j % 2) * 16, 16 + j * 32, 6, 0, Math.PI * 2);
+      x.fill();
+    }
+  const t = canvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(2, 2);
+  return t;
+}
+function moonTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#c9c6bd';
+  x.fillRect(0, 0, 512, 256);
+  for (const [cx, cy, r, a] of [[80, 70, 40, 0.25], [200, 150, 55, 0.2], [330, 60, 30, 0.3], [420, 170, 45, 0.22], [150, 40, 18, 0.3], [280, 210, 22, 0.3], [470, 60, 20, 0.3]]) {
+    x.fillStyle = `rgba(90,88,84,${a})`;
+    x.beginPath();
+    x.arc(cx, cy, r, 0, Math.PI * 2);
+    x.fill();
   }
   return canvasTexture(c);
 }

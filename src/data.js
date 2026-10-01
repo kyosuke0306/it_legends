@@ -301,6 +301,16 @@ export const LEGENDS = [
     look: { skin: 0xf2d0b8, hairStyle: 'side', hairColor: 0x3a2a20, shirt: 0x1f2d55 },
     // 宇宙ステーションに行ったときの紺のフライトスーツで作る（文字やマークは付けない）
     outfit: 'a navy blue astronaut flight suit jumpsuit with a few simple white and red stripes across the chest, without any logos, patches or text, and white sneakers',
+    // 2021年に行った国際宇宙ステーションの中で話す
+    show: {
+      stage: 'iss',
+      props: ['iss'],
+      lines: [
+        { text: '世界中をカッコよく、世界中に笑顔を。', sub: 'Inspire the world. Deliver joy every day.', prop: 'zozosuit', anim: 'agree' },
+        { text: '月に行きます。', sub: 'I choose to go to the Moon!', prop: 'moon', anim: 'greet_01' },
+        { text: '宇宙から見た地球は、本当に美しい。', sub: 'The Earth from space is truly beautiful.', anim: 'fold_arms', animFrom: 1.5 },
+      ],
+    },
   },
 ];
 
