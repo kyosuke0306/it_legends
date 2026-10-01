@@ -1,11 +1,12 @@
 // Firebase（Google ログイン + Firestore）で記録を保存・同期する（money_manage の sync.js と同じ方式）
 // - 記録は Firestore の users/<ユーザーID> に { data: 記録のJSON, updatedAt, device } で保存
 // - ほかの端末で保存された内容は onSnapshot で受け取って反映する
-// - 通信を軽くするため、Firebase の部品は「ログインするとき」か「前回ログインしていたとき」だけ読み込む
+// - Firebase の部品は、画面の表示が終わって落ち着いてから読み込む（ゲームの表示を遅らせない）
 import { FIREBASE_CONFIG } from './firebase-config.js';
 
 const SDK = 'https://www.gstatic.com/firebasejs/12.18.0/';
 const FLAG = 'it_legends.cloud'; // 前回ログインしていたか
+const REDIRECT = 'it_legends.redirect'; // ページを切り替えてログインしている途中か
 const flag = {
   get: () => { try { return localStorage.getItem(FLAG) === '1'; } catch { return false; } },
   set: (on) => { try { on ? localStorage.setItem(FLAG, '1') : localStorage.removeItem(FLAG); } catch {} },
@@ -33,6 +34,11 @@ async function load() {
   const app = initializeApp(FIREBASE_CONFIG);
   fb = { auth, store, a: auth.getAuth(app), db: store.getFirestore(app) };
   auth.onAuthStateChanged(fb.a, onUser);
+  // ページを切り替えてログインしたときの失敗を知らせる
+  if (sessionStorage.getItem(REDIRECT)) {
+    sessionStorage.removeItem(REDIRECT);
+    auth.getRedirectResult(fb.a).catch((e) => showError(e));
+  }
   return fb;
 }
 
@@ -47,6 +53,10 @@ export function init(h) {
     });
   } else {
     status('ログイン', 'login');
+    // ボタンを押した瞬間にログインの窓を開けるよう、画面が落ち着いたら先に読んでおく
+    // （押してから読むと、iPhone の Safari では窓が止められることがある）
+    const idle = window.requestIdleCallback ?? ((f) => setTimeout(f, 1500));
+    setTimeout(() => idle(() => load().catch(() => {})), 2000);
   }
 }
 
@@ -138,6 +148,12 @@ function parse(json) {
 // ボタンに触れた時点で Firebase を読み始める（ログインの窓をすぐ開けるように）
 export const warmUp = () => load().catch(() => {});
 
+function showError(e) {
+  console.error(e);
+  status('ログインできません', 'error');
+  alert(`ログインできませんでした（${e.code || e.message}）`);
+}
+
 export async function login() {
   const ready = Boolean(fb);
   status('ログイン中', 'busy');
@@ -151,12 +167,12 @@ export async function login() {
       status('もう一度タップ', 'login');
     } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
       flag.set(true); // 戻ってきたときに Firebase を読み込むため
+      sessionStorage.setItem(REDIRECT, '1');
       await auth.signInWithRedirect(a, provider);
-    } else {
+    } else if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
       status('ログイン', 'login');
-      if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
-        alert(`ログインできませんでした（${e.code || e.message}）`);
-      }
+    } else {
+      showError(e);
     }
   }
 }

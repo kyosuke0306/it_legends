@@ -524,8 +524,7 @@ let syncState = { text: 'ログイン', cls: 'login' };
 function showSync(text, cls) {
   syncState = { text, cls };
   for (const el of document.querySelectorAll('.sync')) {
-    // ログイン前だけ文字を出す。ログイン後はアイコンだけ
-    el.innerHTML = icon(SYNC_ICON[cls], cls === 'busy' ? 'spin' : '') + (cls === 'login' || cls === 'error' ? `<span>${esc(text)}</span>` : '');
+    el.innerHTML = icon(SYNC_ICON[cls], cls === 'busy' ? 'spin' : '') + `<span>${esc(text)}</span>`;
     el.className = `sync ${cls}${el.classList.contains('start-sync') ? ' start-sync' : ''}`;
     el.title = text;
   }
