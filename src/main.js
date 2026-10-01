@@ -378,8 +378,10 @@ function openHistory(cat = null) {
             .slice(0, 50)
             .map(
               (h) => `<div class="hist-row cat-${h.cat} ${h.ok ? '' : 'ng'}"><i></i>
-                <span class="hist-main"><b>${esc(h.title)}</b><small>${esc(h.who.join('・'))}・${ago(h.t)}前</small></span>
-                <span class="hist-vals">${h.ok ? icon('check', 'ok') : icon('error', 'bad')}${h.great ? icon('bolt', 'res-great') : ''}${h.early ? icon('clock', 'res-early') : ''}<b>${yen(h.money)}</b><small class="${h.rep < 0 ? 'bad' : ''}">${icon('star')}${h.rep > 0 ? '+' : ''}${h.rep}</small></span>
+                <span class="hist-main"><b>${esc(h.title)}</b><small>${[...h.who, `${ago(h.t)}前`].map(esc).join('・')}</small></span>
+                <span class="hist-vals">${h.ok ? icon('check', 'ok') : icon('error', 'bad')}${h.great ? icon('bolt', 'res-great') : ''}${h.early ? icon('clock', 'res-early') : ''}<b>${h.money == null ? '—' : yen(h.money)}</b>${
+                  h.rep == null ? '' : `<small class="${h.rep < 0 ? 'bad' : ''}">${icon('star')}${h.rep > 0 ? '+' : ''}${h.rep}</small>`
+                }</span>
               </div>`,
             )
             .join('')

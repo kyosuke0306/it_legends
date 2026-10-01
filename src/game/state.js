@@ -644,7 +644,21 @@ export function migrate(s) {
   s.company = companyTitle(s.company);
   delete s.notes;
   s.log = s.log.filter((l) => l.kind !== 'note');
+  backfillHistory(s);
   return s;
+}
+
+// 「これまでの仕事」を作る前に終わった仕事を、出来事のメモ（「仕事の名前  成功／失敗」）から一覧に足す（1回だけ）
+// メモには報酬・評判・担当者が残っていないので空欄（money / rep は null）
+function backfillHistory(s) {
+  if (s.historyBackfilled) return;
+  s.historyBackfilled = true;
+  const oldest = Math.min(...(s.history ?? []).map((h) => h.t), Infinity);
+  const old = s.log
+    .map((l) => ({ l, m: l.text.match(/^(.+)  (成功|失敗)$/) }))
+    .filter(({ l, m }) => m && l.t < oldest && R.TASKS.some((x) => x.title === m[1]))
+    .map(({ l, m }) => ({ t: l.t, title: m[1], cat: R.TASKS.find((x) => x.title === m[1]).cat, ok: m[2] === '成功', money: null, rep: null, who: [] }));
+  s.history = [...(s.history ?? []), ...old].slice(0, HISTORY_MAX);
 }
 
 // ---------- 記録 ----------
