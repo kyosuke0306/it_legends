@@ -23,21 +23,38 @@ export const JOBS = {
 };
 
 // 会社の広さ。cap は入れる人数（自分も含む）、tier は受けられる仕事の大きさ
+// lv は面接に来る人のレベルの幅、temp は派遣で来る人のレベル（大きな会社ほど育った人が来る）
+// 見た目: floor 床 / wall 壁 / win 窓の色 / winW 窓の幅（部屋の幅に対して）/ ground 外の地面 / path 道 / trees 外の木
+// 本社ビルのあと（2026-10-01 ユーザー指示「終わりが見えないくらいやり込めるように」）: 高層タワー → … → 宇宙ステーション
 export const OFFICES = [
-  { name: '自宅の部屋', cap: 2, cost: 0, rep: 0, floor: 0xa89474, wall: 0xcfc3a6 }, // 古くて薄汚れた部屋
-  { name: 'ガレージ', cap: 4, cost: 300_000, rep: 30, floor: 0x9a9a9a, wall: 0xc9c2b4 },
-  { name: '小さな事務所', cap: 7, cost: 2_000_000, rep: 150, floor: 0xb59a76, wall: 0xeeeeea },
-  { name: 'オフィスビル', cap: 12, cost: 15_000_000, rep: 600, floor: 0x8f9bab, wall: 0xe4e8ef },
-  { name: '本社ビル', cap: 20, cost: 100_000_000, rep: 2000, floor: 0x6f6a80, wall: 0xf5f3fa },
+  { name: '自宅の部屋', cap: 2, cost: 0, rep: 0, lv: [1, 2], temp: 1, floor: 0xa89474, wall: 0xcfc3a6 }, // 古くて薄汚れた部屋
+  { name: 'ガレージ', cap: 4, cost: 300_000, rep: 30, lv: [1, 3], temp: 3, floor: 0x9a9a9a, wall: 0xc9c2b4 },
+  { name: '小さな事務所', cap: 7, cost: 2_000_000, rep: 150, lv: [1, 5], temp: 5, floor: 0xb59a76, wall: 0xeeeeea },
+  { name: 'オフィスビル', cap: 12, cost: 15_000_000, rep: 600, lv: [1, 7], temp: 7, floor: 0x8f9bab, wall: 0xe4e8ef },
+  { name: '本社ビル', cap: 20, cost: 100_000_000, rep: 2000, lv: [1, 8], temp: 9, floor: 0x6f6a80, wall: 0xf5f3fa },
+  { name: '高層タワー', cap: 28, cost: 300_000_000, rep: 6000, lv: [6, 16], temp: 14, floor: 0x4f5a6a, wall: 0xdfe8f0, win: 0x9fd0ff, winW: 0.8 },
+  { name: 'テックキャンパス', cap: 38, cost: 1_200_000_000, rep: 15000, lv: [12, 26], temp: 22, floor: 0xd8c3a0, wall: 0xf4f7f2, win: 0xbfe8d0, winW: 0.7, ground: 0x8fcf7a },
+  { name: '世界本社', cap: 50, cost: 5_000_000_000, rep: 40000, lv: [20, 36], temp: 30, floor: 0xeeeae2, wall: 0xf8f4ea, win: 0xcfe6ff, winW: 0.8 },
+  { name: 'スマートシティ', cap: 64, cost: 20_000_000_000, rep: 100000, lv: [28, 48], temp: 40, floor: 0x26304a, wall: 0xd6eef6, win: 0x2a3a6a, winW: 0.9, ground: 0x3a4152, path: 0x5ad0e0 },
+  { name: '宇宙ステーション', cap: 80, cost: 100_000_000_000, rep: 250000, lv: [38, 62], temp: 52, floor: 0x5a6472, wall: 0xe6ecf2, win: 0x070b18, winW: 0.9, ground: 0x151a28, path: 0x2c3550, trees: false },
 ];
+// いちばん上の会社のあとは、いくらでも増築できる（1回ごとに席 +FLOOR_CAP。費用は FLOOR_COST から FLOOR_GROW 倍ずつ上がる）
+export const FLOOR_CAP = 8;
+export const FLOOR_COST = 30_000_000_000;
+export const FLOOR_GROW = 1.35;
 
-// 仕事（受託）の大きさごとの数字。rate は1時間あたりの報酬の目安
+// 仕事（受託）の大きさごとの数字。rate は1時間あたりの報酬の目安。xp は成長の倍率（大きな仕事ほど育つ）
 export const TIERS = [
   { rate: 6_000, diff: [14, 24], team: 2, hours: [1, 2, 4, 8], rep: 1 },
   { rate: 15_000, diff: [35, 60], team: 3, hours: [2, 4, 8, 12], rep: 3 },
   { rate: 40_000, diff: [80, 130], team: 4, hours: [4, 8, 12, 24], rep: 8 },
   { rate: 100_000, diff: [180, 280], team: 5, hours: [8, 12, 24, 36], rep: 20 },
   { rate: 250_000, diff: [380, 560], team: 6, hours: [12, 24, 36, 48], rep: 50 },
+  { rate: 600_000, diff: [600, 820], team: 7, hours: [12, 24, 36, 48], rep: 120, xp: 1.6 },
+  { rate: 1_500_000, diff: [850, 1150], team: 8, hours: [24, 36, 48, 72], rep: 280, xp: 2.6 },
+  { rate: 4_000_000, diff: [1150, 1550], team: 9, hours: [24, 36, 48, 72], rep: 650, xp: 4.1 },
+  { rate: 10_000_000, diff: [1500, 2100], team: 10, hours: [36, 48, 72, 96], rep: 1500, xp: 6.6 },
+  { rate: 25_000_000, diff: [2200, 3100], team: 12, hours: [48, 72, 96, 120], rep: 3500, xp: 10.5 },
 ];
 
 // 仕事の種類。cat は偉人と出会う条件に使う
@@ -67,6 +84,34 @@ export const TASKS = [
   { tier: 4, cat: 'space', title: '月面探査機の着陸プログラム', w: { idea: 1, tech: 3, plan: 4, talk: 0 } },
   { tier: 4, cat: 'ai', title: '会話できるAIアシスタントの開発', w: { idea: 3, tech: 3, plan: 1, talk: 1 } },
   { tier: 4, cat: 'infra', title: '全国の交通ICカードの基盤づくり', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
+  // tier 5（高層タワー）
+  { tier: 5, cat: 'web', title: '動画配信サービスの基盤づくり', w: { idea: 1, tech: 3, plan: 2, talk: 0 } },
+  { tier: 5, cat: 'app', title: '全国の銀行アプリの作り直し', w: { idea: 1, tech: 2, plan: 3, talk: 1 } },
+  { tier: 5, cat: 'infra', title: '国の行政システムのクラウド化', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
+  { tier: 5, cat: 'consult', title: '世界的な自動車メーカーのDX戦略', w: { idea: 2, tech: 0, plan: 2, talk: 3 } },
+  { tier: 5, cat: 'ai', title: '病院の画像診断AI', w: { idea: 1, tech: 3, plan: 2, talk: 0 } },
+  // tier 6（テックキャンパス）
+  { tier: 6, cat: 'ai', title: '自動運転車のAI開発', w: { idea: 2, tech: 3, plan: 2, talk: 0 } },
+  { tier: 6, cat: 'infra', title: '海底ケーブルの通信網づくり', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
+  { tier: 6, cat: 'space', title: '宇宙望遠鏡のデータ解析', w: { idea: 2, tech: 3, plan: 2, talk: 0 } },
+  { tier: 6, cat: 'web', title: '世界で使われる検索エンジン', w: { idea: 2, tech: 3, plan: 1, talk: 1 } },
+  { tier: 6, cat: 'app', title: '1億人が使う決済アプリ', w: { idea: 1, tech: 2, plan: 3, talk: 1 } },
+  // tier 7（世界本社）
+  { tier: 7, cat: 'ai', title: '1か月先の天気を当てるAI', w: { idea: 2, tech: 3, plan: 2, talk: 0 } },
+  { tier: 7, cat: 'infra', title: '世界のデータセンターをつなぐ', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
+  { tier: 7, cat: 'space', title: '火星探査車の自動運転', w: { idea: 1, tech: 3, plan: 3, talk: 0 } },
+  { tier: 7, cat: 'consult', title: '国の通貨のデジタル化', w: { idea: 1, tech: 1, plan: 3, talk: 3 } },
+  { tier: 7, cat: 'app', title: '世界同時配信のオンラインゲーム', w: { idea: 3, tech: 3, plan: 1, talk: 0 } },
+  // tier 8（スマートシティ）
+  { tier: 8, cat: 'ai', title: '新しい薬を見つけるAI', w: { idea: 3, tech: 3, plan: 1, talk: 0 } },
+  { tier: 8, cat: 'space', title: '月面基地の生命維持システム', w: { idea: 1, tech: 3, plan: 4, talk: 0 } },
+  { tier: 8, cat: 'infra', title: '量子暗号の通信網', w: { idea: 1, tech: 4, plan: 2, talk: 0 } },
+  { tier: 8, cat: 'web', title: '街じゅうのセンサーをつなぐ', w: { idea: 1, tech: 3, plan: 3, talk: 1 } },
+  // tier 9（宇宙ステーション）
+  { tier: 9, cat: 'space', title: '火星の都市の管制システム', w: { idea: 1, tech: 3, plan: 4, talk: 1 } },
+  { tier: 9, cat: 'ai', title: '人と話せる汎用AI', w: { idea: 3, tech: 4, plan: 1, talk: 1 } },
+  { tier: 9, cat: 'infra', title: '地球全体の電力網の制御', w: { idea: 0, tech: 3, plan: 4, talk: 1 } },
+  { tier: 9, cat: 'app', title: '全人類の通訳アプリ', w: { idea: 2, tech: 3, plan: 1, talk: 3 } },
 ];
 export const CAT_NAMES = { web: 'Web', app: 'アプリ', infra: 'インフラ', consult: '相談', ai: 'AI', space: '宇宙' };
 
@@ -77,6 +122,13 @@ export const GENRES = {
   game: { name: 'ゲーム', cost: 500_000, hours: 48, need: 110, office: 1, w: { idea: 3, tech: 2, plan: 1, talk: 0 } },
   biz: { name: '業務ソフト', cost: 1_000_000, hours: 48, need: 160, office: 2, w: { idea: 0, tech: 2, plan: 3, talk: 1 } },
   ai: { name: 'AIサービス', cost: 5_000_000, hours: 72, need: 300, office: 3, w: { idea: 2, tech: 3, plan: 1, talk: 0 } },
+  // 大きな会社でだけ作れる製品（本社ビルから）
+  cloud: { name: 'クラウド基盤', cost: 30_000_000, hours: 96, need: 450, office: 4, w: { idea: 0, tech: 3, plan: 3, talk: 0 } },
+  sns: { name: 'SNS', cost: 150_000_000, hours: 120, need: 700, office: 5, w: { idea: 3, tech: 2, plan: 1, talk: 2 } },
+  car: { name: '自動運転', cost: 800_000_000, hours: 144, need: 1100, office: 6, w: { idea: 1, tech: 3, plan: 3, talk: 0 } },
+  quantum: { name: '量子コンピュータ', cost: 4_000_000_000, hours: 168, need: 1700, office: 7, w: { idea: 2, tech: 4, plan: 2, talk: 0 } },
+  satnet: { name: '宇宙インターネット', cost: 20_000_000_000, hours: 240, need: 2500, office: 8, w: { idea: 1, tech: 3, plan: 3, talk: 1 } },
+  agi: { name: '汎用AI', cost: 100_000_000_000, hours: 336, need: 3800, office: 9, w: { idea: 3, tech: 4, plan: 2, talk: 1 } },
 };
 export const PRODUCT_RATE = 0.006; // ふつうの出来なら1時間に開発費の 0.6% を稼ぐ
 export const PRODUCT_HALF_LIFE = 7 * DAY; // 収入が半分になるまでの時間
@@ -101,7 +153,7 @@ export const CANDIDATE_EVERY = DAY;
 export const CANDIDATE_LIFE = [1, 2.5];
 export const MAX_CANDIDATES = 5; // 採用候補が入れ替わる間隔
 // 1日に面接に来る人の数（会社の広さごとの平均）。小さいうちはなかなか来ないので、勉強会で人を呼ぶ
-export const CANDIDATES_PER_DAY = [0.25, 1, 2, 3, 3];
+export const CANDIDATES_PER_DAY = [0.25, 1, 2, 3, 3, 3, 4, 4, 5, 5];
 export const ENCOUNTER_PER_HOUR = 1 / 110; // 条件を満たした偉人と出会う確率（1時間あたり。平均4〜5日に1回）
 export const ENCOUNTER_LIFE = DAY; // 出会いのチャンスが続く時間
 export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会えるまで

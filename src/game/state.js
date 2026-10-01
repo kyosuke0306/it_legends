@@ -134,7 +134,8 @@ export function teamPower(s, team, w) {
 
 const memberById = (s, id) => s.members.find((m) => m.id === id);
 export const freeMembers = (s) => s.members.filter((m) => !m.busy);
-export const capacity = (s) => R.OFFICES[s.office].cap;
+// 席の数。いちばん上の会社のあとは増築したぶん増える
+export const capacity = (s) => R.OFFICES[s.office].cap + (s.floors ?? 0) * R.FLOOR_CAP;
 // 席を使う人数（偉人は特別な席なので数えない。せっかくの出会いを席不足で逃さないように）
 export const seatsUsed = (s) => s.members.filter((m) => m.kind !== 'legend').length;
 
@@ -161,7 +162,7 @@ function addOffer(s, now, forceTier, easy = false) {
     team: T.team,
     reward: round(T.rate * hours * between(s, 0.85, 1.2) * (diff / T.diff[0]) ** 0.3),
     rep: Math.max(1, Math.round(T.rep * Math.sqrt(hours))),
-    xp: Math.round(hours * 3 * (tier + 1)),
+    xp: Math.round(hours * 3 * (tier + 1) * (T.xp ?? 1)),
     expiresAt: now + R.OFFER_LIFE,
   });
 }
@@ -183,7 +184,7 @@ export function makeTemp(s, offer, i) {
   const job = bestJob(offer.w);
   const j = R.JOBS[job];
   const p = randomPerson(r);
-  const level = 1 + s.office * 2;
+  const level = R.OFFICES[s.office].temp;
   const stats = {};
   for (const k of R.STAT_KEYS) stats[k] = Math.round(4 + j.w[k] * (3 + 1.5 * r()) + (level - 1) * j.w[k] * 1.1);
   return { id: -(offer.id * 10 + i + 1), kind: 'temp', job, name: p.name, look: { ...p.look, shirt: j.shirt }, stats, level, xp: 0, busy: offer.id };
@@ -368,7 +369,8 @@ function refreshCandidates(s, t = 0) {
   for (let i = 0; i < count; i++) {
     const m = makePerson(s, pick(s, jobs));
     // 会社が大きくなると、育った人も応募してくる
-    growTo(s, m, 1 + Math.floor(rand(s) * (s.office + 1) * 1.5));
+    const [lo, hi] = R.OFFICES[s.office].lv;
+    growTo(s, m, lo + Math.floor(rand(s) * (hi - lo + 1)));
     m.until = t + between(s, ...R.CANDIDATE_LIFE) * R.DAY;
     s.candidates.push(m);
   }
@@ -405,6 +407,18 @@ export function upgradeOffice(s, now) {
   s.money -= next.cost;
   s.office++;
   addLog(s, now, `${next.name}へ引っ越し`, 'good');
+  return true;
+}
+
+// いちばん上の会社まで来たら、あとはいくらでも増築できる（席が増える。費用はだんだん上がる）
+export const canExpand = (s) => s.office === R.OFFICES.length - 1;
+export const expandCost = (s) => round(R.FLOOR_COST * R.FLOOR_GROW ** (s.floors ?? 0), 1e8);
+export function expand(s, now) {
+  const cost = expandCost(s);
+  if (!canExpand(s) || s.money < cost) return false;
+  s.money -= cost;
+  s.floors = (s.floors ?? 0) + 1;
+  addLog(s, now, `増築 ${s.floors}`, 'good');
   return true;
 }
 
@@ -516,7 +530,7 @@ function rollWalkin(s, t, ev) {
   s.candidates = s.candidates.filter((c) => !c.walkin); // 訪ねてくるのは1人ずつ
   const m = makePerson(s, pick(s, Object.keys(R.JOBS)));
   // 腕のいい人が訪ねてくる（今の会社より少し育っている）
-  growTo(s, m, 2 + s.office * 2 + Math.floor(rand(s) * 3));
+  growTo(s, m, Math.max(2 + s.office * 2, R.OFFICES[s.office].lv[1]) + Math.floor(rand(s) * 3));
   m.walkin = true;
   m.until = t + R.WALKIN_LIFE;
   s.candidates.unshift(m);

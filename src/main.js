@@ -50,10 +50,11 @@ document.addEventListener('visibilitychange', () => {
 
 // ---------- 表示の小道具 ----------
 const pct = (x) => `${Math.round(x * 100)}%`;
-// お金は短く（12.3万 / 1.2億）
+// お金は短く（12.3万 / 1.2億 / 3.4兆）
 function money(n) {
   const a = Math.abs(n);
   const sign = n < 0 ? '-' : '';
+  if (a >= 1e12) return `${sign}${(a / 1e12).toFixed(a >= 1e13 ? 0 : 1)}兆`;
   if (a >= 1e8) return `${sign}${(a / 1e8).toFixed(a >= 1e9 ? 0 : 1)}億`;
   if (a >= 1e4) return `${sign}${(a / 1e4).toFixed(a >= 1e5 ? 0 : 1)}万`;
   return `${sign}${Math.round(a).toLocaleString('ja-JP')}`;
@@ -296,7 +297,8 @@ function hourlyIncome() {
 function renderOffice() {
   office.sync(S);
   const o = R.OFFICES[S.office];
-  $('#office-chips').innerHTML = `<span class="chip">${o.name}</span><span class="chip">${icon('people')}${G.seatsUsed(S)}/${o.cap}</span>${
+  const floors = S.floors ? `<small>+${S.floors}</small>` : ''; // 増築した回数
+  $('#office-chips').innerHTML = `<span class="chip">${o.name}${floors}</span><span class="chip">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${
     S.products.length ? `<span class="chip">${icon('box')}+${yen(hourlyIncome())}/時</span>` : ''
   }`;
   const enc = S.encounter;
@@ -327,7 +329,14 @@ function renderOffice() {
         ${val('coin', yen(next.cost), okMoney ? 'ok' : '')}${val('star', next.rep, okRep ? 'ok' : '')}
       </button>`;
     $('#upgrade').onclick = () => G.upgradeOffice(S, Date.now()) && commit();
-  } else $('#office-info').innerHTML = '';
+  } else {
+    // いちばん上の会社のあとは、いくらでも増築（席が増える）
+    const cost = G.expandCost(S);
+    $('#office-info').innerHTML = `<button class="panel upgrade" id="upgrade" ${S.money >= cost ? '' : 'disabled'}>
+        ${icon('plus')}<span class="grow"><b>増築</b> ${val('people', `+${R.FLOOR_CAP}`)}</span>${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}
+      </button>`;
+    $('#upgrade').onclick = () => G.expand(S, Date.now()) && commit();
+  }
 }
 
 // ----- 仕事 -----
@@ -609,7 +618,9 @@ function renderProduct() {
   const next = G.trendEndsAt(S, now);
   const seeNext = ce.nextTrend > 0;
   const canStart = G.freeMembers(S).length > 0;
+  // 先の製品は、次の会社の分まで（鍵つき）だけ見せる
   const genres = Object.entries(R.GENRES)
+    .filter(([, g]) => g.office <= S.office + 1)
     .map(([k, g]) => {
       const locked = S.office < g.office;
       return `<button class="panel genre" data-genre="${k}" ${locked || !canStart || S.money < g.cost ? 'disabled' : ''}>
