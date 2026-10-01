@@ -295,6 +295,7 @@ function assignTask(offerId) {
     title: o.title,
     max: o.team,
     w: o.w,
+    need: o.diff,
     preview: (ids) => {
       const p = G.taskPreview(S, o, ids);
       return `${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(p.duration))}${val('coin', yen(p.reward))}`;
@@ -304,20 +305,23 @@ function assignTask(offerId) {
 }
 
 // 人を選ぶ（仕事・開発で共通）。下から出るシート
-function openAssign({ title, max, w, preview, confirm, extra = '' }) {
+function openAssign({ title, max, w, need, preview, confirm, extra = '' }) {
   const dlg = $('#assign');
   const chosen = new Set();
   const power = (m) => Math.round(G.teamPower(S, [m], w));
   const free = G.freeMembers(S).sort((a, b) => power(b) - power(a));
   const draw = () => {
     const ids = [...chosen];
+    // 選んだ人の力の合計と、この仕事に必要な力（ゲージがいっぱいになれば十分）
+    const sum = ids.reduce((a, id) => a + power(free.find((m) => m.id === id)), 0);
     $('#assign-body').innerHTML = `
-      <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${chosen.size}/${max > 20 ? free.length : max}</span></div>
+      <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${icon('people')}${chosen.size}/${max > 20 ? free.length : max}</span></div>
       ${extra}
+      <div class="need ${sum >= need ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / need))}"></i></span><span class="need-num"><b>${sum}</b>/${need}</span></div>
       <div class="pick">${free
         .map(
           (m) => `<button class="person ${chosen.has(m.id) ? 'active' : ''}" data-id="${m.id}">
-            ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${power(m)}</span>
+            ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
           </button>`,
         )
         .join('')}</div>
@@ -354,7 +358,7 @@ function memberRow(m, { candidate = false } = {}) {
     const cost = G.hireCost(S, m);
     const can = G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
     const wait = m.walkin ? `<span class="muted">${val('clock', `<span data-left="${m.until}"></span>`)}</span>` : '';
-    return `${wait}<button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>${yen(cost)}</button>`;
+    return `${wait}<button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>採用 ${yen(cost)}</button>`;
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''} ${open ? 'open' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
@@ -376,7 +380,7 @@ function renderTeam() {
   const v = $('#view-team');
   v.innerHTML = `
     <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
-    <div class="sec">${icon('plus')}<span>${G.seatsUsed(S)}/${G.capacity(S)}</span><span class="left" data-left="${S.candAt + R.CANDIDATE_EVERY}"></span></div>
+    <div class="sec interview">${icon('people')}<b>面接</b><span class="grow"></span>${val('home', `${G.seatsUsed(S)}/${G.capacity(S)}`)}${val('clock', `<span data-left="${S.candAt + R.CANDIDATE_EVERY}"></span>`)}</div>
     <div class="list">${S.candidates.map((c) => memberRow(c, { candidate: true })).join('')}</div>`;
   fillThumbs(v);
   v.querySelectorAll('[data-open]').forEach(
@@ -445,6 +449,7 @@ function assignDev(genre) {
     title: g.name,
     max: 99,
     w: g.w,
+    need: g.need,
     extra: `<div class="vals center">${val('coin', yen(g.cost))}${trendIcon(G.trendAt(S, genre, Date.now()))}</div>`,
     preview: (ids) => {
       const p = G.devPreview(S, genre, ids);

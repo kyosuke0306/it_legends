@@ -189,6 +189,8 @@ button.panel:disabled { opacity: 0.45; }
 .link { border: 0; background: none; color: var(--accent); padding: 4px 0; }
 .link.small { font-size: 0.8rem; }
 .sec { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.8rem; margin: 16px 2px 8px; }
+.sec.interview b { color: var(--text); font-size: 0.95rem; }
+.sec .grow { flex: 1; }
 .empty { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--muted); padding: 30px 0; }
 .left { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
 .prog { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
@@ -280,7 +282,17 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 .pick { display: flex; flex-direction: column; gap: 6px; max-height: 45vh; overflow-y: auto; }
 .person { display: flex; align-items: center; gap: 10px; border: 2px solid transparent; border-radius: 14px; background: var(--bg); padding: 8px 12px; }
 .person.active { border-color: var(--accent); }
-.person .pw { font-weight: 800; font-size: 1.1rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+.person .pw { display: inline-flex; align-items: center; gap: 2px; font-weight: 800; font-size: 1.1rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+.person .pw .ic, .need > .ic { width: 1em; height: 1em; color: var(--gold); }
+.sheet-head .muted { display: inline-flex; align-items: center; gap: 4px; }
+.sheet-head .muted .ic { width: 1em; height: 1em; }
+.need { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 0.95rem; color: var(--muted); }
+.need-bar { flex: 1; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.need-bar i { display: block; height: 100%; border-radius: inherit; background: var(--gold); transition: width 0.2s; }
+.need.full .need-bar i { background: var(--ok); }
+.need-num { font-variant-numeric: tabular-nums; }
+.need-num b { color: var(--text); }
+.need.full .need-num b { color: var(--ok); }
 .preview { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 12px; min-height: 28px; font-weight: 700; font-size: 1.05rem; }
 .preview .val .ic { width: 1.1em; height: 1.1em; }
 .sheet .big { margin-top: 12px; }
