@@ -173,10 +173,11 @@ function loadGltf(url) {
   return glbCache[url];
 }
 
-// 起動後、ひまなときに 3D モデルを先に読んでおく（ガチャを引いたときに待たせないため）
-export async function preloadCharacters() {
+// 起動後、ひまなときに 3D モデルを先に読んでおく。ids を渡すとその偉人だけ（仲間にした偉人だけ読み、通信を節約）
+export async function preloadCharacters(ids) {
   const manifest = await loadManifest();
   for (const id of manifest) {
+    if (ids && !ids.includes(id)) continue;
     await new Promise((r) => (window.requestIdleCallback ?? setTimeout)(r));
     await loadGltf(`models/${id}.glb`).catch(() => {});
   }

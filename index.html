@@ -8,47 +8,86 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
         }
       }
     </script>
   </head>
   <body>
-    <header>
+    <!-- はじめての人：主人公の職種を選ぶ -->
+    <section id="start" class="start hidden">
       <h1>IT Legends</h1>
-      <nav>
-        <button class="tab active" data-view="gacha">ガチャ</button>
-        <button class="tab" data-view="zukan">図鑑 <span id="progress"></span></button>
+      <p class="lead">
+        あなたはIT業界で働く、ふつうの一人。<br />
+        小さな部屋で会社を立ち上げ、仲間を集め、<br />
+        いつか時を超えて現れる <b>ITの偉人たち</b> とチームを組もう。
+      </p>
+      <div class="form">
+        <label>あなたの名前 <input id="start-name" maxlength="12" value="わたし" /></label>
+        <label>会社の名前 <input id="start-company" maxlength="16" value="ガレージ・ラボ" /></label>
+      </div>
+      <h2>あなたの職種を選んでください</h2>
+      <div id="start-jobs" class="jobs"></div>
+      <button id="start-go" class="big" disabled>この職種で始める</button>
+      <p class="muted small">ログインして記録を残すこともできます（右上の ⚙ から）</p>
+    </section>
+
+    <div id="game" class="hidden">
+      <header class="top">
+        <div class="company">
+          <div id="company-name" class="cname"></div>
+          <div class="nums"><span id="money"></span><span id="rep"></span></div>
+        </div>
+        <button id="open-settings" class="icon" aria-label="設定">⚙</button>
+      </header>
+      <nav class="tabs">
+        <button class="tab active" data-view="office">会社</button>
+        <button class="tab" data-view="work">仕事 <span class="badge" id="badge-work"></span></button>
+        <button class="tab" data-view="team">仲間</button>
+        <button class="tab" data-view="product">製品</button>
+        <button class="tab" data-view="legends">偉人 <span id="progress"></span></button>
       </nav>
-    </header>
 
-    <main>
-      <section id="view-gacha" class="view active">
-        <div class="stage-wrap">
-          <canvas id="gacha-canvas"></canvas>
-          <div id="gacha-placeholder" class="placeholder">ガチャを引いてITの偉人を集めよう！</div>
-        </div>
-        <div id="gacha-result" class="result hidden"></div>
-        <div id="gacha-list" class="pull-list"></div>
-        <div class="buttons">
-          <button id="pull1" class="pull">1回引く</button>
-          <button id="pull10" class="pull pull10">10連ガチャ</button>
-        </div>
-        <p class="rates">排出率　SSR 5% ／ SR 30% ／ R 65%</p>
-      </section>
+      <main>
+        <section id="view-office" class="view active">
+          <div id="encounter"></div>
+          <div class="stage-wrap office"><canvas id="office-canvas"></canvas></div>
+          <div id="office-info"></div>
+          <h3>できごと</h3>
+          <ul id="log" class="log"></ul>
+        </section>
+        <section id="view-work" class="view"></section>
+        <section id="view-team" class="view"></section>
+        <section id="view-product" class="view"></section>
+        <section id="view-legends" class="view"><div id="zukan-grid" class="grid"></div></section>
+      </main>
+    </div>
 
-      <section id="view-zukan" class="view">
-        <div id="zukan-grid" class="grid"></div>
-      </section>
-    </main>
+    <!-- 仕事・開発に人を割り当てる -->
+    <dialog id="assign">
+      <button class="close" aria-label="閉じる">×</button>
+      <div id="assign-body"></div>
+    </dialog>
 
+    <!-- 偉人の詳細・仲間になる演出 -->
     <dialog id="detail">
       <button class="close" aria-label="閉じる">×</button>
       <div class="detail-body">
         <div class="stage-wrap small"><canvas id="detail-canvas"></canvas></div>
         <div id="detail-info" class="info"></div>
       </div>
+    </dialog>
+
+    <!-- お知らせ（おかえりなさい・結果） -->
+    <dialog id="notice">
+      <div id="notice-body"></div>
+      <button class="big" id="notice-ok">OK</button>
+    </dialog>
+
+    <dialog id="settings">
+      <button class="close" aria-label="閉じる">×</button>
+      <div id="settings-body"></div>
     </dialog>
 
     <div id="version"></div>

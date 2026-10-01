@@ -130,6 +130,11 @@ export class Stage {
   loop() {
     if (!this.running) return;
     requestAnimationFrame(this.loop);
+    // 画面に出ていないときは描かない（電池と処理を節約）
+    if (document.hidden || !this.canvas.offsetParent) {
+      this.clock.getDelta();
+      return;
+    }
     this.resize();
     const dt = this.clock.getDelta();
     const t = this.clock.elapsedTime;
