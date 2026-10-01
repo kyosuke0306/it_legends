@@ -95,7 +95,7 @@ export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会える�
 export const ACTIVITIES = {
   walk: { name: '散歩', icon: 'walk', event: 'legend', perHour: 1 / 400 }, // 平均17日に1回くらい
   net: { name: 'ネット', icon: 'globe', event: 'luck', perHour: 1 / 36 }, // 平均1日半に1回くらい
-  meetup: { name: '勉強会', icon: 'mic', event: 'walkin', perHour: 1 / 48 }, // 平均2日に1回くらい
+  meetup: { name: '勉強会', icon: 'seminar', event: 'walkin', perHour: 1 / 48 }, // 平均2日に1回くらい
 };
 export const DEFAULT_ACTIVITY = 'net';
 export const WALKIN_LIFE = DAY; // 訪ねてきた人が待ってくれる時間
