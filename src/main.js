@@ -66,6 +66,8 @@ function dur(ms) {
   if (h < 24) return m % 60 && h < 10 ? `${h}時間${m % 60}分` : `${h}時間`;
   return h % 24 ? `${Math.floor(h / 24)}日${h % 24}時間` : `${Math.floor(h / 24)}日`;
 }
+// 依頼の種類の札（Web・アプリ・インフラ…）。色は種類ごと（.cat-web など）。レジェンドの出会いの条件と見比べられるように
+const catTag = (cat) => `<span class="cat-tag cat-${cat}">${R.CAT_NAMES[cat]}</span>`;
 const val = (name, text, cls = '') => `<span class="val ${cls}">${icon(name)}${text}</span>`;
 const jobShort = (m) => (m.kind === 'legend' ? 'レジェンド' : R.JOBS[m.job].name);
 const perkText = (m) => (m.kind === 'legend' ? R.LEGEND_RULES[m.legend].abilityText : R.JOBS[m.job].perkText);
@@ -336,7 +338,7 @@ function renderWork() {
   const running = S.tasks
     .map(
       // タップすると、選ぶ前の仕事と同じように下から詳しいシートが出る（openRunning）
-      (t) => `<button class="panel run" data-run="${t.id}"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>
+      (t) => `<button class="panel run cat-${t.cat}" data-run="${t.id}"><div class="row1"><b>${catTag(t.cat)}${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>
         ${progress(t.startAt, t.endsAt)}</button>`,
     )
     .join('');
@@ -344,7 +346,7 @@ function renderWork() {
   const offers = S.offers
     .map(
       (o) => `<button class="panel offer cat-${o.cat}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
-        <b>${esc(o.title)}</b>
+        <b>${catTag(o.cat)}${esc(o.title)}</b>
         <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
       </button>`,
     )
