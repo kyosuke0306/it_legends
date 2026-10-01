@@ -13,6 +13,7 @@ import * as cloud from './cloud.js';
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 document.getElementById('version').textContent = VERSION;
+document.getElementById('title-ver').textContent = VERSION;
 $('#open-settings').innerHTML = icon('gear');
 document.querySelectorAll('.tab').forEach((t) => t.insertAdjacentHTML('afterbegin', icon(t.dataset.icon)));
 
@@ -179,9 +180,17 @@ function initStart() {
 initStart();
 
 // ---------- ゲーム画面 ----------
+// 会社の画面はスクロールせずに1画面に収める（上の見出しと下のタブの高さを CSS に渡し、3Dの部分が残りを使う）
+function fitScreen() {
+  const root = document.documentElement.style;
+  root.setProperty('--head-h', `${$('header.top').offsetHeight}px`);
+  root.setProperty('--tab-h', `${$('.tabbar').offsetHeight}px`);
+}
+addEventListener('resize', fitScreen);
 function enterGame() {
   $('#start').classList.add('hidden');
   $('#game').classList.remove('hidden');
+  fitScreen();
   office ??= new Office($('#office-canvas'));
   preloadCharacters([...G.ownedLegends(S)]);
   renderAll();
@@ -261,10 +270,6 @@ function renderOffice() {
       </button>`;
     $('#upgrade').onclick = () => G.upgradeOffice(S, Date.now()) && commit();
   } else $('#office-info').innerHTML = '';
-  $('#log').innerHTML = S.log
-    .slice(0, 6)
-    .map((l) => `<li class="${l.kind}"><time>${new Date(l.t).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</time>${esc(l.text)}</li>`)
-    .join('');
 }
 
 // ----- 仕事 -----

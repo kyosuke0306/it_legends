@@ -1,4 +1,4 @@
-// 公開（main に push）する直前に実行する: バージョン番号を1つ上げ、日付（日本時間）を書き込む
+// 公開（main に push）する直前に実行する: バージョン（ver1.0.22 の形）の最後の数を1つ上げる
 // あわせて index.html の読み込み先に ?v=番号 を付け、ブラウザが古いファイルを使い続けないようにする
 // （GitHub Pages は 10 分キャッシュされるので、新旧のファイルが混ざると正しく動かない）
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
@@ -7,9 +7,11 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const file = path.join(ROOT, 'src/version.js');
-const n = Number(readFileSync(file, 'utf8').match(/v(\d+)/)?.[1] ?? 0) + 1;
-const date = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }).replaceAll('-', '.');
-writeFileSync(file, `// 画面の右下に出すバージョン。scripts/bump-version.mjs が公開のたびに書き換える\nexport const VERSION = 'v${n} (${date})';\n`);
+const old = readFileSync(file, 'utf8');
+// 以前の「v21 (日付)」の形からは ver1.0.22 に続ける
+const [major, minor, patch] = old.match(/ver(\d+)\.(\d+)\.(\d+)/)?.slice(1).map(Number) ?? [1, 0, Number(old.match(/v(\d+)/)?.[1] ?? 0)];
+const n = `${major}.${minor}.${patch + 1}`;
+writeFileSync(file, `// タイトルと画面の右下に出すバージョン。scripts/bump-version.mjs が公開のたびに書き換える\nexport const VERSION = 'ver${n}';\n`);
 
 // src の下のすべての .js を「?v=番号」付きの場所に読み替える import map を作る
 const files = [];
@@ -28,7 +30,7 @@ for (const f of files) imports[`./${f}`] = `./${f}?v=${n}`;
 const html = path.join(ROOT, 'index.html');
 let s = readFileSync(html, 'utf8');
 s = s.replace(/<script type="importmap">[\s\S]*?<\/script>/, `<script type="importmap">\n${JSON.stringify({ imports }, null, 2).replace(/^/gm, '      ')}\n    </script>`);
-s = s.replace(/src="src\/main\.js(\?v=\d+)?"/, `src="src/main.js?v=${n}"`);
-s = s.replace(/href="style\.css(\?v=\d+)?"/, `href="style.css?v=${n}"`);
+s = s.replace(/src="src\/main\.js(\?v=[\d.]+)?"/, `src="src/main.js?v=${n}"`);
+s = s.replace(/href="style\.css(\?v=[\d.]+)?"/, `href="style.css?v=${n}"`);
 writeFileSync(html, s);
-console.log(`v${n} (${date})`);
+console.log(`ver${n}`);
