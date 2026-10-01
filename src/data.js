@@ -223,6 +223,44 @@ export const LEGENDS = [
       ],
     },
   },
+  {
+    id: 'ek',
+    name: 'ダニエル・エク',
+    nameEn: 'Daniel Ek',
+    wiki: 'Daniel_Ek',
+    years: '1983–',
+    rarity: 'R',
+    title: '音楽を聴き放題にした人',
+    summary:
+      'スウェーデンでSpotifyを立ち上げ、月額で音楽が聴き放題になる仕組みを広めました。違法なダウンロードが当たり前だった時代に、アーティストにもお金が届く形をつくりました。',
+    achievements: [
+      'マーティン・ロレンツォンとSpotifyを創業（2006年）',
+      '定額で聴き放題の音楽配信を世界に広める',
+      'ポッドキャストやオーディオブックにも広げる',
+    ],
+    look: { skin: 0xf3d6c4, hairStyle: 'bald', hairColor: 0x6b5a48, shirt: 0x2a2a2e },
+    // ふだんの、黒いTシャツにパーカーの姿で作る
+    outfit: 'a plain black crew-neck T-shirt under an open dark charcoal zip-up hoodie, black slim jeans and white sneakers',
+  },
+  {
+    id: 'bezos',
+    name: 'ジェフ・ベゾス',
+    nameEn: 'Jeff Bezos',
+    wiki: 'Jeff_Bezos',
+    years: '1964–',
+    rarity: 'R',
+    title: 'ネットで何でも買える世界をつくった人',
+    summary:
+      'ガレージでネットの本屋Amazonを始め、何でも届く巨大なお店に育てました。社内のために作ったサーバーの仕組みをAWSとして貸し出し、クラウドの時代を切り開きました。',
+    achievements: [
+      'ガレージでAmazonを創業（1994年）',
+      'AWSでクラウドを世界に広める（2006年）',
+      '宇宙ロケットの会社ブルーオリジンを設立',
+    ],
+    look: { skin: 0xf2d2bc, hairStyle: 'bald', hairColor: 0x6b5a48, shirt: 0x8fb0d8 },
+    // おなじみの、シャツにジャケットの姿で作る
+    outfit: 'a light blue button-down shirt with an open collar, a navy blue blazer, navy chino pants and brown leather shoes',
+  },
 ];
 
 export const RARITY = {

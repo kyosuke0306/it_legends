@@ -111,15 +111,24 @@ async function findPhoto(legend) {
   if (!flags.has('--fetch-photo')) {
     throw new Error(`pipeline/photos/${legend.id}.jpg を置くか --fetch-photo を付けてください`);
   }
-  const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${legend.wiki}`, {
-    headers: { 'User-Agent': 'it_legends-pipeline/0.1' },
-  });
-  const info = await res.json();
-  const src = info.originalimage?.source || info.thumbnail?.source;
+  const headers = { 'User-Agent': 'it_legends-pipeline/0.1 (https://kyosuke0306.github.io/it_legends/)' };
+  let src;
+  try {
+    const info = await (await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${legend.wiki}`, { headers })).json();
+    src = info.originalimage?.source || info.thumbnail?.source;
+  } catch {
+    // API が混んでいて断られたときは、記事のページに載っている写真を使う
+    const html = await (await fetch(`https://en.wikipedia.org/wiki/${legend.wiki}`, { headers })).text();
+    src = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1]?.replace(/&amp;/g, '&').replace(/\?.*$/, '')
+      .replace('//thumb.wikimedia.org/', '//upload.wikimedia.org/') // 同じ画像を upload から取る
+      .replace(/\/thumb(\/.+)\/[^/]+$/, '$1'); // 縮小版は断られやすいので元の画像を使う
+  }
   if (!src) throw new Error('Wikipedia に画像が見つかりません');
   const ext = path.extname(new URL(src).pathname).slice(1).toLowerCase() || 'jpg';
   const p = path.join(PHOTOS, `${legend.id}.${ext}`);
-  await fs.writeFile(p, Buffer.from(await (await fetch(src)).arrayBuffer()));
+  const img = await fetch(src, { headers });
+  if (!img.ok) throw new Error(`写真を取れません (${img.status})`);
+  await fs.writeFile(p, Buffer.from(await img.arrayBuffer()));
   // 画像のライセンス確認用に出典を残す
   await fs.appendFile(path.join(PHOTOS, 'SOURCES.md'), `- ${legend.id}: ${src} (https://en.wikipedia.org/wiki/${legend.wiki})\n`);
   return p;

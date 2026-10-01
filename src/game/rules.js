@@ -256,5 +256,25 @@ export const LEGEND_RULES = {
     abilityText: '製品の出来 +80%  収入が長持ち',
     scene: '19世紀のドレスの女性が、計算機の設計図に見入っている…',
   },
+  ek: {
+    stats: { idea: 85, tech: 75, plan: 65, talk: 70 },
+    meet: { cat: { app: 10 }, products: 2 },
+    hint: 'アプリの仕事を 10 回こなし、製品を 2 つ出すと…',
+    join: 0.4,
+    ability: { incomeGenre: { app: 0.5 }, decaySlow: 0.3 },
+    abilityText: 'アプリの収入 +50%  収入が長持ち',
+    scene: 'ヘッドホンをした若者が、音楽を聴きながら何かを考えている…',
+  },
+  bezos: {
+    stats: { idea: 80, tech: 70, plan: 90, talk: 80 },
+    meet: { office: 2, cat: { web: 15 } },
+    hint: '小さな事務所を構え、Web の仕事を 15 回こなすと…',
+    join: 0.3,
+    ability: { income: 0.2, offers: 1 },
+    abilityText: '全製品の収入 +20%  依頼 +1件',
+    quit: 35,
+    quitText: '「宇宙ロケットの会社に専念する」と去った',
+    scene: '段ボール箱の山の前で、大きな声で笑う男がいる…',
+  },
 };
 
