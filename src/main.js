@@ -241,6 +241,16 @@ function renderOffice() {
     ? `<button class="encounter" id="go-encounter">${icon('spark', 'spin')}<span>誰かが現れた</span><span class="left" data-left="${enc.until}"></span></button>`
     : '';
   if (enc) $('#go-encounter').onclick = openEncounter;
+  // CEO の過ごし方（いつもどれか1つ）。右下の小さなアイコンは、それで起きる出来事
+  const EVENT_ICON = { legend: 'spark', luck: 'coin', walkin: 'people' };
+  $('#activity').innerHTML = Object.entries(R.ACTIVITIES)
+    .map(
+      ([id, a]) => `<button class="act ${S.activity === id ? 'active' : ''}" data-act="${id}">
+        ${icon(a.icon, 'act-ic')}<span>${a.name}</span>${icon(EVENT_ICON[a.event], `act-ev ev-${a.event}`)}
+      </button>`,
+    )
+    .join('');
+  $('#activity').querySelectorAll('[data-act]').forEach((b) => (b.onclick = () => G.setActivity(S, b.dataset.act) && commit()));
   const next = R.OFFICES[S.office + 1];
   if (next) {
     const okMoney = S.money >= next.cost;

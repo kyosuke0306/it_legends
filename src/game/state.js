@@ -44,6 +44,7 @@ export function newGame({ job, name, company }, now = Date.now()) {
     offerAt: now,
     candAt: now,
     encounter: null,
+    activity: R.DEFAULT_ACTIVITY,
     met: {},
     counts: { tasks: 0, cat: {}, products: 0 },
     log: [],
@@ -362,7 +363,8 @@ function rollEncounter(s, t, ev) {
   const p = R.ENCOUNTER_PER_HOUR * (owned.size === 0 ? 2 : 1); // 最初の1人目は少し会いやすい
   if (ready.length && rand(s) < p) l = pick(s, ready);
   // 条件を満たしていなくても、ごくまれに偶然出会う
-  else if (free.length && rand(s) < R.STRAY_LEGEND_PER_HOUR) l = pick(s, free);
+  // 散歩していると、条件を満たしていなくてもまれに偶然出会う
+  else if (free.length && activityRoll(s, 'legend')) l = pick(s, free);
   if (!l) return;
   s.encounter = { id: l.id, at: t, until: t + R.ENCOUNTER_LIFE };
   s.met[l.id] = { ...s.met[l.id], seen: true };
@@ -393,9 +395,20 @@ export function scout(s, now) {
   return 'refused';
 }
 
-// ---------- まれに起きる出来事（何もしていなくても起きる） ----------
+// ---------- CEO の過ごし方と、それで起きる出来事 ----------
+export function setActivity(s, id) {
+  if (!R.ACTIVITIES[id]) return false;
+  s.activity = id;
+  return true;
+}
+// いまの過ごし方で、その出来事が起きるか
+function activityRoll(s, event) {
+  const a = R.ACTIVITIES[s.activity];
+  return a?.event === event && rand(s) < a.perHour;
+}
+
 function rollLuck(s, t, ev) {
-  if (rand(s) >= R.LUCK_PER_HOUR) return;
+  if (!activityRoll(s, 'luck')) return;
   const L = pick(s, R.LUCKS);
   const money = round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * between(s, ...L.amount));
   s.money += money;
@@ -404,7 +417,7 @@ function rollLuck(s, t, ev) {
 }
 
 function rollWalkin(s, t, ev) {
-  if (rand(s) >= R.WALKIN_PER_HOUR) return;
+  if (!activityRoll(s, 'walkin')) return;
   s.candidates = s.candidates.filter((c) => !c.walkin); // 訪ねてくるのは1人ずつ
   const m = makePerson(s, pick(s, Object.keys(R.JOBS)));
   // 腕のいい人が訪ねてくる（今の会社より少し育っている）
@@ -412,7 +425,7 @@ function rollWalkin(s, t, ev) {
   m.walkin = true;
   m.until = t + R.WALKIN_LIFE;
   s.candidates.unshift(m);
-  addLog(s, t, `${m.name}  入社したいと訪ねてきた`, 'good');
+  addLog(s, t, `${m.name}  勉強会で出会い、入社したいと訪ねてきた`, 'good');
   ev.push({ type: 'walkin', id: m.id, name: m.name });
 }
 
@@ -472,6 +485,7 @@ export function advance(s, now, ev = []) {
 
 // 古い記録を今の形にそろえる（以前あった知識ノートのデータは使わないので消す）
 export function migrate(s) {
+  if (!R.ACTIVITIES[s.activity]) s.activity = R.DEFAULT_ACTIVITY;
   delete s.notes;
   s.log = s.log.filter((l) => l.kind !== 'note');
   return s;

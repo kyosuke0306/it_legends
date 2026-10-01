@@ -90,19 +90,22 @@ export const CANDIDATE_EVERY = DAY; // 採用候補が入れ替わる間隔
 export const ENCOUNTER_PER_HOUR = 1 / 110; // 条件を満たした偉人と出会う確率（1時間あたり。平均4〜5日に1回）
 export const ENCOUNTER_LIFE = DAY; // 出会いのチャンスが続く時間
 export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会えるまで
-// 何もしていなくても、まれに起きる出来事（1時間ごとに判定）
-export const LUCK_PER_HOUR = 1 / 50; // 臨時収入（平均2日に1回くらい）
-export const WALKIN_PER_HOUR = 1 / 72; // 入社したい人が訪ねてくる（平均3日に1回くらい）
+// CEO の過ごし方（無料。いつもどれか1つを選んでいる）。選んだものに合った出来事がまれに起きる（1時間ごとに判定）
+//   event: legend 偉人と偶然出会う（条件を満たしていなくても） / luck 臨時収入 / walkin 入社したい人が訪ねてくる
+export const ACTIVITIES = {
+  walk: { name: '散歩', icon: 'walk', event: 'legend', perHour: 1 / 400 }, // 平均17日に1回くらい
+  net: { name: 'ネット', icon: 'globe', event: 'luck', perHour: 1 / 36 }, // 平均1日半に1回くらい
+  meetup: { name: '勉強会', icon: 'mic', event: 'walkin', perHour: 1 / 48 }, // 平均2日に1回くらい
+};
+export const DEFAULT_ACTIVITY = 'net';
 export const WALKIN_LIFE = DAY; // 訪ねてきた人が待ってくれる時間
-export const STRAY_LEGEND_PER_HOUR = 1 / 900; // 条件を満たしていない偉人に、偶然出会う（平均5週間に1回くらい）
-// 臨時収入の種類。amount は今の会社の仕事1時間ぶんの報酬の何倍か
+// 臨時収入（ネットで見つかる）。amount は今の会社の仕事1時間ぶんの報酬の何倍か
 export const LUCKS = [
   { title: '昔作ったアプリの広告収入', amount: [2, 4] },
-  { title: 'IT導入補助金', amount: [4, 8] },
-  { title: 'ハッカソンで優勝', amount: [3, 6] },
+  { title: 'IT導入補助金を見つけた', amount: [4, 8] },
+  { title: 'オンラインのハッカソンで優勝', amount: [3, 6] },
   { title: '脆弱性を見つけた報奨金', amount: [3, 7] },
-  { title: '勉強会で登壇のお礼', amount: [1, 3] },
-  { title: '古いサーバーの買い取り', amount: [1, 3] },
+  { title: 'ブログが話題になった', amount: [1, 3] },
   { title: 'ドメインが高く売れた', amount: [5, 10] },
 ];
 export const MAX_CATCHUP = 30 * DAY; // 留守の間に進める最大の時間
