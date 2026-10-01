@@ -243,6 +243,16 @@ export const LEGENDS = [
     face: 'a slim, slightly long oval face that is clearly narrower than it is wide, with a defined jawline and a pointed chin, not round or chubby; short light stubble on the jaw and chin; a closely shaved head',
     // ふだんの、黒いTシャツにパーカーの姿で作る
     outfit: 'a plain black crew-neck T-shirt under an open dark charcoal zip-up hoodie, black slim jeans and white sneakers',
+    // Spotify を始めたストックホルムの夜のスタジオで話す
+    show: {
+      stage: 'studio',
+      props: ['studio'],
+      lines: [
+        { text: '海賊版に勝つには、海賊版より便利なものを作ればいい。', sub: 'The only way to beat piracy is to be better than piracy.', prop: 'turntable', anim: 'agree' },
+        { text: '人の創造力を、解き放つ。', sub: 'Unlock the potential of human creativity.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: 'すべての人に、音楽を。', sub: 'Music for everyone.', prop: 'headphones', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'bezos',

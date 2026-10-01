@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -513,6 +513,104 @@ const PROPS = {
       p.position.set(o.position.x + 0.9, 1.25 + Math.sin(t * 2.6) * 0.06, 0.3);
       p.rotation.z = Math.sin(t * 1.3) * 0.12;
       flame.scale.y = 0.8 + Math.abs(Math.sin(t * 18)) * 0.5;
+    };
+    return g;
+  },
+
+  // Spotify を始めたストックホルムの夜のスタジオ：壁で光る緑の音のマークと、音に合わせて動く光の棒
+  studio() {
+    const g = new THREE.Group();
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: studioWallTexture() }));
+    wall.position.set(0, 3, -2.5);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: floorTexture() }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, 1);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95), new THREE.MeshBasicMaterial({ map: soundLogoTexture(false), transparent: true, depthWrite: false }));
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.1, 2.1),
+      new THREE.MeshBasicMaterial({ map: soundLogoTexture(true), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    );
+    sign.position.set(0.95, 2.2, -2.47);
+    glow.position.set(0.95, 2.2, -2.48);
+    g.add(wall, floor, glow, sign);
+    // 音に合わせて伸び縮みする緑の光の棒（左の壁ぎわ）
+    const bars = [];
+    const barMat = new THREE.MeshBasicMaterial({ color: 0x1ed760, transparent: true, opacity: 0.85 });
+    for (let i = 0; i < 9; i++) {
+      const b = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 1), barMat);
+      b.position.set(-2.1 + i * 0.2, 0.6, -2.46);
+      bars.push(b);
+      g.add(b);
+    }
+    g.renderOrder = -1;
+    g.userData.animate = (p, t) => {
+      glow.material.opacity = 0.55 + Math.sin(t * 2.2) * 0.25;
+      bars.forEach((b, i) => {
+        const h = 0.25 + Math.abs(Math.sin(t * (2.3 + i * 0.37) + i * 1.7)) * 1.2;
+        b.scale.y = h;
+        b.position.y = 0.45 + h / 2;
+      });
+    };
+    return g;
+  },
+
+  // レコードプレーヤー（小さな台ごと横に出てくる）。レコードが回る
+  turntable() {
+    const g = new THREE.Group();
+    const dark = new THREE.MeshStandardMaterial({ color: 0x2b2b30, roughness: 0.6 });
+    const H = 0.72;
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 0.55), new THREE.MeshStandardMaterial({ color: 0x8a6446, roughness: 0.7 }));
+    top.position.y = H - 0.025;
+    g.add(top);
+    for (const [x, z] of [[-0.31, -0.23], [0.31, -0.23], [-0.31, 0.23], [0.31, 0.23]]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, H - 0.05, 0.05), dark);
+      leg.position.set(x, (H - 0.05) / 2, z);
+      g.add(leg);
+    }
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.07, 0.4), new THREE.MeshStandardMaterial({ color: 0xd8d4cc, roughness: 0.5 }));
+    base.position.y = H + 0.035;
+    const record = new THREE.Group();
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.012, 40), new THREE.MeshStandardMaterial({ color: 0x111114, roughness: 0.3 }));
+    const label = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.014, 24), new THREE.MeshBasicMaterial({ color: 0x1ed760 }));
+    record.add(disc, label);
+    record.position.set(-0.05, H + 0.077, 0);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.015, 0.22), new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: 0.6, roughness: 0.3 }));
+    arm.position.set(0.17, H + 0.09, -0.03);
+    arm.rotation.y = 0.35;
+    g.add(base, record, arm);
+    g.userData.animate = (p, t, o) => {
+      if (p.userData.placedAt !== p.userData.popAt) {
+        p.userData.placedAt = p.userData.popAt;
+        p.position.set(o.position.x + 0.95, 0, 0.2);
+      }
+      p.rotation.y = -0.35;
+      record.rotation.y = t * 3.5;
+    };
+    return g;
+  },
+
+  // ヘッドホン：「すべての人に、音楽を」のときに手の横に浮かぶ。まわりに音符の光
+  headphones() {
+    const g = new THREE.Group();
+    const h = new THREE.Group(); // 小さく見えるので 1.7 倍に
+    h.scale.setScalar(1.7);
+    g.add(h);
+    const dark = new THREE.MeshStandardMaterial({ color: 0x24252b, roughness: 0.4 });
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.018, 10, 32, Math.PI), dark);
+    band.position.y = 0.02;
+    h.add(band);
+    for (const s of [-1, 1]) {
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 24), dark);
+      cup.rotation.z = Math.PI / 2;
+      cup.position.set(s * 0.15, -0.02, 0);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.008, 8, 24), new THREE.MeshBasicMaterial({ color: 0x1ed760 }));
+      ring.rotation.y = Math.PI / 2;
+      ring.position.set(s * 0.177, -0.02, 0);
+      h.add(cup, ring);
+    }
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x + 0.9, 1.3 + Math.sin(t * 2.4) * 0.05, 0.3);
+      p.rotation.y = Math.sin(t * 1.2) * 0.6;
     };
     return g;
   },
@@ -1316,6 +1414,71 @@ function bookshopScreen() {
   for (let i = 0; i < 3; i++) {
     x.fillStyle = ['#7a3b2e', '#2e5a7a', '#5a7a2e'][i];
     x.fillRect(330 + i * 52, 170, 40, 120);
+  }
+  return canvasTexture(c);
+}
+
+// ストックホルムの夜のスタジオの壁：吸音パネルと、窓の外の雪の夜
+function studioWallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 878;
+  const x = c.getContext('2d');
+  const W = c.width;
+  const H = c.height;
+  const wall = x.createRadialGradient(W / 2, H * 0.35, 60, W / 2, H * 0.5, W * 0.55);
+  wall.addColorStop(0, '#2c2f36');
+  wall.addColorStop(1, '#0e0f12');
+  x.fillStyle = wall;
+  x.fillRect(0, 0, W, H);
+  // 吸音パネル（右）
+  for (let i = 0; i < 4; i++)
+    for (let j = 0; j < 3; j++) {
+      x.fillStyle = (i + j) % 2 ? '#24262c' : '#1b1d22';
+      x.fillRect(1380 + i * 120, 150 + j * 120, 112, 112);
+    }
+  // 窓（左上）：雪の夜
+  const wx = 380;
+  const wy = 150;
+  x.fillStyle = '#0d1b33';
+  x.fillRect(wx, wy, 280, 230);
+  x.fillStyle = '#ffffff';
+  for (let i = 0; i < 40; i++) {
+    x.globalAlpha = 0.3 + ((i * 7) % 5) / 8;
+    x.fillRect(wx + ((i * 67) % 270), wy + ((i * 41) % 220), 3, 3);
+  }
+  x.globalAlpha = 1;
+  x.strokeStyle = '#3a3e48';
+  x.lineWidth = 10;
+  x.strokeRect(wx, wy, 280, 230);
+  x.fillStyle = 'rgba(8,10,20,0.2)';
+  x.fillRect(0, 0, W, H);
+  return canvasTexture(c);
+}
+
+// 緑の丸に3本の音の線のマーク。blur=true なら後光用のぼかし
+function soundLogoTexture(blur) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 512;
+  const x = c.getContext('2d');
+  if (blur) x.filter = 'blur(40px)';
+  x.fillStyle = '#1ed760';
+  x.shadowColor = 'rgba(30,215,96,0.9)';
+  x.shadowBlur = blur ? 0 : 20;
+  x.beginPath();
+  x.arc(256, 256, blur ? 140 : 230, 0, Math.PI * 2);
+  x.fill();
+  if (!blur) {
+    x.shadowBlur = 0;
+    x.strokeStyle = '#0b0b0d';
+    x.lineCap = 'round';
+    [[180, 40, 0.36], [235, 32, 0.32], [285, 26, 0.28]].forEach(([y, w, k]) => {
+      x.lineWidth = w;
+      x.beginPath();
+      x.moveTo(256 - 512 * k * 0.42, y);
+      x.quadraticCurveTo(256, y - 512 * k * 0.13, 256 + 512 * k * 0.42, y + 512 * k * 0.08);
+      x.stroke();
+    });
   }
   return canvasTexture(c);
 }
