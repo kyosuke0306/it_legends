@@ -4,41 +4,62 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>IT Legends</title>
-    <link rel="stylesheet" href="style.css?v=9" />
+    <meta name="theme-color" content="#14123a" />
+    <link rel="icon" href="assets/favicon.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="style.css?v=10" />
     <script type="importmap">
       {
         "imports": {
           "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-          "./src/character.js": "./src/character.js?v=9",
-          "./src/cloud.js": "./src/cloud.js?v=9",
-          "./src/data.js": "./src/data.js?v=9",
-          "./src/firebase-config.js": "./src/firebase-config.js?v=9",
-          "./src/game/names.js": "./src/game/names.js?v=9",
-          "./src/game/rules.js": "./src/game/rules.js?v=9",
-          "./src/game/state.js": "./src/game/state.js?v=9",
-          "./src/icons.js": "./src/icons.js?v=9",
-          "./src/main.js": "./src/main.js?v=9",
-          "./src/office.js": "./src/office.js?v=9",
-          "./src/show.js": "./src/show.js?v=9",
-          "./src/stage.js": "./src/stage.js?v=9",
-          "./src/version.js": "./src/version.js?v=9"
+          "./src/character.js": "./src/character.js?v=10",
+          "./src/cloud.js": "./src/cloud.js?v=10",
+          "./src/data.js": "./src/data.js?v=10",
+          "./src/firebase-config.js": "./src/firebase-config.js?v=10",
+          "./src/game/names.js": "./src/game/names.js?v=10",
+          "./src/game/rules.js": "./src/game/rules.js?v=10",
+          "./src/game/state.js": "./src/game/state.js?v=10",
+          "./src/icons.js": "./src/icons.js?v=10",
+          "./src/main.js": "./src/main.js?v=10",
+          "./src/office.js": "./src/office.js?v=10",
+          "./src/show.js": "./src/show.js?v=10",
+          "./src/stage.js": "./src/stage.js?v=10",
+          "./src/version.js": "./src/version.js?v=10"
         }
       }
     </script>
   </head>
   <body>
-    <!-- はじめて：主人公の職種を選ぶ -->
+    <!-- はじめて：タイトル → 名前 → 会社 → 職種（main.js の showStart） -->
     <section id="start" class="start hidden">
-      <h1>IT Legends</h1>
-      <p class="lead">小さな部屋から、伝説のIT会社へ。</p>
-      <div class="form">
-        <input id="start-name" maxlength="12" value="わたし" aria-label="あなたの名前" />
-        <input id="start-company" maxlength="16" value="ガレージ・ラボ" aria-label="会社の名前" />
+      <div class="step title-step active" data-step="0">
+        <div class="title-art"></div>
+        <div class="title-text">
+          <h1>IT LEGENDS</h1>
+          <p>伝説のIT会社をつくれ</p>
+        </div>
+        <div class="title-actions">
+          <button class="big" data-next>はじめる</button>
+          <button class="sync login start-sync"></button>
+        </div>
       </div>
-      <div id="start-jobs" class="jobs"></div>
-      <button id="start-go" class="big" disabled>はじめる</button>
-      <button class="sync login start-sync"></button>
+      <div class="step" data-step="1">
+        <div class="step-head"><button class="back" data-back aria-label="戻る"></button><div class="dots"><i class="on"></i><i></i><i></i></div></div>
+        <label class="field"><span>あなたの名前</span><input id="start-name" maxlength="12" placeholder="例：山田 太郎" autocomplete="off" /></label>
+        <button class="big" data-next>次へ</button>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-head"><button class="back" data-back aria-label="戻る"></button><div class="dots"><i class="on"></i><i class="on"></i><i></i></div></div>
+        <label class="field"><span>会社の名前</span><input id="start-company" maxlength="16" placeholder="例：ガレージ・ラボ" autocomplete="off" /></label>
+        <button class="big" data-next>次へ</button>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-head"><button class="back" data-back aria-label="戻る"></button><div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+        <div class="field"><span>あなたの職種</span></div>
+        <div id="start-jobs" class="jobs"></div>
+        <div class="job-go"><button id="start-go" class="big" disabled>この職種ではじめる</button></div>
+      </div>
     </section>
 
     <div id="game" class="hidden">
@@ -102,6 +123,6 @@
 
     <div id="version"></div>
 
-    <script type="module" src="src/main.js?v=9"></script>
+    <script type="module" src="src/main.js?v=10"></script>
   </body>
 </html>

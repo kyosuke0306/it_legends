@@ -90,19 +90,41 @@ function fillThumbs(root) {
   root.querySelectorAll('img[data-thumb]').forEach((img) => thumbnailFor(byId[img.dataset.thumb]).then((src) => (img.src = src)));
 }
 
-// ---------- はじめの画面 ----------
+// ---------- はじめの画面（タイトル → 名前 → 会社 → 職種） ----------
 function showStart() {
   $('#start').classList.remove('hidden');
   $('#game').classList.add('hidden');
+  const steps = [...document.querySelectorAll('#start .step')];
+  let at = 0;
+  const go = (i) => {
+    at = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((st, k) => st.classList.toggle('active', k === at));
+    steps[at].querySelector('input')?.focus();
+  };
+  document.querySelectorAll('#start .back').forEach((b) => {
+    b.innerHTML = icon('back');
+    b.onclick = () => go(at - 1);
+  });
+  // 名前・会社は空なら次へ進めない
+  const need = { 1: '#start-name', 2: '#start-company' };
+  const check = () =>
+    Object.entries(need).forEach(([i, sel]) => (steps[i].querySelector('[data-next]').disabled = !$(sel).value.trim()));
+  Object.values(need).forEach((sel) => {
+    $(sel).oninput = check;
+    $(sel).onkeydown = (e) => e.key === 'Enter' && !e.isComposing && $(sel).value.trim() && go(at + 1);
+  });
+  check();
+  document.querySelectorAll('#start [data-next]').forEach((b) => (b.onclick = () => go(at + 1)));
+
   let chosen = null;
   const box = $('#start-jobs');
   box.innerHTML = Object.entries(R.JOBS)
-    .map(([id, j]) => {
-      const st = Object.fromEntries(R.STAT_KEYS.map((k) => [k, j.w[k] * 25]));
-      return `<button class="job" data-job="${id}" style="--c:${hex(j.shirt)}">
-        <b>${j.full}</b>${statBars(st)}<small>${j.perkText}</small>
-      </button>`;
-    })
+    .map(
+      ([id, j]) => `<button class="job" data-job="${id}">
+        <img src="assets/jobs/${id}.webp" alt="" loading="lazy">
+        <b>${j.full}</b><small>${j.perkText}</small>
+      </button>`,
+    )
     .join('');
   box.onclick = (e) => {
     const b = e.target.closest('.job');
@@ -113,7 +135,7 @@ function showStart() {
   };
   $('#start-go').onclick = () => {
     if (!chosen) return;
-    S = G.newGame({ job: chosen, name: $('#start-name').value.trim() || 'わたし', company: $('#start-company').value.trim() || 'ガレージ・ラボ' });
+    S = G.newGame({ job: chosen, name: $('#start-name').value.trim(), company: $('#start-company').value.trim() });
     save();
     enterGame();
   };

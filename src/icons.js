@@ -25,6 +25,7 @@ const P = {
   level: '<path d="M6 18l6-6 6 6M6 12l6-6 6 6"/>',
   move: '<path d="M4 12h13M13 7l5 5-5 5"/><path d="M20 5v14"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
   wallet: '<rect x="3.5" y="6.5" width="17" height="12" rx="2"/><path d="M16 12.5h1.5"/><path d="M3.5 9.5h17"/>',
 };
 export const icon = (name, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[name] ?? ''}</svg>`;

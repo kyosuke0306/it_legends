@@ -48,32 +48,75 @@ button:disabled { cursor: default; }
 .vals { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.85rem; }
 .vals.center { justify-content: center; align-items: center; margin: 4px 0 10px; }
 
-/* ---------- はじめ ---------- */
-.start { max-width: 640px; margin: 0 auto; padding: 32px 16px 40px; text-align: center; }
-.start h1 { font-size: 2rem; margin: 0; letter-spacing: 0.04em; }
-.lead { color: var(--muted); margin: 6px 0 18px; }
-.form { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; }
-.form input { font: inherit; width: 50%; max-width: 200px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text); text-align: center; }
-.jobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-.job { display: flex; flex-direction: column; align-items: center; gap: 6px; border: 2px solid transparent; border-radius: 14px; background: var(--panel); padding: 12px 8px 10px; }
-.job b { font-size: 0.92rem; }
-.job small { color: var(--muted); font-size: 0.75rem; }
-.job.active { border-color: var(--accent); }
+/* 大きなボタン */
 .big {
   display: block;
   width: 100%;
-  max-width: 320px;
+  max-width: 360px;
   margin: 18px auto 0;
   border: 0;
-  border-radius: 14px;
-  padding: 14px;
-  font-weight: 700;
+  border-radius: 16px;
+  padding: 16px;
+  font-weight: 800;
   font-size: 1.05rem;
   color: #fff;
   background: var(--accent);
+  transition: opacity 0.2s, transform 0.1s;
 }
-.big:disabled { opacity: 0.35; }
-.start-sync { margin: 14px auto 0; }
+.big:active { transform: scale(0.98); }
+.big:disabled { opacity: 0.3; }
+
+/* ---------- はじめ（タイトル → 名前 → 会社 → 職種） ---------- */
+.start { position: fixed; inset: 0; z-index: 20; background: var(--bg); overflow-y: auto; }
+.step { display: none; min-height: 100%; max-width: 560px; margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom)); flex-direction: column; }
+.step.active { display: flex; animation: step-in 0.35s ease-out; }
+@keyframes step-in { from { opacity: 0; transform: translateX(16px); } }
+.start .big { margin-top: auto; }
+
+/* タイトル */
+.title-step { max-width: none; padding: 0; position: relative; color: #fff; background: #0d0b26; }
+.title-art { position: absolute; inset: 0; background: url(assets/title.webp) center 60% / cover no-repeat; }
+.title-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13, 11, 38, 0.85) 0%, rgba(13, 11, 38, 0) 35%, rgba(13, 11, 38, 0) 60%, rgba(13, 11, 38, 0.95) 100%); }
+.title-text { position: relative; text-align: center; padding-top: max(16vh, calc(env(safe-area-inset-top) + 60px)); }
+.title-text h1 {
+  margin: 0;
+  font-size: clamp(2.6rem, 12vw, 4.2rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  background: linear-gradient(180deg, #fff 30%, #ffd27a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px rgba(170, 120, 255, 0.7));
+}
+.title-text p { margin: 14px 0 0; letter-spacing: 0.3em; font-size: 0.85rem; opacity: 0.85; }
+.title-actions { position: relative; margin-top: auto; padding: 0 24px calc(32px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.title-actions .big { margin: 0; background: linear-gradient(90deg, #7b3cff, #c94dff); box-shadow: 0 8px 30px rgba(140, 70, 255, 0.5); letter-spacing: 0.2em; }
+.title-actions .sync { background: rgba(255, 255, 255, 0.12); color: #fff; backdrop-filter: blur(6px); }
+
+/* 名前・会社 */
+.step-head { display: flex; align-items: center; justify-content: space-between; height: 44px; margin-bottom: 24px; }
+.back { border: 0; background: var(--panel); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; }
+.dots { display: flex; gap: 6px; }
+.dots i { width: 22px; height: 5px; border-radius: 99px; background: var(--line); }
+.dots i.on { background: var(--accent); }
+.field { display: flex; flex-direction: column; gap: 14px; }
+.field span { font-size: 1.5rem; font-weight: 800; }
+.field input { font: inherit; font-size: 1.3rem; padding: 16px 18px; border-radius: 16px; border: 2px solid var(--line); background: var(--panel); color: var(--text); outline: none; }
+.field input:focus { border-color: var(--accent); }
+
+/* 職種 */
+.jobs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0 90px; }
+.job { display: flex; flex-direction: column; align-items: center; gap: 3px; border: 3px solid transparent; border-radius: 18px; background: var(--panel); padding: 0 0 10px; overflow: hidden; text-align: center; }
+.job img { width: 100%; aspect-ratio: 1; display: block; }
+.job b { font-size: 0.78rem; line-height: 1.25; padding: 4px 4px 0; }
+.job small { color: var(--muted); font-size: 0.68rem; padding: 0 4px; }
+.job.active { border-color: var(--accent); box-shadow: 0 6px 18px rgba(91, 91, 240, 0.3); transform: translateY(-2px); }
+.job { transition: transform 0.15s, box-shadow 0.15s; }
+.job-go { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 35%); }
+.job-go .big { margin: 0 auto; }
+.start-sync { height: 40px; }
 
 /* ---------- 上の帯 ---------- */
 header.top {
@@ -375,3 +418,6 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+/* 名前・会社の「次へ」は入力のすぐ下に（スマホのキーボードに隠れないように） */
+.step[data-step='1'] .big,
+.step[data-step='2'] .big { margin: 24px 0 0; max-width: none; }
