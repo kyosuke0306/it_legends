@@ -193,10 +193,11 @@ button.panel:disabled { opacity: 0.45; }
 .btn.fire { background: transparent; color: var(--bad); border: 1px solid var(--bad); margin-left: auto; }
 .res-great, .res-early { width: 1.1em; height: 1.1em; color: var(--gold); }
 .run { cursor: pointer; }
-.run-more { display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; }
-.run-more .vals { flex: 1; }
-.add-member { display: inline-flex; align-items: center; gap: 0; padding: 6px 10px; }
-.add-member .ic { width: 1.1em; height: 1.1em; }
+/* 仕事中の仕事の詳しいシート */
+#assign-body > .prog { margin: 10px 0 14px; }
+#run-add { display: flex; align-items: center; justify-content: center; gap: 2px; }
+#run-add .ic { width: 1.3em; height: 1.3em; }
+.big.ghost { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
 .link { border: 0; background: none; color: var(--accent); padding: 4px 0; }
 .link.small { font-size: 0.8rem; }
 .sec { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.8rem; margin: 16px 2px 8px; }

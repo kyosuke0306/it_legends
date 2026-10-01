@@ -281,19 +281,11 @@ function renderOffice() {
 function renderWork() {
   const byIdM = (id) => S.members.find((m) => m.id === id);
   const running = S.tasks
-    .map((t) => {
-      const size = t.members.length + (t.temps?.length ?? 0);
-      // タップすると見込み（成功率・かかる時間・人数・報酬・成功したときの評判）と、人を足すボタンが出る
-      let more = '';
-      if (openTasks.has(t.id)) {
-        const p = G.taskPreview(S, t, t.members.filter(byIdM));
-        more = `<div class="run-more"><span class="vals">${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(t.endsAt - t.startAt))}${val('people', `${size}/${t.team}`)}${val('coin', yen(p.reward), 'strong')}${val('star', `+${p.rep}`)}</span>${
-          size < t.team ? `<button class="btn add-member" data-add="${t.id}">${icon('plus')}${icon('people')}</button>` : ''
-        }</div>`;
-      }
-      return `<div class="panel run ${openTasks.has(t.id) ? 'open' : ''}" data-run="${t.id}"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>
-        ${more}${progress(t.startAt, t.endsAt)}</div>`;
-    })
+    .map(
+      // タップすると、選ぶ前の仕事と同じように下から詳しいシートが出る（openRunning）
+      (t) => `<button class="panel run" data-run="${t.id}"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>
+        ${progress(t.startAt, t.endsAt)}</button>`,
+    )
     .join('');
   const canWork = G.freeMembers(S).length > 0;
   const offers = S.offers
@@ -309,17 +301,42 @@ function renderWork() {
     ${offers || `<p class="empty">${icon('clock')}<span data-left="${S.offerAt + R.OFFER_EVERY}"></span></p>`}`;
   fillThumbs($('#view-work'));
   $('#view-work').querySelectorAll('[data-offer]').forEach((b) => (b.onclick = () => assignTask(+b.dataset.offer)));
-  $('#view-work').querySelectorAll('[data-run]').forEach(
-    (el) =>
-      (el.onclick = (e) => {
-        const id = +el.dataset.run;
-        if (e.target.closest('[data-add]')) return addMembers(id);
-        openTasks.has(id) ? openTasks.delete(id) : openTasks.add(id);
-        renderWork();
-      }),
-  );
+  $('#view-work').querySelectorAll('[data-run]').forEach((el) => (el.onclick = () => openRunning(+el.dataset.run)));
 }
-const openTasks = new Set(); // 詳しく見ている仕事中の仕事
+
+// 仕事中の仕事の詳しいシート：担当している人と力、見込み（成功率・かかる時間・報酬・評判）、進み具合。空きがあれば人を足せる
+function openRunning(taskId) {
+  const t = S.tasks.find((x) => x.id === taskId);
+  if (!t) return;
+  const dlg = $('#assign');
+  const team = [...t.members.map((id) => S.members.find((m) => m.id === id)).filter(Boolean), ...(t.temps ?? [])];
+  const power = (m) => Math.round(G.teamPower(S, [m], t.w));
+  const sum = team.reduce((a, m) => a + power(m), 0);
+  const p = G.taskPreview(S, t, t.members.filter((id) => S.members.some((m) => m.id === id)));
+  const room = team.length < t.team;
+  $('#assign-body').innerHTML = `
+    <div class="sheet-head"><b>${esc(t.title)}</b><span class="muted">${icon('people')}${team.length}/${t.team}</span></div>
+    <div class="need ${sum >= t.diff ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / t.diff))}"></i></span><span class="need-num"><b>${sum}</b>/${t.diff}</span></div>
+    <div class="pick">${team
+      .map(
+        (m) => `<div class="person ${m.kind === 'temp' ? 'temp' : ''} active">
+          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${m.kind === 'temp' ? '・派遣' : ''}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
+        </div>`,
+      )
+      .join('')}</div>
+    <div class="preview">${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(t.endsAt - t.startAt))}${val('coin', yen(p.reward))}${val('star', `+${p.rep}`, p.great || p.early ? 'ok' : '')}</div>
+    ${progress(t.startAt, t.endsAt)}
+    ${room ? `<button class="big" id="run-add">${icon('plus')}${icon('people')}</button>` : `<button class="big ghost" id="run-close">OK</button>`}`;
+  fillThumbs($('#assign-body'));
+  updateTimers();
+  if (!dlg.open) dlg.showModal();
+  if (room)
+    $('#run-add').onclick = () => {
+      dlg.close();
+      addMembers(taskId);
+    };
+  else $('#run-close').onclick = () => dlg.close();
+}
 
 // 仕事中の仕事に人を足す（派遣も。足した分だけ残りが早く進む）
 function addMembers(taskId) {
