@@ -776,13 +776,27 @@ function welcomeBack(ev, away) {
   const gained = ev.filter((e) => e.type === 'luck' || e.type === 'task').reduce((a, e) => a + e.money, 0) - ev.filter((e) => e.type === 'rival').reduce((a, e) => a + (e.money ?? 0), 0);
   const net = (ev.income ?? 0) - (ev.salary ?? 0) + gained;
   if (Math.abs(net) >= 1) rows.push(val('coin', `${net >= 0 ? '+' : ''}${yen(net)}`, net >= 0 ? 'ok' : 'bad'));
+  // 増減のわけ（仕事の報酬・製品の収入・臨時収入・給料・冷やかし）。0 のものは出さない
+  const sum = (type) => ev.filter((e) => e.type === type).reduce((a, e) => a + (e.money ?? 0), 0);
+  const parts = [
+    ['task', '仕事', sum('task')],
+    ['box', '製品', ev.income ?? 0],
+    ['globe', '臨時収入', sum('luck')],
+    ['wallet', '給料', -(ev.salary ?? 0)],
+    ['error', '冷やかし', -sum('rival')],
+  ].filter(([, , v]) => Math.abs(v) >= 1);
+  const breakdown = parts.length
+    ? `<div class="money-why">${parts
+        .map(([ic, label, v]) => `<div class="mw-row">${icon(ic)}<span>${label}</span><b class="${v >= 0 ? 'ok' : 'bad'}">${v >= 0 ? '+' : '-'}${yen(Math.abs(v))}</b></div>`)
+        .join('')}</div>`
+    : '';
   if (ev.some((e) => e.type === 'encounter')) rows.push(val('spark', '誰かが現れた', 'legend'));
   if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '面接に来た', 'legend'));
   // 終わった仕事は1つずつ（resultsHtml の一覧だけを使う）
   const done = resultsHtml(ev, { head: false });
   const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false });
   if (!rows.length && !done && !rivals) return;
-  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${rivals}${done}`);
+  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${breakdown}${rivals}${done}`);
 }
 
 // ---------- ログイン（Google で保存・同期。src/cloud.js） ----------
