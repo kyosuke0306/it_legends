@@ -1,9 +1,11 @@
 // 画面まわり。ゲームの中身は game/state.js、数字は game/rules.js
+// 文字は少なく、アイコンと数字で見せる（絵文字は使わない。アイコンは icons.js）
 import { LEGENDS, RARITY, byId } from './data.js';
 import { createCharacter, preloadCharacters, thumbnailUrl } from './character.js';
 import { Stage, renderThumbnail } from './stage.js';
 import { Office } from './office.js';
 import { VERSION } from './version.js';
+import { icon } from './icons.js';
 import * as G from './game/state.js';
 import * as R from './game/rules.js';
 import * as cloud from './cloud.js';
@@ -11,6 +13,8 @@ import * as cloud from './cloud.js';
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 document.getElementById('version').textContent = VERSION;
+$('#open-settings').innerHTML = icon('gear');
+document.querySelectorAll('.tab').forEach((t) => t.insertAdjacentHTML('afterbegin', icon(t.dataset.icon)));
 
 const SAVE_KEY = 'it_legends.save.v1';
 let S = null; // ゲームの状態
@@ -29,9 +33,8 @@ function loadLocal() {
 function save() {
   if (!S) return;
   S.savedAt = Date.now();
-  const json = JSON.stringify(S);
   try {
-    localStorage.setItem(SAVE_KEY, json);
+    localStorage.setItem(SAVE_KEY, JSON.stringify(S));
   } catch {}
   cloud.changed();
 }
@@ -43,24 +46,48 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ---------- 表示の小道具 ----------
-const yen = G.yen;
+const pct = (x) => `${Math.round(x * 100)}%`;
+// お金は短く（12.3万 / 1.2億）
+function money(n) {
+  const a = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (a >= 1e8) return `${sign}${(a / 1e8).toFixed(a >= 1e9 ? 0 : 1)}億`;
+  if (a >= 1e4) return `${sign}${(a / 1e4).toFixed(a >= 1e5 ? 0 : 1)}万`;
+  return `${sign}${Math.round(a).toLocaleString('ja-JP')}`;
+}
+const yen = (n) => `${money(n)}円`;
 function dur(ms) {
   const m = Math.max(0, Math.ceil(ms / 60000));
   if (m < 60) return `${m}分`;
   const h = Math.floor(m / 60);
-  if (h < 24) return m % 60 ? `${h}時間${m % 60}分` : `${h}時間`;
+  if (h < 24) return m % 60 && h < 10 ? `${h}時間${m % 60}分` : `${h}時間`;
   return h % 24 ? `${Math.floor(h / 24)}日${h % 24}時間` : `${Math.floor(h / 24)}日`;
 }
-const pct = (x) => `${Math.round(x * 100)}%`;
-const jobName = (m) => (m.kind === 'legend' ? '偉人' : R.JOBS[m.job].full);
+const val = (name, text, cls = '') => `<span class="val ${cls}">${icon(name)}${text}</span>`;
+const jobShort = (m) => (m.kind === 'legend' ? byId[m.legend].rarity : R.JOBS[m.job].name);
 const perkText = (m) => (m.kind === 'legend' ? R.LEGEND_RULES[m.legend].abilityText : R.JOBS[m.job].perkText);
-function statBars(stats) {
-  return `<div class="stats">${R.STAT_KEYS.map(
-    (k) => `<div class="st"><span>${R.STATS[k]}</span><i style="--v:${Math.min(100, stats[k])}%"></i><b>${stats[k]}</b></div>`,
-  ).join('')}</div>`;
+const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
+function avatar(m) {
+  if (m.kind === 'legend') return `<span class="av legend" style="--c:${RARITY[byId[m.legend].rarity].css}"><img data-thumb="${m.legend}" alt=""></span>`;
+  const c = m.kind === 'hero' ? 'var(--accent)' : hex(R.JOBS[m.job].shirt);
+  return `<span class="av" style="--c:${c}">${esc(m.name.replace(/\s.*/, '').slice(0, 1))}</span>`;
+}
+// 4つの能力を小さな棒で（ラベルは1文字）
+function statBars(st) {
+  // 小さい差も見えるように平方根で（25 → 半分、100 → いっぱい）
+  const h = (v) => Math.min(100, Math.sqrt(Math.max(0, v) / 100) * 100);
+  return `<span class="mini">${R.STAT_KEYS.map((k) => `<i title="${R.STATS[k]} ${st[k]}"><span><b style="height:${h(st[k])}%"></b></span><em>${R.STATS[k][0]}</em></i>`).join('')}</span>`;
+}
+function rating(q) {
+  const n = Math.max(1, Math.min(5, Math.round(q * 2)));
+  return `<span class="rating">${'<i class="on"></i>'.repeat(n)}${'<i></i>'.repeat(5 - n)}</span>`;
 }
 function progress(start, end) {
-  return `<div class="bar" data-start="${start}" data-ends="${end}"><i></i></div><div class="muted small" data-left="${end}"></div>`;
+  return `<div class="prog"><div class="bar" data-start="${start}" data-ends="${end}"><i></i></div><span class="left" data-left="${end}"></span></div>`;
+}
+// 偉人の小さな絵をあとから差し込む
+function fillThumbs(root) {
+  root.querySelectorAll('img[data-thumb]').forEach((img) => thumbnailFor(byId[img.dataset.thumb]).then((src) => (img.src = src)));
 }
 
 // ---------- はじめの画面 ----------
@@ -70,13 +97,12 @@ function showStart() {
   let chosen = null;
   const box = $('#start-jobs');
   box.innerHTML = Object.entries(R.JOBS)
-    .map(
-      ([id, j]) => `<button class="job" data-job="${id}">
-        <b>${j.full}</b>
-        <div class="weights">${R.STAT_KEYS.map((k) => `<span>${R.STATS[k]}${'●'.repeat(Math.round(j.w[k]))}</span>`).join('')}</div>
-        <div class="perk">得意：${j.perkText}</div>
-      </button>`,
-    )
+    .map(([id, j]) => {
+      const st = Object.fromEntries(R.STAT_KEYS.map((k) => [k, j.w[k] * 25]));
+      return `<button class="job" data-job="${id}" style="--c:${hex(j.shirt)}">
+        <b>${j.full}</b>${statBars(st)}<small>${j.perkText}</small>
+      </button>`;
+    })
     .join('');
   box.onclick = (e) => {
     const b = e.target.closest('.job');
@@ -84,13 +110,10 @@ function showStart() {
     chosen = b.dataset.job;
     box.querySelectorAll('.job').forEach((x) => x.classList.toggle('active', x === b));
     $('#start-go').disabled = false;
-    $('#start-go').textContent = `${R.JOBS[chosen].full}として始める`;
   };
   $('#start-go').onclick = () => {
     if (!chosen) return;
-    const name = $('#start-name').value.trim() || 'わたし';
-    const company = $('#start-company').value.trim() || 'ガレージ・ラボ';
-    S = G.newGame({ job: chosen, name, company });
+    S = G.newGame({ job: chosen, name: $('#start-name').value.trim() || 'わたし', company: $('#start-company').value.trim() || 'ガレージ・ラボ' });
     save();
     enterGame();
   };
@@ -110,34 +133,32 @@ document.querySelectorAll('.tab').forEach((tab) => {
     view = tab.dataset.view;
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${view}`));
+    scrollTo(0, 0);
     renderAll();
   };
 });
 
+function renderHeader() {
+  $('#company-name').textContent = S.company;
+  $('#money').innerHTML = val('coin', yen(S.money), S.money < 0 ? 'minus' : '');
+  $('#rep').innerHTML = val('star', S.rep);
+  $('#dot-office').classList.toggle('on', Boolean(S.encounter));
+  $('#dot-work').classList.toggle('on', G.freeMembers(S).length > 0 && S.offers.length > 0);
+}
 function renderAll() {
   if (!S) return;
-  $('#company-name').textContent = S.company;
-  $('#money').textContent = yen(S.money);
-  $('#money').classList.toggle('minus', S.money < 0);
-  $('#rep').textContent = `評判 ${S.rep}`;
-  $('#progress').textContent = `${G.ownedLegends(S).size}/${LEGENDS.length}`;
-  const free = G.freeMembers(S).length;
-  $('#badge-work').textContent = free && S.offers.length ? free : '';
+  renderHeader();
   ({ office: renderOffice, work: renderWork, team: renderTeam, product: renderProduct, legends: renderLegends })[view]();
   updateTimers();
 }
 
-// 1秒ごとに残り時間だけ書き換える（全部描き直さない）
+// 1秒ごとに残り時間だけ書き換える
 function updateTimers() {
   const now = Date.now();
   document.querySelectorAll('[data-ends]').forEach((el) => {
-    const a = +el.dataset.start;
-    const b = +el.dataset.ends;
-    el.firstElementChild.style.width = pct(Math.min(1, (now - a) / (b - a)));
+    el.firstElementChild.style.width = pct(Math.min(1, (now - el.dataset.start) / (el.dataset.ends - el.dataset.start)));
   });
-  document.querySelectorAll('[data-left]').forEach((el) => {
-    el.textContent = `あと ${dur(+el.dataset.left - now)}`;
-  });
+  document.querySelectorAll('[data-left]').forEach((el) => (el.textContent = dur(el.dataset.left - now)));
 }
 
 // ----- 会社 -----
@@ -147,67 +168,50 @@ function hourlyIncome() {
 }
 function renderOffice() {
   office.sync(S);
+  const o = R.OFFICES[S.office];
+  $('#office-chips').innerHTML = `<span class="chip">${o.name}</span><span class="chip">${icon('people')}${G.seatsUsed(S)}/${o.cap}</span>${
+    S.products.length ? `<span class="chip">${icon('box')}+${yen(hourlyIncome())}/時</span>` : ''
+  }`;
   const enc = S.encounter;
   $('#encounter').innerHTML = enc
-    ? `<button class="encounter" id="go-encounter">
-        <span class="spark">✦</span> 時空のゆがみから、誰かが現れた！
-        <small>${esc(R.LEGEND_RULES[enc.id].scene)}</small>
-        <span class="muted small" data-left="${enc.until}"></span>
-      </button>`
+    ? `<button class="encounter" id="go-encounter">${icon('spark', 'spin')}<span>誰かが現れた</span><span class="left" data-left="${enc.until}"></span></button>`
     : '';
   if (enc) $('#go-encounter').onclick = openEncounter;
-  const o = R.OFFICES[S.office];
   const next = R.OFFICES[S.office + 1];
-  const salary = S.members.reduce((a, m) => a + (m.salary ?? 0), 0);
-  $('#office-info').innerHTML = `
-    <div class="panel row">
-      <div><div class="muted small">会社の場所</div><b>${o.name}</b></div>
-      <div><div class="muted small">席</div><b>${G.seatsUsed(S)}/${o.cap}人</b></div>
-      <div><div class="muted small">製品の収入</div><b>${yen(hourlyIncome())}/時</b></div>
-      <div><div class="muted small">給料</div><b>${yen(salary)}/日</b></div>
-    </div>
-    ${
-      next
-        ? `<div class="panel row">
-            <div>次は <b>${next.name}</b>（${next.cap}人まで）<div class="muted small">${yen(next.cost)}・評判 ${next.rep} 以上</div></div>
-            <button class="btn" id="upgrade" ${S.money >= next.cost && S.rep >= next.rep ? '' : 'disabled'}>引っ越す</button>
-          </div>`
-        : ''
-    }`;
-  if (next) $('#upgrade').onclick = () => G.upgradeOffice(S, Date.now()) && commit();
+  if (next) {
+    const okMoney = S.money >= next.cost;
+    const okRep = S.rep >= next.rep;
+    $('#office-info').innerHTML = `<button class="panel upgrade" id="upgrade" ${okMoney && okRep ? '' : 'disabled'}>
+        ${icon('move')}<span class="grow"><b>${next.name}</b> ${val('people', next.cap)}</span>
+        ${val('coin', yen(next.cost), okMoney ? 'ok' : '')}${val('star', next.rep, okRep ? 'ok' : '')}
+      </button>`;
+    $('#upgrade').onclick = () => G.upgradeOffice(S, Date.now()) && commit();
+  } else $('#office-info').innerHTML = '';
   $('#log').innerHTML = S.log
-    .slice(0, 20)
-    .map((l) => `<li class="${l.kind}"><time>${new Date(l.t).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</time>${esc(l.text)}</li>`)
+    .slice(0, 6)
+    .map((l) => `<li class="${l.kind}"><time>${new Date(l.t).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</time>${esc(l.text)}</li>`)
     .join('');
 }
 
 // ----- 仕事 -----
 function renderWork() {
-  const now = Date.now();
+  const byIdM = (id) => S.members.find((m) => m.id === id);
   const running = S.tasks
-    .map((t) => {
-      const names = t.members.map((id) => S.members.find((m) => m.id === id)?.name).join('・');
-      return `<div class="panel"><b>${esc(t.title)}</b><div class="muted small">${esc(names)}</div>${progress(t.startAt, t.endsAt)}</div>`;
-    })
+    .map((t) => `<div class="panel run"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${t.members.map((id) => avatar(byIdM(id))).join('')}</span></div>${progress(t.startAt, t.endsAt)}</div>`)
     .join('');
+  const canWork = G.freeMembers(S).length > 0;
   const offers = S.offers
     .map(
-      (o) => `<div class="panel offer">
-        <div class="grow">
-          <span class="cat">${R.CAT_NAMES[o.cat]}</span> <b>${esc(o.title)}</b>
-          <div class="muted small">${dur(o.hours * R.HOUR)}・最大${o.team}人・難しさ ${o.diff}・期限まで ${dur(o.expiresAt - now)}</div>
-          <div>報酬 <b>${yen(o.reward)}</b>　評判 +${o.rep}</div>
-        </div>
-        <button class="btn" data-offer="${o.id}" ${G.freeMembers(S).length ? '' : 'disabled'}>受ける</button>
-      </div>`,
+      (o) => `<button class="panel offer cat-${o.cat}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
+        <b>${esc(o.title)}</b>
+        <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
+      </button>`,
     )
     .join('');
-  const nextOffer = S.offerAt + R.OFFER_EVERY;
   $('#view-work').innerHTML = `
-    ${running ? `<h3>進行中の仕事</h3>${running}` : ''}
-    <h3>届いている依頼</h3>
-    ${offers || '<p class="muted">依頼はまだありません</p>'}
-    <p class="muted small">次の依頼まで <span data-left="${nextOffer}"></span>（${dur(R.OFFER_EVERY)}ごとに届きます）</p>`;
+    ${running}
+    ${offers || `<p class="empty">${icon('clock')}<span data-left="${S.offerAt + R.OFFER_EVERY}"></span></p>`}`;
+  fillThumbs($('#view-work'));
   $('#view-work').querySelectorAll('[data-offer]').forEach((b) => (b.onclick = () => assignTask(+b.dataset.offer)));
 }
 
@@ -215,43 +219,37 @@ function assignTask(offerId) {
   const o = S.offers.find((x) => x.id === offerId);
   openAssign({
     title: o.title,
-    sub: `${R.CAT_NAMES[o.cat]}・最大${o.team}人・難しさ ${o.diff}`,
     max: o.team,
     w: o.w,
     preview: (ids) => {
       const p = G.taskPreview(S, o, ids);
-      return `成功率 <b class="${p.chance < 0.5 ? 'bad' : ''}">${pct(p.chance)}</b>　かかる時間 <b>${dur(p.duration)}</b>　報酬 <b>${yen(p.reward)}</b>`;
+      return `${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(p.duration))}${val('coin', yen(p.reward))}`;
     },
     confirm: (ids) => G.startTask(S, offerId, ids, Date.now()),
   });
 }
 
-// 人を選ぶダイアログ（仕事・開発で共通）
-function openAssign({ title, sub, max, w, preview, confirm, note = '' }) {
+// 人を選ぶ（仕事・開発で共通）。下から出るシート
+function openAssign({ title, max, w, preview, confirm, extra = '' }) {
   const dlg = $('#assign');
-  const free = G.freeMembers(S);
   const chosen = new Set();
-  const powerOf = (m) => Math.round(G.teamPower(S, [m], w));
+  const power = (m) => Math.round(G.teamPower(S, [m], w));
+  const free = G.freeMembers(S).sort((a, b) => power(b) - power(a));
   const draw = () => {
     const ids = [...chosen];
     $('#assign-body').innerHTML = `
-      <h2>${esc(title)}</h2>
-      <div class="muted">${esc(sub)}</div>
-      ${note}
-      <p>担当する人を選んでください（${chosen.size}/${max}人）</p>
-      <div class="pick">
-        ${free
-          .sort((a, b) => powerOf(b) - powerOf(a))
-          .map(
-            (m) => `<button class="person ${chosen.has(m.id) ? 'active' : ''} ${m.kind}" data-id="${m.id}">
-              <b>${esc(m.name)}</b> <span class="muted small">${jobName(m)} Lv${m.level}</span>
-              <span class="pw">力 ${powerOf(m)}</span>
-            </button>`,
-          )
-          .join('')}
-      </div>
-      <div class="preview">${ids.length ? preview(ids) : '<span class="muted">まだ誰も選んでいません</span>'}</div>
-      <button class="big" id="assign-go" ${ids.length ? '' : 'disabled'}>この人たちに任せる</button>`;
+      <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${chosen.size}/${max > 20 ? free.length : max}</span></div>
+      ${extra}
+      <div class="pick">${free
+        .map(
+          (m) => `<button class="person ${chosen.has(m.id) ? 'active' : ''}" data-id="${m.id}">
+            ${avatar(m)}<span class="pname">${esc(m.name)}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${power(m)}</span>
+          </button>`,
+        )
+        .join('')}</div>
+      <div class="preview">${ids.length ? preview(ids) : '&nbsp;'}</div>
+      <button class="big" id="assign-go" ${ids.length ? '' : 'disabled'}>任せる</button>`;
+    fillThumbs($('#assign-body'));
     $('#assign-body').querySelectorAll('.person').forEach(
       (b) =>
         (b.onclick = () => {
@@ -273,124 +271,115 @@ function openAssign({ title, sub, max, w, preview, confirm, note = '' }) {
 }
 
 // ----- 仲間 -----
-function memberCard(m) {
-  const st = G.statsOf(S, m);
-  const busy = m.busy ? [...S.tasks, ...S.devs].find((x) => x.id === m.busy) : null;
-  const need = G.xpNeed(m.level);
-  return `<div class="panel member ${m.kind}">
-    <div class="mhead">
-      <div><b>${esc(m.name)}</b> ${m.kind === 'hero' ? '<span class="tag">あなた</span>' : ''} ${m.kind === 'legend' ? `<span class="rarity r-${byId[m.legend].rarity}">${byId[m.legend].rarity}</span>` : ''}
-        <div class="muted small">${jobName(m)}　Lv${m.level}（次まで ${Math.ceil(need - m.xp)}）</div></div>
-    </div>
-    <div class="state">${busy ? `<span class="busy">${esc(busy.title ?? R.GENRES[busy.genre].name + 'の開発')}中</span>` : '<span class="free">手が空いている</span>'}</div>
-    ${statBars(st)}
-    <div class="perk small">★ ${esc(perkText(m))}</div>
-    ${m.salary ? `<div class="muted small">給料 ${yen(m.salary)}/日 ${m.busy ? '' : `<button class="link small" data-dismiss="${m.id}">やめてもらう</button>`}</div>` : ''}
-    ${m.kind === 'legend' ? `<button class="link small" data-legend="${m.legend}">詳しく見る</button>` : ''}
+const opened = new Set();
+function memberRow(m, { candidate = false } = {}) {
+  const st = candidate ? m.stats : G.statsOf(S, m);
+  const open = opened.has(m.id);
+  const status = candidate ? '' : `<i class="st-dot ${m.busy ? 'busy' : 'free'}"></i>`;
+  const hireBtn = () => {
+    const cost = G.hireCost(S, m);
+    const can = G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
+    return `<button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>${yen(cost)}</button>`;
+  };
+  return `<div class="member ${m.kind} ${open ? 'open' : ''}">
+    <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
+      <span class="pname">${esc(m.name)}<small>${jobShort(m)} Lv${m.level}</small></span>
+      ${statBars(st)}
+    </button>
+    ${
+      open || candidate
+        ? `<div class="more"><span class="perk">${esc(perkText(m))}</span>${
+            m.salary ? `<span class="muted">${val('wallet', `${yen(m.salary)}/日`)}</span>` : ''
+          }${!candidate && m.kind === 'staff' && !m.busy ? `<button class="link small" data-dismiss="${m.id}">やめてもらう</button>` : ''}${
+            m.kind === 'legend' ? `<button class="link small" data-legend="${m.legend}">見る</button>` : ''
+          }${candidate ? hireBtn() : ''}</div>`
+        : ''
+    }
   </div>`;
 }
 function renderTeam() {
-  const full = G.seatsUsed(S) >= G.capacity(S);
-  const cands = S.candidates
-    .map((c) => {
-      const cost = G.hireCost(S, c);
-      return `<div class="panel member">
-        <div class="mhead"><div><b>${esc(c.name)}</b><div class="muted small">${R.JOBS[c.job].full}　Lv${c.level}</div></div>
-        <button class="btn" data-hire="${c.id}" ${!full && S.money >= cost ? '' : 'disabled'}>雇う ${yen(cost)}</button></div>
-        ${statBars(c.stats)}
-        <div class="perk small">★ ${R.JOBS[c.job].perkText}</div>
-        <div class="muted small">給料 ${yen(c.salary)}/日</div>
-      </div>`;
-    })
-    .join('');
-  $('#view-team').innerHTML = `
-    <h3>仲間（席 ${G.seatsUsed(S)}/${G.capacity(S)}人・偉人は別の特別席）</h3>
-    <div class="cards">${S.members.map(memberCard).join('')}</div>
-    <h3>採用の候補</h3>
-    ${full ? '<p class="muted small">席がいっぱいです。会社を広げると雇えます</p>' : ''}
-    <div class="cards">${cands}</div>
-    <p class="muted small">候補は <span data-left="${S.candAt + R.CANDIDATE_EVERY}"></span> で入れ替わります</p>`;
   const v = $('#view-team');
-  v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
-  v.querySelectorAll('[data-dismiss]').forEach(
-    (b) => (b.onclick = () => confirm('本当にやめてもらいますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()),
+  v.innerHTML = `
+    <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
+    <div class="sec">${icon('plus')}<span>${G.seatsUsed(S)}/${G.capacity(S)}</span><span class="left" data-left="${S.candAt + R.CANDIDATE_EVERY}"></span></div>
+    <div class="list">${S.candidates.map((c) => memberRow(c, { candidate: true })).join('')}</div>`;
+  fillThumbs(v);
+  v.querySelectorAll('[data-open]').forEach(
+    (b) =>
+      (b.onclick = (e) => {
+        if (e.target.closest('[data-hire]')) return;
+        const id = +b.dataset.open;
+        opened.has(id) ? opened.delete(id) : opened.add(id);
+        renderTeam();
+      }),
   );
+  v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
+  v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('やめてもらいますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));
 }
 
 // ----- 製品 -----
-function trendLabel(x) {
-  if (x >= 1.45) return '<span class="t up2">大人気 ↑↑</span>';
-  if (x >= 1.1) return '<span class="t up">人気 ↑</span>';
-  if (x >= 0.85) return '<span class="t">ふつう</span>';
-  return '<span class="t down">下火 ↓</span>';
+function trendIcon(x) {
+  if (x >= 1.45) return icon('up2', 't up2');
+  if (x >= 1.1) return icon('up', 't up');
+  if (x >= 0.85) return icon('flat', 't');
+  return icon('down', 't down');
 }
 function renderProduct() {
   const now = Date.now();
   const ce = G.companyEffects(S);
-  const ends = G.trendEndsAt(S, now);
+  const next = G.trendEndsAt(S, now);
   const seeNext = ce.nextTrend > 0;
-  const genres = Object.entries(R.GENRES);
-  const trends = `<div class="panel"><table class="trend">
-      <tr><th></th><th>いまの流行</th>${seeNext ? '<th>次の流行</th>' : ''}</tr>
-      ${genres.map(([k, g]) => `<tr><td>${g.name}</td><td>${trendLabel(G.trendAt(S, k, now))}</td>${seeNext ? `<td>${trendLabel(G.trendAt(S, k, ends + 1))}</td>` : ''}</tr>`).join('')}
-    </table>
-    <div class="muted small">流行は <span data-left="${ends}"></span> で変わります${seeNext ? '' : '（データサイエンティストがいると次の流行が分かります）'}</div></div>`;
-  const devs = S.devs
-    .map((d) => `<div class="panel"><b>${R.GENRES[d.genre].name}を開発中</b>${progress(d.startAt, d.endsAt)}</div>`)
-    .join('');
-  const products = S.products
-    .map(
-      (p) => `<div class="panel row">
-        <div class="grow"><b>${esc(p.name)}</b> <span class="muted small">${R.GENRES[p.genre].name}</span>
-          <div class="small">出来 <span class="stars">${G.stars(p.q)}</span>　いま ${yen(G.productIncome(S, p, now, ce))}/時　これまで ${yen(p.earned)}</div></div>
-        <button class="link small" data-stop="${p.id}">販売終了</button>
-      </div>`,
-    )
-    .join('');
   const canStart = G.freeMembers(S).length > 0;
-  const newDev = genres
+  const genres = Object.entries(R.GENRES)
     .map(([k, g]) => {
       const locked = S.office < g.office;
       return `<button class="panel genre" data-genre="${k}" ${locked || !canStart || S.money < g.cost ? 'disabled' : ''}>
-        <b>${g.name}</b>
-        <div class="small">開発費 ${yen(g.cost)}・${dur(g.hours * R.HOUR)}</div>
-        <div class="muted small">${locked ? `${R.OFFICES[g.office].name}から作れます` : `ふつうの出来に必要な力 ${g.need}`}</div>
+        <span class="gname">${locked ? icon('lock') : ''}${g.name}</span>
+        <span class="trend">${trendIcon(G.trendAt(S, k, now))}${seeNext ? `<span class="arrow">→</span>${trendIcon(G.trendAt(S, k, next + 1))}` : ''}</span>
+        <span class="vals">${val('coin', yen(g.cost))}${val('clock', dur(g.hours * R.HOUR))}</span>
       </button>`;
     })
     .join('');
+  const devs = S.devs
+    .map((d) => `<div class="panel run"><div class="row1"><b>${R.GENRES[d.genre].name}</b>${icon('busy', 'spin')}</div>${progress(d.startAt, d.endsAt)}</div>`)
+    .join('');
+  const products = S.products
+    .map(
+      (p) => `<div class="panel prod">
+        <span class="pname">${esc(p.name)}<small>${R.GENRES[p.genre].name}</small></span>
+        ${rating(p.q)}
+        <span class="val strong">+${yen(G.productIncome(S, p, now, ce))}/時</span>
+        <button class="x" data-stop="${p.id}" aria-label="販売終了">×</button>
+      </div>`,
+    )
+    .join('');
   $('#view-product').innerHTML = `
-    <p class="muted small">お金と時間をかけて自社製品を作ると、売れている間ずっと収入が入ります。流行に乗れば大もうけ、外せば赤字になることも。</p>
-    ${trends}
-    ${devs ? `<h3>開発中</h3>${devs}` : ''}
-    <h3>販売中の製品</h3>
-    ${products || '<p class="muted">まだ製品はありません</p>'}
-    <h3>新しい製品を作る</h3>
-    <div class="genres">${newDev}</div>`;
+    <div class="sec">${icon('clock')}<span data-left="${next}"></span></div>
+    <div class="genres">${genres}</div>
+    ${devs}
+    ${products}`;
   const v = $('#view-product');
   v.querySelectorAll('[data-genre]').forEach((b) => (b.onclick = () => assignDev(b.dataset.genre)));
-  v.querySelectorAll('[data-stop]').forEach(
-    (b) => (b.onclick = () => confirm('この製品の販売をやめますか？（収入がなくなります）') && (G.stopProduct(S, +b.dataset.stop), commit())),
-  );
+  v.querySelectorAll('[data-stop]').forEach((b) => (b.onclick = () => confirm('販売をやめますか？') && (G.stopProduct(S, +b.dataset.stop), commit())));
 }
 
 function assignDev(genre) {
   const g = R.GENRES[genre];
   openAssign({
-    title: `${g.name}を作る`,
-    sub: `開発費 ${yen(g.cost)}・ふつうの出来に必要な力 ${g.need}`,
+    title: g.name,
     max: 99,
     w: g.w,
-    note: `<p class="small">いまの流行：${trendLabel(G.trendAt(S, genre, Date.now()))}（発売のころには変わっているかも）</p>`,
+    extra: `<div class="vals center">${val('coin', yen(g.cost))}${trendIcon(G.trendAt(S, genre, Date.now()))}</div>`,
     preview: (ids) => {
       const p = G.devPreview(S, genre, ids);
-      return `出来の見込み <b class="stars">${G.stars(p.quality * 0.6)}〜${G.stars(p.quality * 1.4)}</b>　かかる時間 <b>${dur(p.duration)}</b>`;
+      return `${rating(p.quality * 0.6)}<span class="muted">〜</span>${rating(p.quality * 1.4)}${val('clock', dur(p.duration))}`;
     },
     confirm: (ids) => G.startDev(S, genre, ids, Date.now()),
   });
 }
 
-// ----- 偉人（図鑑） -----
+// ----- 偉人 -----
 const thumbs = {};
 function thumbnailFor(legend) {
   thumbs[legend.id] ??= thumbnailUrl(legend).then((url) => url ?? createCharacter(legend).then((obj) => renderThumbnail(obj)));
@@ -398,50 +387,31 @@ function thumbnailFor(legend) {
 }
 function renderLegends() {
   const owned = G.ownedLegends(S);
-  const grid = $('#zukan-grid');
-  grid.innerHTML = '';
-  // 会いやすい順（R → SR → SSR）に並べる
   const order = { R: 0, SR: 1, SSR: 2 };
-  for (const legend of [...LEGENDS].sort((a, b) => order[a.rarity] - order[b.rarity])) {
-    const has = owned.has(legend.id);
-    const rule = R.LEGEND_RULES[legend.id];
-    const card = document.createElement('button');
-    card.className = `card r-${legend.rarity} ${has ? '' : 'locked'}`;
-    const conds = G.meetProgress(S, legend.id);
-    card.innerHTML = `
-      <span class="rarity r-${legend.rarity}">${legend.rarity}</span>
-      <div class="thumb"><span class="spinner"></span></div>
-      <div class="name">${has ? legend.name : '？？？'}</div>
-      ${
-        has
-          ? `<div class="count">${esc(legend.title)}</div>`
-          : `<div class="hint">${esc(rule.hint)}</div><ul class="conds">${conds.map((c) => `<li class="${c.ok ? 'ok' : ''}">${esc(c.text)}</li>`).join('')}</ul>`
-      }`;
-    card.onclick = () => has && openLegend(legend.id);
-    grid.append(card);
-    thumbnailFor(legend).then((src) => {
-      const img = new Image();
-      img.src = src;
-      card.querySelector('.thumb').replaceChildren(img);
-    });
-  }
+  $('#zukan-grid').innerHTML = [...LEGENDS]
+    .sort((a, b) => order[a.rarity] - order[b.rarity])
+    .map((l) => {
+      const has = owned.has(l.id);
+      // 出会いの条件を、短い言葉と進み具合の棒で
+      const conds = has
+        ? ''
+        : `<div class="conds">${G.meetProgress(S, l.id)
+            .map((c) => `<div class="cond ${c.ok ? 'ok' : ''}"><span>${esc(c.label)}</span><i><b style="width:${pct(c.ratio)}"></b></i></div>`)
+            .join('')}</div>`;
+      return `<button class="card r-${l.rarity} ${has ? '' : 'locked'}" data-id="${l.id}">
+        <span class="rarity r-${l.rarity}">${l.rarity}</span>
+        <div class="thumb"><img data-thumb="${l.id}" alt=""></div>
+        ${has ? `<div class="name">${l.name}</div>` : conds}
+      </button>`;
+    })
+    .join('');
+  fillThumbs($('#zukan-grid'));
+  $('#zukan-grid').querySelectorAll('.card:not(.locked)').forEach((c) => (c.onclick = () => openLegend(c.dataset.id)));
 }
 
 // ---------- 偉人の詳細・出会い ----------
 let detailStage;
 let detailToken;
-function detailInfo(legend, extra = '') {
-  return `
-    <span class="rarity r-${legend.rarity}">${legend.rarity}</span>
-    <h2>${legend.name}</h2>
-    <div class="sub">${legend.nameEn}（${legend.years}）</div>
-    <div class="title">「${legend.title}」</div>
-    ${extra}
-    <h3>何をした人？</h3>
-    <p>${legend.summary}</p>
-    <h3>おもな功績</h3>
-    <ul>${legend.achievements.map((a) => `<li>${a}</li>`).join('')}</ul>`;
-}
 async function showOnDetail(legend, { reveal = false } = {}) {
   detailStage ??= new Stage($('#detail-canvas'));
   detailStage.setCharacter(null);
@@ -451,13 +421,16 @@ async function showOnDetail(legend, { reveal = false } = {}) {
   const obj = await p;
   if (token === detailToken) detailStage.setCharacter(obj);
 }
+function legendHead(legend) {
+  return `<span class="rarity r-${legend.rarity}">${legend.rarity}</span><h2>${legend.name}</h2><div class="sub">${legend.title}</div>`;
+}
 function openLegend(id) {
   const legend = byId[id];
   const m = S.members.find((x) => x.legend === id);
-  $('#detail-info').innerHTML = detailInfo(
-    legend,
-    `<div class="ability">★ ${esc(R.LEGEND_RULES[id].abilityText)}</div>${m ? `<div class="muted small">Lv${m.level}</div>${statBars(G.statsOf(S, m))}` : ''}`,
-  );
+  $('#detail-info').innerHTML = `${legendHead(legend)}
+    <div class="ability">${esc(R.LEGEND_RULES[id].abilityText)}</div>
+    ${m ? `<div class="lvrow">Lv${m.level} ${statBars(G.statsOf(S, m))}</div>` : ''}
+    <details><summary>くわしく</summary><p>${legend.summary}</p></details>`;
   $('#detail').showModal();
   showOnDetail(legend);
 }
@@ -469,14 +442,10 @@ function openEncounter() {
   const rule = R.LEGEND_RULES[e.id];
   detailStage ??= new Stage($('#detail-canvas'));
   detailStage.setCharacter(null);
-  $('#detail-info').innerHTML = `
-    <span class="rarity r-${legend.rarity}">${legend.rarity}</span>
-    <h2>時を超えて、${legend.name} が現れた！</h2>
-    <div class="title">「${legend.title}」</div>
-    <p>${esc(rule.scene)}</p>
-    <div class="ability">仲間になると：${esc(rule.abilityText)}</div>
-    <p>仲間に誘えるのは1回だけ。断られると、しばらく会えません。</p>
-    <div class="muted small">仲間になってくれる見込み ${pct(G.scoutChance(S, e.id))}・<span data-left="${e.until}"></span>で去ってしまう</div>
+  $('#detail-info').innerHTML = `${legendHead(legend)}
+    <p class="scene">${esc(rule.scene)}</p>
+    <div class="ability">${esc(rule.abilityText)}</div>
+    <div class="vals">${val('target', pct(G.scoutChance(S, e.id)))}${val('clock', `<span data-left="${e.until}"></span>`)}</div>
     <button class="big" id="scout">仲間に誘う</button>`;
   updateTimers();
   $('#detail').showModal();
@@ -494,10 +463,10 @@ function openEncounter() {
     commit();
     wrap.querySelector('.silhouette')?.remove();
     if (r === 'joined') {
-      $('#detail-info').innerHTML = detailInfo(legend, `<div class="joined">${legend.name} が仲間になった！！</div><div class="ability">★ ${esc(rule.abilityText)}</div>`);
+      $('#detail-info').innerHTML = `${legendHead(legend)}<div class="joined">仲間になった</div><div class="ability">${esc(rule.abilityText)}</div>`;
       await showOnDetail(legend, { reveal: true });
     } else {
-      $('#detail-info').innerHTML = `<h2>${legend.name} は首を横にふった…</h2><p>「まだ君の会社には早いようだ」</p><p class="muted">数日たてば、また会えるかもしれません。</p>`;
+      $('#detail-info').innerHTML = `${legendHead(legend)}<p class="scene">「まだ早いようだ」</p>`;
     }
   };
 }
@@ -524,44 +493,49 @@ function tick() {
   if (!S) return;
   const ev = G.advance(S, Date.now());
   if (ev.length) {
-    if (ev.some((e) => e.type === 'encounter')) notice(`<h2>✦ 時空のゆがみ…</h2><p>誰かが現れたようです。「会社」の画面から会いに行こう！</p>`);
+    if (ev.some((e) => e.type === 'encounter')) notice(`${icon('spark', 'big-ic spin')}<h2>誰かが現れた</h2>`);
     commit();
   } else {
-    $('#money').textContent = yen(S.money);
+    renderHeader();
     updateTimers();
   }
 }
 
-// 留守の間に起きたことのまとめ
+// 留守の間に起きたこと
 function welcomeBack(ev, away) {
   if (away < 10 * 60000) return;
   const tasks = ev.filter((e) => e.type === 'task');
-  const ok = tasks.filter((e) => e.ok).length;
-  const lines = [];
-  if (tasks.length) lines.push(`仕事が ${tasks.length} 件終わった（成功 ${ok} 件）`);
-  for (const e of ev.filter((e) => e.type === 'product')) lines.push(`新製品「${esc(e.name)}」を発売した`);
-  for (const e of ev.filter((e) => e.type === 'level')) lines.push(`${esc(e.name)} がレベル ${e.level} になった`);
-  if (ev.income > 1) lines.push(`製品の収入 +${yen(ev.income)}`);
-  if (ev.salary > 1) lines.push(`給料の支払い −${yen(ev.salary)}`);
-  if (ev.some((e) => e.type === 'encounter')) lines.push('<b>✦ 誰かが時を超えて現れた！</b>');
-  if (!lines.length) return;
-  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}ぶり</p><ul>${lines.map((l) => `<li>${l}</li>`).join('')}</ul>`);
+  const rows = [];
+  if (tasks.length) rows.push(val('task', `${tasks.filter((e) => e.ok).length}/${tasks.length}`, 'ok'));
+  const levels = ev.filter((e) => e.type === 'level').length;
+  if (levels) rows.push(val('level', `+${levels}`));
+  const prods = ev.filter((e) => e.type === 'product').length;
+  if (prods) rows.push(val('box', `+${prods}`));
+  const net = (ev.income ?? 0) - (ev.salary ?? 0);
+  if (Math.abs(net) >= 1) rows.push(val('coin', `${net >= 0 ? '+' : ''}${yen(net)}`, net >= 0 ? 'ok' : 'bad'));
+  if (ev.some((e) => e.type === 'encounter')) rows.push(val('spark', '誰かが現れた', 'legend'));
+  if (!rows.length) return;
+  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>`);
 }
 
-// ---------- 設定・ログイン（Google ログインで保存・同期。src/cloud.js） ----------
+// ---------- ログイン（Google で保存・同期。src/cloud.js） ----------
+const SYNC_ICON = { login: 'login', ok: 'cloudOk', busy: 'busy', error: 'error' };
 let syncState = { text: 'ログイン', cls: 'login' };
 function showSync(text, cls) {
   syncState = { text, cls };
   for (const el of document.querySelectorAll('.sync')) {
-    el.textContent = cls === 'login' && text === 'ログイン' ? 'ログイン' : text;
-    el.className = `sync ${cls}`;
+    // ログイン前だけ文字を出す。ログイン後はアイコンだけ
+    el.innerHTML = icon(SYNC_ICON[cls], cls === 'busy' ? 'spin' : '') + (cls === 'login' || cls === 'error' ? `<span>${esc(text)}</span>` : '');
+    el.className = `sync ${cls}${el.classList.contains('start-sync') ? ' start-sync' : ''}`;
+    el.title = text;
   }
   if ($('#settings').open) renderSettings();
 }
 async function toggleLogin() {
   const u = cloud.currentUser();
   if (!u) return cloud.login();
-  if (confirm(`${u.email} でログイン中です。ログアウトしますか？\n（記録はクラウドに残ります）`)) await cloud.logout();
+  renderSettings();
+  $('#settings').showModal();
 }
 document.querySelectorAll('.sync').forEach((b) => {
   b.onclick = toggleLogin;
@@ -571,26 +545,17 @@ document.querySelectorAll('.sync').forEach((b) => {
 function renderSettings() {
   const u = cloud.currentUser();
   $('#settings-body').innerHTML = `
-    <h2>設定</h2>
-    <h3>記録の保存</h3>
-    ${
-      u
-        ? `<p>ログイン中：<b>${esc(u.displayName ?? u.email ?? '')}</b>（${esc(syncState.text)}）</p>
-           <p class="muted small">記録は自動でクラウドに保存され、ほかのスマホやパソコンで遊んだ内容も反映されます。</p>
-           <button class="btn ghost" id="logout">ログアウト</button>`
-        : `<p>Google でログインすると、記録がクラウドに保存され、ほかのスマホやパソコンでも続きから遊べます。</p>
-           <button class="btn" id="login">Google でログイン</button>`
-    }
-    <p class="muted small">ログインしなくても、この端末のブラウザには自動で保存されます。</p>
-    ${S ? `<h3>最初から</h3><button class="btn ghost danger" id="reset">記録を消して最初から始める</button>` : ''}`;
+    <div class="set-row">${icon(u ? SYNC_ICON[syncState.cls] : 'cloud')}<span class="grow">${u ? esc(u.email ?? '') : 'Google'}</span>
+      ${u ? '<button class="btn ghost" id="logout">ログアウト</button>' : '<button class="btn" id="login">ログイン</button>'}</div>
+    ${S ? `<div class="set-row">${icon('error')}<span class="grow">最初から</span><button class="btn ghost danger" id="reset">消す</button></div>` : ''}`;
   if ($('#login')) {
     $('#login').onclick = () => cloud.login();
-    cloud.warmUp(); // 設定を開いた時点で読み始める
+    cloud.warmUp();
   }
-  $('#logout') && ($('#logout').onclick = toggleLogin);
+  $('#logout') && ($('#logout').onclick = () => cloud.logout());
   $('#reset') &&
     ($('#reset').onclick = async () => {
-      if (!confirm(`本当に記録を消しますか？（元に戻せません）${u ? '\nクラウドの記録も消えます。' : ''}`)) return;
+      if (!confirm(`記録を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
       S = null;
       try {
         localStorage.removeItem(SAVE_KEY);
@@ -611,12 +576,8 @@ async function decide(remote) {
   G.migrate(remote);
   if (!S) return 'remote';
   if (remote.seed === S.seed) return (remote.savedAt ?? 0) >= (S.savedAt ?? 0) ? 'remote' : 'local';
-  const desc = (s) => `「${s.company}」${yen(s.money)}・偉人 ${legendCount(s)}人`;
-  return confirm(
-    `クラウドに別の記録があります。\n\nクラウド：${desc(remote)}\nこの端末：${desc(S)}\n\nクラウドの記録を使いますか？（キャンセルするとこの端末の記録で上書きします）`,
-  )
-    ? 'remote'
-    : 'local';
+  const desc = (s) => `${s.company}  ${yen(s.money)}  偉人${legendCount(s)}`;
+  return confirm(`クラウドの記録を使いますか？\n\nクラウド：${desc(remote)}\nこの端末：${desc(S)}`) ? 'remote' : 'local';
 }
 
 // クラウドの記録（ログイン時・ほかの端末で保存されたとき）を反映する
@@ -628,7 +589,7 @@ function applyState(remote) {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(S));
   } catch {}
-  $('#assign').close(); // 古い記録で開いていた人選びは閉じる
+  $('#assign').close();
   if (first || $('#game').classList.contains('hidden')) enterGame();
   else renderAll();
 }

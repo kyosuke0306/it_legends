@@ -2,7 +2,7 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>IT Legends</title>
     <link rel="stylesheet" href="style.css" />
     <script type="importmap">
@@ -15,23 +15,17 @@
     </script>
   </head>
   <body>
-    <!-- はじめての人：主人公の職種を選ぶ -->
+    <!-- はじめて：主人公の職種を選ぶ -->
     <section id="start" class="start hidden">
       <h1>IT Legends</h1>
-      <p class="lead">
-        あなたはIT業界で働く、ふつうの一人。<br />
-        小さな部屋で会社を立ち上げ、仲間を集め、<br />
-        いつか時を超えて現れる <b>ITの偉人たち</b> とチームを組もう。
-      </p>
+      <p class="lead">小さな部屋から、伝説のIT会社へ。</p>
       <div class="form">
-        <label>あなたの名前 <input id="start-name" maxlength="12" value="わたし" /></label>
-        <label>会社の名前 <input id="start-company" maxlength="16" value="ガレージ・ラボ" /></label>
+        <input id="start-name" maxlength="12" value="わたし" aria-label="あなたの名前" />
+        <input id="start-company" maxlength="16" value="ガレージ・ラボ" aria-label="会社の名前" />
       </div>
-      <h2>あなたの職種を選んでください</h2>
       <div id="start-jobs" class="jobs"></div>
-      <button id="start-go" class="big" disabled>この職種で始める</button>
-      <p class="muted small">ほかの端末で遊んでいた人は、ログインすると続きから遊べます</p>
-      <button class="sync login">ログイン</button>
+      <button id="start-go" class="big" disabled>はじめる</button>
+      <button class="sync login start-sync"></button>
     </section>
 
     <div id="game" class="hidden">
@@ -41,24 +35,19 @@
           <div class="nums"><span id="money"></span><span id="rep"></span></div>
         </div>
         <div class="hbtns">
-          <button class="sync login" title="Google でログインして保存・同期">ログイン</button>
-          <button id="open-settings" class="icon" aria-label="設定">⚙</button>
+          <button class="sync login" aria-label="ログイン"></button>
+          <button id="open-settings" class="icon-btn" aria-label="設定"></button>
         </div>
       </header>
-      <nav class="tabs">
-        <button class="tab active" data-view="office">会社</button>
-        <button class="tab" data-view="work">仕事 <span class="badge" id="badge-work"></span></button>
-        <button class="tab" data-view="team">仲間</button>
-        <button class="tab" data-view="product">製品</button>
-        <button class="tab" data-view="legends">偉人 <span id="progress"></span></button>
-      </nav>
 
       <main>
         <section id="view-office" class="view active">
-          <div id="encounter"></div>
-          <div class="stage-wrap office"><canvas id="office-canvas"></canvas></div>
+          <div class="stage-wrap office">
+            <canvas id="office-canvas"></canvas>
+            <div id="office-chips" class="chips"></div>
+            <div id="encounter"></div>
+          </div>
           <div id="office-info"></div>
-          <h3>できごと</h3>
           <ul id="log" class="log"></ul>
         </section>
         <section id="view-work" class="view"></section>
@@ -66,15 +55,20 @@
         <section id="view-product" class="view"></section>
         <section id="view-legends" class="view"><div id="zukan-grid" class="grid"></div></section>
       </main>
+
+      <nav class="tabbar">
+        <button class="tab active" data-view="office" data-icon="home">会社<i class="dot" id="dot-office"></i></button>
+        <button class="tab" data-view="work" data-icon="task">仕事<i class="dot" id="dot-work"></i></button>
+        <button class="tab" data-view="team" data-icon="people">仲間</button>
+        <button class="tab" data-view="product" data-icon="box">製品</button>
+        <button class="tab" data-view="legends" data-icon="crown">偉人</button>
+      </nav>
     </div>
 
-    <!-- 仕事・開発に人を割り当てる -->
-    <dialog id="assign">
-      <button class="close" aria-label="閉じる">×</button>
+    <dialog id="assign" class="sheet">
       <div id="assign-body"></div>
     </dialog>
 
-    <!-- 偉人の詳細・仲間になる演出 -->
     <dialog id="detail">
       <button class="close" aria-label="閉じる">×</button>
       <div class="detail-body">
@@ -83,7 +77,6 @@
       </div>
     </dialog>
 
-    <!-- お知らせ（おかえりなさい・結果） -->
     <dialog id="notice">
       <div id="notice-body"></div>
       <button class="big" id="notice-ok">OK</button>

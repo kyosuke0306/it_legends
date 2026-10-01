@@ -11,15 +11,15 @@ export const DAY = 24 * HOUR;
 //   teamSpeed / teamReward / teamSuccess / teamQuality / teamXp … その人が参加した仕事・開発だけに効く
 //   income / offers / nextTrend … 会社にいるだけで効く
 export const JOBS = {
-  se: { name: 'SE', full: 'システムエンジニア', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamReward: 0.1 }, perkText: '担当した仕事の報酬 +10%', shirt: 0x4a78c2 },
-  pg: { name: 'プログラマー', full: 'プログラマー', w: { idea: 1, tech: 3.5, plan: 1, talk: 0.5 }, perk: { teamSpeed: 0.15 }, perkText: '担当した仕事が 15% 早く終わる', shirt: 0x2f2f3a },
-  infra: { name: 'インフラ', full: 'インフラエンジニア', w: { idea: 0.5, tech: 3, plan: 2, talk: 0.5 }, perk: { teamSuccess: 0.1 }, perkText: '担当した仕事の成功率 +10%', shirt: 0x3f8f6b },
-  designer: { name: 'デザイナー', full: 'デザイナー', w: { idea: 3.5, tech: 1, plan: 1, talk: 1.5 }, perk: { teamQuality: 0.2 }, perkText: '開発した製品の出来 +20%', shirt: 0xe0607e },
-  data: { name: 'データ分析', full: 'データサイエンティスト', w: { idea: 2, tech: 2.5, plan: 1.5, talk: 0.5 }, perk: { nextTrend: 1 }, perkText: '次の流行が前もって分かる', shirt: 0x7a5cc4 },
-  pm: { name: 'PM', full: 'プロジェクトマネージャー', w: { idea: 1, tech: 1, plan: 2.5, talk: 2.5 }, perk: { teamSpeed: 0.1, teamSuccess: 0.05 }, perkText: 'チームの仕事が 10% 早く、成功率 +5%', shirt: 0x2d6ea8 },
-  gm: { name: 'GM', full: 'ゼネラルマネージャー', w: { idea: 2, tech: 1, plan: 2, talk: 2 }, perk: { teamXp: 0.5 }, perkText: 'チーム全員の成長 +50%', shirt: 0x50505a },
-  consul: { name: 'コンサル', full: 'ITコンサルタント', w: { idea: 2, tech: 1, plan: 2, talk: 3 }, perk: { teamReward: 0.2 }, perkText: '担当した仕事の報酬 +20%', shirt: 0x24324a },
-  sales: { name: '営業', full: 'IT営業', w: { idea: 1, tech: 0.5, plan: 1, talk: 4 }, perk: { offers: 1 }, perkText: '届く依頼が 1 件増える', shirt: 0xc9822c },
+  se: { name: 'SE', full: 'システムエンジニア', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamReward: 0.1 }, perkText: '報酬 +10%', shirt: 0x4a78c2 },
+  pg: { name: 'プログラマー', full: 'プログラマー', w: { idea: 1, tech: 3.5, plan: 1, talk: 0.5 }, perk: { teamSpeed: 0.15 }, perkText: '速さ +15%', shirt: 0x2f2f3a },
+  infra: { name: 'インフラ', full: 'インフラエンジニア', w: { idea: 0.5, tech: 3, plan: 2, talk: 0.5 }, perk: { teamSuccess: 0.1 }, perkText: '成功率 +10%', shirt: 0x3f8f6b },
+  designer: { name: 'デザイナー', full: 'デザイナー', w: { idea: 3.5, tech: 1, plan: 1, talk: 1.5 }, perk: { teamQuality: 0.2 }, perkText: '製品の出来 +20%', shirt: 0xe0607e },
+  data: { name: 'データ分析', full: 'データサイエンティスト', w: { idea: 2, tech: 2.5, plan: 1.5, talk: 0.5 }, perk: { nextTrend: 1 }, perkText: '次の流行が見える', shirt: 0x7a5cc4 },
+  pm: { name: 'PM', full: 'プロジェクトマネージャー', w: { idea: 1, tech: 1, plan: 2.5, talk: 2.5 }, perk: { teamSpeed: 0.1, teamSuccess: 0.05 }, perkText: '速さ +10%  成功率 +5%', shirt: 0x2d6ea8 },
+  gm: { name: 'GM', full: 'ゼネラルマネージャー', w: { idea: 2, tech: 1, plan: 2, talk: 2 }, perk: { teamXp: 0.5 }, perkText: 'チームの成長 +50%', shirt: 0x50505a },
+  consul: { name: 'コンサル', full: 'ITコンサルタント', w: { idea: 2, tech: 1, plan: 2, talk: 3 }, perk: { teamReward: 0.2 }, perkText: '報酬 +20%', shirt: 0x24324a },
+  sales: { name: '営業', full: 'IT営業', w: { idea: 1, tech: 0.5, plan: 1, talk: 4 }, perk: { offers: 1 }, perkText: '依頼 +1件', shirt: 0xc9822c },
 };
 
 // 会社の広さ。cap は入れる人数（自分も含む）、tier は受けられる仕事の大きさ
@@ -102,7 +102,7 @@ export const LEGEND_RULES = {
     hint: 'ガレージで会社をやっていると…',
     join: 0.4,
     ability: { teamQuality: 0.6, income: 0.1 },
-    abilityText: '開発に参加すると製品の出来 +60%、会社の全製品の収入 +10%',
+    abilityText: '製品の出来 +60%  全製品の収入 +10%',
     scene: 'ガレージの前で、黒いタートルネックの男がこちらを見ている…',
   },
   gates: {
@@ -111,7 +111,7 @@ export const LEGEND_RULES = {
     hint: '自社製品を 3 つ売り出すと…',
     join: 0.4,
     ability: { income: 0.25 },
-    abilityText: '会社の全製品の収入 +25%',
+    abilityText: '全製品の収入 +25%',
     scene: '製品の売れ行きを熱心に調べている眼鏡の若者がいる…',
   },
   zuckerberg: {
@@ -120,7 +120,7 @@ export const LEGEND_RULES = {
     hint: 'Web の仕事を 10 回こなすと…',
     join: 0.4,
     ability: { incomeGenre: { web: 0.6, app: 0.3 } },
-    abilityText: 'Webサービスの収入 +60%、スマホアプリの収入 +30%',
+    abilityText: 'Web の収入 +60%  アプリの収入 +30%',
     scene: 'パーカー姿の学生が、ノートPCで何かを作っている…',
   },
   torvalds: {
@@ -129,7 +129,7 @@ export const LEGEND_RULES = {
     hint: 'インフラの仕事を 10 回こなすと…',
     join: 0.4,
     ability: { hireCost: 0.5, teamSpeed: 0.2 },
-    abilityText: '一般社員を雇う費用が半分、参加した仕事が 20% 早く終わる',
+    abilityText: '雇う費用 半分  速さ +20%',
     scene: 'ペンギンのぬいぐるみを持った青年が、サーバーをのぞきこんでいる…',
   },
   ritchie: {
@@ -138,7 +138,7 @@ export const LEGEND_RULES = {
     hint: '仕事を 120 回こなし、オフィスビルを構えると…',
     join: 0.3,
     ability: { statAll: { tech: 0.15 } },
-    abilityText: '会社の全員の技術 +15%',
+    abilityText: '全員の技術 +15%',
     scene: 'ひげの男が、分厚いプログラミングの本を静かに読んでいる…',
   },
   bernerslee: {
@@ -147,7 +147,7 @@ export const LEGEND_RULES = {
     hint: 'Web の仕事を 30 回こなし、評判が 1500 を超えると…',
     join: 0.3,
     ability: { offers: 2, incomeGenre: { web: 0.3 } },
-    abilityText: '届く依頼が 2 件増える、Webサービスの収入 +30%',
+    abilityText: '依頼 +2件  Web の収入 +30%',
     scene: '「情報をつなぐ仕組み」の図を描いている紳士がいる…',
   },
   hopper: {
@@ -156,7 +156,7 @@ export const LEGEND_RULES = {
     hint: '一般社員を 8 人以上雇うと…',
     join: 0.3,
     ability: { xpAll: 1 },
-    abilityText: '会社の全員の成長が 2 倍',
+    abilityText: '全員の成長 2倍',
     scene: '海軍の制服の女性が、若手社員にていねいに教えている…',
   },
   hamilton: {
@@ -165,7 +165,7 @@ export const LEGEND_RULES = {
     hint: '宇宙の仕事を 3 回やりとげると…',
     join: 0.3,
     ability: { alwaysSuccess: 1 },
-    abilityText: '参加した仕事は必ず成功する',
+    abilityText: '担当した仕事は必ず成功',
     scene: '背丈ほどのプログラムの紙の束の横に、女性が立っている…',
   },
   vonneumann: {
@@ -174,7 +174,7 @@ export const LEGEND_RULES = {
     hint: '評判が 5000 を超えると…',
     join: 0.3,
     ability: { teamSpeed: 0.4, teamReward: 0.2 },
-    abilityText: '参加した仕事が 40% 早く終わり、報酬 +20%',
+    abilityText: '速さ +40%  報酬 +20%',
     scene: '暗算で何かを一瞬で解いた紳士が、にやりと笑った…',
   },
   turing: {
@@ -183,7 +183,7 @@ export const LEGEND_RULES = {
     hint: 'AI の仕事を 10 回こなすと…',
     join: 0.2,
     ability: { teamSuccess: 0.2, incomeGenre: { ai: 0.6 } },
-    abilityText: '参加した仕事の成功率 +20%、AIサービスの収入 +60%',
+    abilityText: '成功率 +20%  AI の収入 +60%',
     scene: '「機械は考えることができるか？」とつぶやく青年がいる…',
   },
   lovelace: {
@@ -192,7 +192,7 @@ export const LEGEND_RULES = {
     hint: '偉人が 8 人以上集まると…',
     join: 0.2,
     ability: { teamQuality: 0.8, decaySlow: 0.5 },
-    abilityText: '開発に参加すると製品の出来 +80%、製品の収入が長持ちする',
+    abilityText: '製品の出来 +80%  収入が長持ち',
     scene: '19世紀のドレスの女性が、計算機の設計図に見入っている…',
   },
 };

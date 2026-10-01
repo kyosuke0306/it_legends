@@ -54,7 +54,7 @@ export function newGame({ job, name, company }, now = Date.now()) {
   s.members.push(hero);
   for (let i = 0; i < 3; i++) addOffer(s, now, 0, true); // 最初は短くてやさしい仕事
   refreshCandidates(s);
-  addLog(s, now, `${company} を立ち上げた！ まずは仕事を受けてみよう`);
+  addLog(s, now, `${company} 創業`);
   return s;
 }
 
@@ -199,7 +199,7 @@ function finishTask(s, task, t, ev) {
   giveXp(s, team, xp, t, ev);
   for (const m of team) m.busy = null;
   s.tasks = s.tasks.filter((x) => x !== task);
-  addLog(s, t, ok ? `「${task.title}」成功！ ${yen(money)} と評判 +${task.rep}` : `「${task.title}」はうまくいかなかった… ${yen(money)}`, ok ? 'good' : 'bad');
+  addLog(s, t, ok ? `${task.title}  成功` : `${task.title}  失敗`, ok ? 'good' : 'bad');
   ev.push({ type: 'task', ok, money, title: task.title });
 }
 
@@ -216,7 +216,7 @@ function giveXp(s, team, base, t, ev) {
       const w = m.kind === 'legend' ? Object.fromEntries(R.STAT_KEYS.map((k) => [k, m.stats[k] / 40])) : R.JOBS[m.job].w;
       for (const k of R.STAT_KEYS) m.stats[k] += Math.round(w[k] * between(s, 0.8, 1.4));
       if (m.salary) m.salary = round(m.salary * 1.08, 500);
-      addLog(s, t, `${m.name} がレベル ${m.level} になった！`, 'good');
+      addLog(s, t, `${m.name}  Lv${m.level}`, 'good');
       ev.push({ type: 'level', name: m.name, level: m.level });
     }
   }
@@ -249,7 +249,7 @@ export function startDev(s, genre, ids, now) {
   const dev = { id: newId(s), genre, members: ids, startAt: now, endsAt: now + pv.duration };
   s.devs.push(dev);
   for (const id of ids) memberById(s, id).busy = dev.id;
-  addLog(s, now, `${g.name}の開発を始めた（${yen(g.cost)}）`);
+  addLog(s, now, `${g.name} 開発開始`);
   return true;
 }
 
@@ -265,7 +265,7 @@ function finishDev(s, dev, t, ev) {
   giveXp(s, team, g.hours * 2, t, ev);
   for (const m of team) m.busy = null;
   s.devs = s.devs.filter((x) => x !== dev);
-  addLog(s, t, `新製品「${product.name}」（${g.name}）を発売！ 出来は ${stars(q)}`, 'good');
+  addLog(s, t, `${product.name}  発売`, 'good');
   ev.push({ type: 'product', name: product.name, q });
 }
 
@@ -305,7 +305,7 @@ export function hire(s, candId, now) {
   s.money -= cost;
   s.candidates = s.candidates.filter((c) => c !== m);
   s.members.push(m);
-  addLog(s, now, `${R.JOBS[m.job].full}の ${m.name} が入社した！`, 'good');
+  addLog(s, now, `${m.name}  入社`, 'good');
   return true;
 }
 
@@ -313,7 +313,7 @@ export function dismiss(s, id, now) {
   const m = memberById(s, id);
   if (!m || m.kind !== 'staff' || m.busy) return false;
   s.members = s.members.filter((x) => x !== m);
-  addLog(s, now, `${m.name} が会社を去った`);
+  addLog(s, now, `${m.name}  退社`);
   return true;
 }
 
@@ -323,33 +323,25 @@ export function upgradeOffice(s, now) {
   if (!next || s.money < next.cost || s.rep < next.rep) return false;
   s.money -= next.cost;
   s.office++;
-  addLog(s, now, `${next.name}に引っ越した！ ${next.cap} 人まで入れるようになった`, 'good');
+  addLog(s, now, `${next.name}へ引っ越し`, 'good');
   return true;
 }
 
 // ---------- 偉人との出会い ----------
 export const ownedLegends = (s) => new Set(s.members.filter((m) => m.kind === 'legend').map((m) => m.legend));
 
-// 出会いの条件ごとの達成状況 [{ text, ok }]
+// 出会いの条件ごとの達成状況 [{ label, ratio, ok }]
 export function meetProgress(s, id) {
   const meet = R.LEGEND_RULES[id].meet;
   const out = [];
-  if (meet.office) out.push({ text: `${R.OFFICES[meet.office].name}以上`, ok: s.office >= meet.office });
-  if (meet.rep) out.push({ text: `評判 ${s.rep}/${meet.rep}`, ok: s.rep >= meet.rep });
-  for (const [cat, n] of Object.entries(meet.cat ?? {})) {
-    const c = s.counts.cat[cat] ?? 0;
-    out.push({ text: `${R.CAT_NAMES[cat]}の仕事 ${Math.min(c, n)}/${n}回`, ok: c >= n });
-  }
-  if (meet.tasks) out.push({ text: `仕事 ${Math.min(s.counts.tasks, meet.tasks)}/${meet.tasks}回`, ok: s.counts.tasks >= meet.tasks });
-  if (meet.products) out.push({ text: `製品の発売 ${Math.min(s.counts.products, meet.products)}/${meet.products}`, ok: s.counts.products >= meet.products });
-  if (meet.staff) {
-    const n = s.members.filter((m) => m.kind === 'staff').length;
-    out.push({ text: `一般社員 ${Math.min(n, meet.staff)}/${meet.staff}人`, ok: n >= meet.staff });
-  }
-  if (meet.legends) {
-    const n = ownedLegends(s).size;
-    out.push({ text: `偉人 ${Math.min(n, meet.legends)}/${meet.legends}人`, ok: n >= meet.legends });
-  }
+  const add = (label, now, need) => out.push({ label: `${label} ${Math.min(now, need)}/${need}`, ratio: Math.min(1, now / need), ok: now >= need });
+  if (meet.office) out.push({ label: R.OFFICES[meet.office].name, ratio: Math.min(1, s.office / meet.office), ok: s.office >= meet.office });
+  if (meet.rep) add('評判', s.rep, meet.rep);
+  for (const [cat, n] of Object.entries(meet.cat ?? {})) add(R.CAT_NAMES[cat], s.counts.cat[cat] ?? 0, n);
+  if (meet.tasks) add('仕事', s.counts.tasks, meet.tasks);
+  if (meet.products) add('製品', s.counts.products, meet.products);
+  if (meet.staff) add('社員', s.members.filter((m) => m.kind === 'staff').length, meet.staff);
+  if (meet.legends) add('偉人', ownedLegends(s).size, meet.legends);
   return out;
 }
 
@@ -365,7 +357,7 @@ function rollEncounter(s, t, ev) {
   const l = pick(s, ready);
   s.encounter = { id: l.id, at: t, until: t + R.ENCOUNTER_LIFE };
   s.met[l.id] = { ...s.met[l.id], seen: true };
-  addLog(s, t, `時空のゆがみ… 誰かが現れたようだ！`, 'legend');
+  addLog(s, t, `誰かが現れた`, 'legend');
   ev.push({ type: 'encounter', id: l.id });
 }
 
@@ -383,12 +375,12 @@ export function scout(s, now) {
   s.encounter = null;
   if (ok) {
     s.members.push(makeLegend(s, id));
-    addLog(s, now, `${LEGEND_BY_ID[id].name} が仲間になった！！`, 'legend');
+    addLog(s, now, `${LEGEND_BY_ID[id].name}  仲間に`, 'legend');
     return 'joined';
   }
   met.tries = (met.tries ?? 0) + 1;
   met.cooldown = now + R.RETRY_COOLDOWN;
-  addLog(s, now, `${LEGEND_BY_ID[id].name} は去っていった… また会えるかもしれない`, 'bad');
+  addLog(s, now, `${LEGEND_BY_ID[id].name}  去った`, 'bad');
   return 'refused';
 }
 
@@ -431,7 +423,7 @@ export function advance(s, now, ev = []) {
     }
     // 偉人との出会い（1時間ごとに判定）
     if (s.encounter && s.encounter.until <= next) {
-      addLog(s, s.encounter.until, `${LEGEND_BY_ID[s.encounter.id].name} はどこかへ消えてしまった…`, 'bad');
+      addLog(s, s.encounter.until, `${LEGEND_BY_ID[s.encounter.id].name}  去った`, 'bad');
       s.met[s.encounter.id] = { ...s.met[s.encounter.id], cooldown: s.encounter.until + R.RETRY_COOLDOWN };
       s.encounter = null;
     }
@@ -454,5 +446,3 @@ function addLog(s, t, text, kind = '') {
   s.log.length = Math.min(s.log.length, 60);
 }
 
-export const yen = (n) => `${Math.round(n).toLocaleString('ja-JP')}円`;
-export const stars = (q) => '★'.repeat(Math.max(1, Math.min(5, Math.round(q * 2)))) + '☆'.repeat(5 - Math.max(1, Math.min(5, Math.round(q * 2))));
