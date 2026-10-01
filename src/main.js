@@ -72,7 +72,7 @@ const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
 function avatar(m) {
   if (m.kind === 'legend') return `<span class="av legend" style="--c:${RARITY[byId[m.legend].rarity].css}"><img data-thumb="${m.legend}" alt=""></span>`;
   const c = m.kind === 'hero' ? 'var(--accent)' : hex(R.JOBS[m.job].shirt);
-  return `<span class="av" style="--c:${c}">${esc(m.name.replace(/\s.*/, '').slice(0, 1))}</span>`;
+  return `<span class="av ${m.kind === 'temp' ? 'temp' : ''}" style="--c:${c}">${esc(m.name.replace(/\s.*/, '').slice(0, 1))}</span>`;
 }
 // 4つの能力を小さな棒で（ラベルは1文字）
 function statBars(st) {
@@ -281,7 +281,7 @@ function renderOffice() {
 function renderWork() {
   const byIdM = (id) => S.members.find((m) => m.id === id);
   const running = S.tasks
-    .map((t) => `<div class="panel run"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${t.members.map((id) => avatar(byIdM(id))).join('')}</span></div>${progress(t.startAt, t.endsAt)}</div>`)
+    .map((t) => `<div class="panel run"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>${progress(t.startAt, t.endsAt)}</div>`)
     .join('');
   const canWork = G.freeMembers(S).length > 0;
   const offers = S.offers
@@ -306,26 +306,41 @@ function assignTask(offerId) {
     max: o.team,
     w: o.w,
     need: o.diff,
-    preview: (ids) => {
-      const p = G.taskPreview(S, o, ids);
+    // 要員派遣（お金を払って、席の数を超えて仕事の間だけ人を借りる）
+    temp: { make: (i) => G.makeTemp(S, o, i), fee: G.tempFee(o) },
+    preview: (ids, temps) => {
+      const p = G.taskPreview(S, o, ids, temps);
       return `${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(p.duration))}${val('coin', yen(p.reward))}`;
     },
-    confirm: (ids) => G.startTask(S, offerId, ids, Date.now()),
+    confirm: (ids, temps) => G.startTask(S, offerId, ids, Date.now(), temps.length),
   });
 }
 
 // 人を選ぶ（仕事・開発で共通）。下から出るシート
-function openAssign({ title, max, w, need, preview, confirm, extra = '' }) {
+// temp があれば要員派遣の人も選べる（自分の会社から1人は出す）
+function openAssign({ title, max, w, need, preview, confirm, temp = null, extra = '' }) {
   const dlg = $('#assign');
   const chosen = new Set();
+  let nTemps = 0;
   const power = (m) => Math.round(G.teamPower(S, [m], w));
   const free = G.freeMembers(S).sort((a, b) => power(b) - power(a));
   const draw = () => {
+    // 席に空きがあるうちは派遣の人を減らし、自分の会社の人を優先する
+    nTemps = Math.max(0, Math.min(nTemps, max - Math.max(1, chosen.size)));
     const ids = [...chosen];
+    const temps = temp ? Array.from({ length: nTemps }, (_, i) => temp.make(i)) : [];
     // 選んだ人の力の合計と、この仕事に必要な力（ゲージがいっぱいになれば十分）
-    const sum = ids.reduce((a, id) => a + power(free.find((m) => m.id === id)), 0);
+    const sum = ids.reduce((a, id) => a + power(free.find((m) => m.id === id)), 0) + temps.reduce((a, m) => a + power(m), 0);
+    const size = chosen.size + nTemps;
+    // 派遣：借りている人（押すと帰す）と、もう1人借りるボタン
+    const room = temp && Math.max(1, chosen.size) + nTemps < max;
+    const canMore = room && S.money >= temp.fee * (nTemps + 1);
+    const tempRow = (m, on) => `<button class="person temp ${on ? 'active' : ''}" data-temp="${on ? 'drop' : 'add'}" ${on || canMore ? '' : 'disabled'}>
+        ${avatar(m)}<span class="pname">${esc(m.name)}<small>${R.JOBS[m.job].name} Lv${m.level}</small></span><span class="fee">${icon('coin')}${yen(temp.fee)}</span><span class="pw">${icon('bolt')}${power(m)}</span>
+      </button>`;
+    const tempHtml = temp ? `<div class="sec temp-head">${icon('plus')}<b>派遣</b></div>${temps.map((m) => tempRow(m, true)).join('')}${room ? tempRow(temp.make(nTemps), false) : ''}` : '';
     $('#assign-body').innerHTML = `
-      <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${icon('people')}${chosen.size}/${max > 20 ? free.length : max}</span></div>
+      <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${icon('people')}${size}/${max > 20 ? free.length : max}</span></div>
       ${extra}
       <div class="need ${sum >= need ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / need))}"></i></span><span class="need-num"><b>${sum}</b>/${need}</span></div>
       <div class="pick">${free
@@ -334,9 +349,9 @@ function openAssign({ title, max, w, need, preview, confirm, extra = '' }) {
             ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
           </button>`,
         )
-        .join('')}</div>
-      <div class="preview">${ids.length ? preview(ids) : '&nbsp;'}</div>
-      <button class="big" id="assign-go" ${ids.length ? '' : 'disabled'}>任せる</button>`;
+        .join('')}${tempHtml}</div>
+      <div class="preview">${ids.length ? preview(ids, temps) : '&nbsp;'}</div>
+      <button class="big" id="assign-go" ${ids.length ? '' : 'disabled'}>任せる${nTemps ? ` <small>${icon('coin')}-${yen(temp.fee * nTemps)}</small>` : ''}</button>`;
     fillThumbs($('#assign-body'));
     $('#assign-body').querySelectorAll('.person').forEach(
       (b) =>
@@ -347,8 +362,15 @@ function openAssign({ title, max, w, need, preview, confirm, extra = '' }) {
           draw();
         }),
     );
+    $('#assign-body').querySelectorAll('[data-temp]').forEach(
+      (b) =>
+        (b.onclick = () => {
+          nTemps += b.dataset.temp === 'add' ? 1 : -1;
+          draw();
+        }),
+    );
     $('#assign-go').onclick = () => {
-      if (confirm([...chosen])) {
+      if (confirm([...chosen], temps)) {
         dlg.close();
         commit();
       }

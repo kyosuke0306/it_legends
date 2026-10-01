@@ -14,6 +14,7 @@ const SPEED = 0.45;
 // タップしたときに出す名前と職種
 function labelOf(m) {
   if (m.kind === 'legend') return { name: m.name, sub: LEGEND_BY_ID[m.legend].title };
+  if (m.kind === 'temp') return { name: m.name, sub: `${JOBS[m.job].full}・派遣` };
   return { name: displayName(m), sub: JOBS[m.job].full };
 }
 const GUEST_LOOKS = [
@@ -69,18 +70,20 @@ export class Office {
   // ゲームの状態に合わせて、部屋と人をそろえる
   sync(state) {
     if (state.office !== this.level) this.buildRoom(state.office);
-    const ids = new Set(state.members.map((m) => m.id));
+    // 派遣の人は仕事の間だけ事務所にいる（席が足りないときは机の横に立つ）
+    const people = [...state.members, ...state.tasks.flatMap((x) => x.temps ?? [])];
+    const ids = new Set(people.map((m) => m.id));
     for (const [id, p] of this.people) {
       if (!ids.has(id)) {
         this.scene.remove(p.holder);
         this.people.delete(id);
       }
     }
-    state.members.forEach((m, i) => {
+    people.forEach((m, i) => {
       let p = this.people.get(m.id);
       if (!p) {
         p = { holder: new THREE.Group(), obj: null, target: null, wait: Math.random() * 2 };
-        p.holder.position.copy(this.randomSpot());
+        p.holder.position.copy(m.kind === 'temp' ? this.spots.door : this.randomSpot());
         this.scene.add(p.holder);
         this.people.set(m.id, p);
         this.makeBody(m).then((obj) => {
@@ -93,7 +96,8 @@ export class Office {
       p.busy = Boolean(m.busy);
       p.hero = m.kind === 'hero';
       p.label = labelOf(m);
-      p.desk = this.desks[i % this.desks.length];
+      const desk = this.desks[i % this.desks.length];
+      p.desk = i < this.desks.length ? desk : desk.clone().add(new THREE.Vector3(0.32 * Math.ceil(i / this.desks.length), 0, 0.15));
     });
     this.activity = state.activity;
     this.board.visible = state.activity === 'meetup';

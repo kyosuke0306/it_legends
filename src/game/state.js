@@ -167,9 +167,32 @@ function addOffer(s, now, forceTier, easy = false) {
 }
 const maxOffers = (s) => R.BASE_OFFERS + companyEffects(s).offers;
 
-// 見込み（画面に出す）
-export function taskPreview(s, offer, ids) {
-  const team = ids.map((id) => memberById(s, id));
+// ---------- 要員派遣（仕事の間だけ借りる人） ----------
+// その仕事に一番向いた職種
+function bestJob(w) {
+  const fit = (j) => R.STAT_KEYS.reduce((a, k) => a + R.JOBS[j].w[k] * w[k], 0) / R.STAT_KEYS.reduce((a, k) => a + R.JOBS[j].w[k], 0);
+  return Object.keys(R.JOBS).reduce((a, b) => (fit(b) > fit(a) ? b : a));
+}
+// i 人目に来る人。選ぶ前に力を見せるため、記録の乱数は使わず仕事ごとに決まった人が来る
+export function makeTemp(s, offer, i) {
+  let x = Math.floor(hash01(s.seed, offer.id, i, 'temp') * 2 ** 31);
+  const r = () => {
+    x = (Math.imul(x, 1103515245) + 12345) & 0x7fffffff;
+    return x / 2 ** 31;
+  };
+  const job = bestJob(offer.w);
+  const j = R.JOBS[job];
+  const p = randomPerson(r);
+  const level = 1 + s.office * 2;
+  const stats = {};
+  for (const k of R.STAT_KEYS) stats[k] = Math.round(4 + j.w[k] * (3 + 1.5 * r()) + (level - 1) * j.w[k] * 1.1);
+  return { id: -(offer.id * 10 + i + 1), kind: 'temp', job, name: p.name, look: { ...p.look, shirt: j.shirt }, stats, level, xp: 0, busy: offer.id };
+}
+export const tempFee = (offer) => round(offer.reward * R.TEMP_FEE);
+
+// 見込み（画面に出す）。temps は派遣の人
+export function taskPreview(s, offer, ids, temps = offer.temps ?? []) {
+  const team = [...ids.map((id) => memberById(s, id)), ...temps];
   const te = teamEffects(team);
   const power = teamPower(s, team, offer.w);
   const chance = te.alwaysSuccess ? 1 : Math.min(0.98, Math.max(0.05, 0.9 * (power / offer.diff) + te.teamSuccess));
@@ -177,12 +200,17 @@ export function taskPreview(s, offer, ids) {
   return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)) };
 }
 
-export function startTask(s, offerId, ids, now) {
+// nTemps は派遣で借りる人数（自分の会社から1人は出す）
+export function startTask(s, offerId, ids, now, nTemps = 0) {
   const offer = s.offers.find((o) => o.id === offerId);
-  if (!offer || !ids.length || ids.length > offer.team) return false;
+  if (!offer || !ids.length || ids.length + nTemps > offer.team) return false;
   if (ids.some((id) => memberById(s, id)?.busy)) return false;
-  const pv = taskPreview(s, offer, ids);
-  const task = { ...offer, members: ids, startAt: now, endsAt: now + pv.duration };
+  const fee = tempFee(offer) * nTemps;
+  if (nTemps && s.money < fee) return false;
+  const temps = Array.from({ length: nTemps }, (_, i) => makeTemp(s, offer, i));
+  s.money -= fee;
+  const pv = taskPreview(s, offer, ids, temps);
+  const task = { ...offer, members: ids, temps, startAt: now, endsAt: now + pv.duration };
   s.offers = s.offers.filter((o) => o !== offer);
   s.tasks.push(task);
   for (const id of ids) memberById(s, id).busy = task.id;

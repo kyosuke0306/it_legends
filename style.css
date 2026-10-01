@@ -307,6 +307,19 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 .need-num { font-variant-numeric: tabular-nums; }
 .need-num b { color: var(--text); }
 .need.full .need-num b { color: var(--ok); }
+/* 要員派遣（仕事の間だけ借りる人）。点線で自分の会社の人と分ける */
+.sec.temp-head { margin: 10px 2px 2px; }
+.sec.temp-head b { color: var(--text); font-size: 0.9rem; }
+.sec.temp-head .ic { width: 1em; height: 1em; }
+.person.temp { border: 2px dashed var(--line); }
+.person.temp.active { border: 2px solid var(--accent); }
+.person.temp:disabled { opacity: 0.45; }
+.person .fee { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; font-size: 0.85rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.person .fee .ic { width: 1em; height: 1em; color: var(--gold); }
+.person.temp .pw { margin-left: 10px; }
+.av.temp { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--muted); }
+#assign-go small { font-size: 0.8em; opacity: 0.85; display: inline-flex; align-items: center; gap: 2px; }
+#assign-go small .ic { width: 1em; height: 1em; }
 .preview { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 12px; min-height: 28px; font-weight: 700; font-size: 1.05rem; }
 .preview .val .ic { width: 1.1em; height: 1.1em; }
 .sheet .big { margin-top: 12px; }
