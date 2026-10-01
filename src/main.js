@@ -15,8 +15,6 @@ document.getElementById('version').textContent = VERSION;
 
 const SAVE_KEY = 'it_legends.save.v1';
 let S = null; // ゲームの状態
-let user = null; // Google でログインしている人
-let lastCloudSave = null;
 let view = 'office';
 let office;
 
@@ -36,7 +34,7 @@ function save() {
   try {
     localStorage.setItem(SAVE_KEY, json);
   } catch {}
-  if (user) cloud.flushSoon(user.uid, () => JSON.stringify(S), (e) => { lastCloudSave = e ? 'error' : Date.now(); });
+  cloud.changed();
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
@@ -612,45 +610,54 @@ function welcomeBack(ev, away) {
   notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}ぶり</p><ul>${lines.map((l) => `<li>${l}</li>`).join('')}</ul>`);
 }
 
-// ---------- 設定・ログイン ----------
+// ---------- 設定・ログイン（Google ログインで保存・同期。src/cloud.js） ----------
+let syncState = { text: 'ログイン', cls: 'login' };
+function showSync(text, cls) {
+  syncState = { text, cls };
+  for (const el of document.querySelectorAll('.sync')) {
+    el.textContent = cls === 'login' && text === 'ログイン' ? 'ログイン' : text;
+    el.className = `sync ${cls}`;
+  }
+  if ($('#settings').open) renderSettings();
+}
+async function toggleLogin() {
+  const u = cloud.currentUser();
+  if (!u) return cloud.login();
+  if (confirm(`${u.email} でログイン中です。ログアウトしますか？\n（記録はクラウドに残ります）`)) await cloud.logout();
+}
+document.querySelectorAll('.sync').forEach((b) => {
+  b.onclick = toggleLogin;
+  b.addEventListener('pointerdown', cloud.warmUp, { once: true });
+});
+
 function renderSettings() {
-  const cloudPart = !cloud.cloudReady
-    ? '<p class="muted">Google ログインでの保存は準備中です。</p>'
-    : user
-      ? `<p>ログイン中：<b>${esc(user.displayName ?? user.email ?? '')}</b></p>
-         <p class="muted small">記録は自動でクラウドに保存されます（変化があってから約1分後・画面を閉じるとき）。${
-           lastCloudSave === 'error' ? '<b class="bad">前回の保存に失敗しました</b>' : lastCloudSave ? `最後の保存 ${new Date(lastCloudSave).toLocaleTimeString('ja-JP')}` : ''
-         }</p>
-         <button class="btn" id="save-now">いま保存する</button> <button class="btn ghost" id="logout">ログアウト</button>`
-      : `<p>Google でログインすると、記録がクラウドに保存され、別のスマホやパソコンでも続きから遊べます。</p>
-         <button class="btn" id="login">Google でログイン</button>`;
+  const u = cloud.currentUser();
   $('#settings-body').innerHTML = `
     <h2>設定</h2>
     <h3>記録の保存</h3>
-    ${cloudPart}
+    ${
+      u
+        ? `<p>ログイン中：<b>${esc(u.displayName ?? u.email ?? '')}</b>（${esc(syncState.text)}）</p>
+           <p class="muted small">記録は自動でクラウドに保存され、ほかのスマホやパソコンで遊んだ内容も反映されます。</p>
+           <button class="btn ghost" id="logout">ログアウト</button>`
+        : `<p>Google でログインすると、記録がクラウドに保存され、ほかのスマホやパソコンでも続きから遊べます。</p>
+           <button class="btn" id="login">Google でログイン</button>`
+    }
     <p class="muted small">ログインしなくても、この端末のブラウザには自動で保存されます。</p>
     ${S ? `<h3>最初から</h3><button class="btn ghost danger" id="reset">記録を消して最初から始める</button>` : ''}`;
-  $('#login') && ($('#login').onclick = login);
-  $('#logout') &&
-    ($('#logout').onclick = async () => {
-      await cloud.flush();
-      await cloud.signOut();
-      user = null;
-      renderSettings();
-    });
-  $('#save-now') &&
-    ($('#save-now').onclick = async () => {
-      save();
-      await cloud.flush();
-      renderSettings();
-    });
+  if ($('#login')) {
+    $('#login').onclick = () => cloud.login();
+    cloud.warmUp(); // 設定を開いた時点で読み始める
+  }
+  $('#logout') && ($('#logout').onclick = toggleLogin);
   $('#reset') &&
-    ($('#reset').onclick = () => {
-      if (!confirm('本当に記録を消しますか？（元に戻せません）')) return;
+    ($('#reset').onclick = async () => {
+      if (!confirm(`本当に記録を消しますか？（元に戻せません）${u ? '\nクラウドの記録も消えます。' : ''}`)) return;
+      S = null;
       try {
         localStorage.removeItem(SAVE_KEY);
       } catch {}
-      if (user) cloud.pushSave(user.uid, JSON.stringify(null)).catch(() => {});
+      await cloud.clear().catch(() => {});
       location.reload();
     });
 }
@@ -659,44 +666,33 @@ $('#open-settings').onclick = () => {
   $('#settings').showModal();
 };
 
-async function login() {
-  try {
-    user = await cloud.signIn();
-    await syncWithCloud();
-  } catch (e) {
-    console.warn(e);
-    alert('ログインできませんでした');
-  }
-  renderSettings();
+const legendCount = (s) => s.members.filter((m) => m.kind === 'legend').length;
+
+// ログインしたとき：クラウドとこの端末の記録のどちらを使うか
+async function decide(remote) {
+  G.migrate(remote);
+  if (!S) return 'remote';
+  if (remote.seed === S.seed) return (remote.savedAt ?? 0) >= (S.savedAt ?? 0) ? 'remote' : 'local';
+  const desc = (s) => `「${s.company}」${yen(s.money)}・偉人 ${legendCount(s)}人`;
+  return confirm(
+    `クラウドに別の記録があります。\n\nクラウド：${desc(remote)}\nこの端末：${desc(S)}\n\nクラウドの記録を使いますか？（キャンセルするとこの端末の記録で上書きします）`,
+  )
+    ? 'remote'
+    : 'local';
 }
 
-// ログインしたとき：クラウドと端末の記録のうち、どちらを使うか決める
-async function syncWithCloud() {
-  const remote = await cloud.fetchSave(user.uid);
-  let rs = null;
+// クラウドの記録（ログイン時・ほかの端末で保存されたとき）を反映する
+function applyState(remote) {
+  G.migrate(remote);
+  const first = !S;
+  S = remote;
+  G.advance(S, Date.now());
   try {
-    rs = remote?.state ? JSON.parse(remote.state) : null;
+    localStorage.setItem(SAVE_KEY, JSON.stringify(S));
   } catch {}
-  if (rs?.v !== 1) rs = null;
-  else G.migrate(rs);
-  let useRemote = false;
-  if (rs && !S) useRemote = true;
-  else if (rs && S && rs.seed === S.seed) useRemote = (rs.savedAt ?? 0) > (S.savedAt ?? 0);
-  else if (rs && S) {
-    const desc = (s) => `「${s.company}」${yen(s.money)}・偉人 ${s.members.filter((m) => m.kind === 'legend').length}人`;
-    useRemote = confirm(`クラウドに別の記録があります。\n\nクラウド：${desc(rs)}\nこの端末：${desc(S)}\n\nクラウドの記録を使いますか？（キャンセルするとこの端末の記録で上書きします）`);
-  }
-  if (useRemote) {
-    S = rs;
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(S));
-    } catch {}
-    G.advance(S, Date.now());
-    enterGame();
-  } else if (S) {
-    save();
-    await cloud.flush();
-  }
+  $('#assign').close(); // 古い記録で開いていた人選びは閉じる
+  if (first || $('#game').classList.contains('hidden')) enterGame();
+  else renderAll();
 }
 
 // ---------- 起動 ----------
@@ -711,11 +707,4 @@ if (S) {
   showStart();
 }
 setInterval(tick, 1000);
-// 前回ログインしていたら、裏でログイン状態を戻してクラウドと合わせる
-cloud
-  .restoreUser()
-  .then(async (u) => {
-    user = u;
-    if (u) await syncWithCloud();
-  })
-  .catch((e) => console.warn('ログイン状態を戻せませんでした', e));
+cloud.init({ getState: () => S, applyState, decide, onStatus: showSync });

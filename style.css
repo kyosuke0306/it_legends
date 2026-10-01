@@ -390,3 +390,13 @@ h3 { font-size: 1rem; margin: 18px 0 8px; }
 .log .note { color: #2f7fb8; }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #22223a; color: #fff; border-radius: 999px; padding: 10px 18px; font-size: 0.9rem; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); z-index: 10; animation: bubble-pop 0.25s ease-out; }
 .new { display: inline-block; color: #fff; background: #ff4d6d; border-radius: 6px; padding: 1px 8px; font-weight: bold; }
+
+/* ログイン・保存の状態（src/cloud.js） */
+.hbtns { display: flex; gap: 8px; align-items: center; }
+.sync { border: 0; border-radius: 999px; padding: 7px 12px; font-size: 0.8rem; font-weight: bold; background: var(--panel); color: var(--text); white-space: nowrap; }
+.sync.login { background: var(--accent); color: #fff; }
+.sync.ok { color: #1f8a4c; }
+.sync.ok::before { content: '✓ '; }
+.sync.busy { color: var(--muted); }
+.sync.error { color: #e5484d; }
+.start .sync { margin-top: 6px; }

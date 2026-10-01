@@ -41,7 +41,7 @@ IT会社を育てる放置ゲーム（2026-10-01 にガチャから作り変え�
 - 偉人は「時を超えて現れる」。条件を満たすとまれに出会い（平均4〜5日に1回）、誘うと確率で仲間に。断られると3日会えない。偉人は席を使わない
 - 自社製品は投資。赤字はありだが会社はつぶれない
 - 画面は事務所の3D（社員と偉人が歩き回る、仕事中は机へ）。`src/office.js`
-- 記録: localStorage ＋ Google ログイン（Firebase Auth + Firestore lite、`src/cloud.js`）。**ユーザーが Firebase プロジェクトを作り `src/firebase-config.js` に値を入れるまでログインは「準備中」**（手順は README）
+- 記録: localStorage ＋ Google ログイン（`src/cloud.js`。kyosuke0306/money_manage の sync.js と同じ方式: Firebase 12.18.0 を gstatic CDN から、Firestore `users/{uid}` に `{ data: JSONの文字列, updatedAt, device }`、onSnapshot でほかの端末の変更を反映）。Firebase は前回ログインしていた人・ログインボタンに触れた人だけ読み込む。設定は `src/firebase-config.js`（プロジェクト itlegends-45d70）。この作業環境からは Google のログイン画面に行けないので、同期は偽の Firebase で2台の端末を再現して確認している
 - 知識ノート（おまけ。メインではない）: IT・人物・IT会社のカード64枚（`src/game/knowledge.js`）。仕事の種類・入社した職種・引っ越し・製品・偉人の加入/レベル3で手に入る。初めて読むと評判+1。**内容は事実を確認して書くこと**
 - バランス確認は、1日3回のぞく自動プレイのシミュレーションで行った（効率的に遊んで11人そろうのに約3か月）
 

@@ -20,11 +20,15 @@ npm start   # http://localhost:8080 を開く
 - 記録はブラウザに自動保存。Google でログインするとクラウドにも保存（下の「Google ログインの準備」）
 - 数字は `src/game/rules.js`、ゲームの中身は `src/game/state.js`
 
-## Google ログインの準備（Firebase）
+## Google ログイン（Firebase）
+
+記録は Firestore の `users/<ユーザーID>` に保存し、ほかの端末の変更も自動で反映します（`src/cloud.js`）。設定は `src/firebase-config.js`。
+
+### 準備の手順（済み）
 
 1. https://console.firebase.google.com/ でプロジェクトを作る
 2. 「Authentication」→ ログイン方法で **Google** を有効にし、「設定 → 承認済みドメイン」に `kyosuke0306.github.io` を追加
-3. 「Firestore Database」を作り、「ルール」に `firestore.rules` の中身を貼って公開
+3. 「Firestore Database」を作り、「ルール」に `firestore.rules` の中身（`users/{uid}` は本人だけ読み書き可）を貼って公開
 4. 「プロジェクトの設定」→「ウェブアプリを追加」で表示される値を `src/firebase-config.js` に貼る
 
 ## 3Dモデルを本物の顔から作る（Gemini + Tripo）

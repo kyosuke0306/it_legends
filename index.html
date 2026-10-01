@@ -30,7 +30,8 @@
       <h2>あなたの職種を選んでください</h2>
       <div id="start-jobs" class="jobs"></div>
       <button id="start-go" class="big" disabled>この職種で始める</button>
-      <p class="muted small">ログインして記録を残すこともできます（右上の ⚙ から）</p>
+      <p class="muted small">ほかの端末で遊んでいた人は、ログインすると続きから遊べます</p>
+      <button class="sync login">ログイン</button>
     </section>
 
     <div id="game" class="hidden">
@@ -39,7 +40,10 @@
           <div id="company-name" class="cname"></div>
           <div class="nums"><span id="money"></span><span id="rep"></span></div>
         </div>
-        <button id="open-settings" class="icon" aria-label="設定">⚙</button>
+        <div class="hbtns">
+          <button class="sync login" title="Google でログインして保存・同期">ログイン</button>
+          <button id="open-settings" class="icon" aria-label="設定">⚙</button>
+        </div>
       </header>
       <nav class="tabs">
         <button class="tab active" data-view="office">会社</button>
