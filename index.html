@@ -7,31 +7,31 @@
     <meta name="theme-color" content="#14123a" />
     <link rel="icon" href="assets/favicon.png" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
-    <link rel="stylesheet" href="style.css?v=12" />
+    <link rel="stylesheet" href="style.css?v=13" />
     <script type="importmap">
       {
         "imports": {
           "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-          "./src/character.js": "./src/character.js?v=12",
-          "./src/cloud.js": "./src/cloud.js?v=12",
-          "./src/data.js": "./src/data.js?v=12",
-          "./src/firebase-config.js": "./src/firebase-config.js?v=12",
-          "./src/game/names.js": "./src/game/names.js?v=12",
-          "./src/game/rules.js": "./src/game/rules.js?v=12",
-          "./src/game/state.js": "./src/game/state.js?v=12",
-          "./src/icons.js": "./src/icons.js?v=12",
-          "./src/main.js": "./src/main.js?v=12",
-          "./src/office.js": "./src/office.js?v=12",
-          "./src/show.js": "./src/show.js?v=12",
-          "./src/stage.js": "./src/stage.js?v=12",
-          "./src/version.js": "./src/version.js?v=12"
+          "./src/character.js": "./src/character.js?v=13",
+          "./src/cloud.js": "./src/cloud.js?v=13",
+          "./src/data.js": "./src/data.js?v=13",
+          "./src/firebase-config.js": "./src/firebase-config.js?v=13",
+          "./src/game/names.js": "./src/game/names.js?v=13",
+          "./src/game/rules.js": "./src/game/rules.js?v=13",
+          "./src/game/state.js": "./src/game/state.js?v=13",
+          "./src/icons.js": "./src/icons.js?v=13",
+          "./src/main.js": "./src/main.js?v=13",
+          "./src/office.js": "./src/office.js?v=13",
+          "./src/show.js": "./src/show.js?v=13",
+          "./src/stage.js": "./src/stage.js?v=13",
+          "./src/version.js": "./src/version.js?v=13"
         }
       }
     </script>
   </head>
   <body>
-    <!-- はじめて：タイトル → 名前 → 会社 → 職種（main.js の showStart） -->
+    <!-- タイトル → 名前 → 会社 → 職種（main.js の showTitle / initStart） -->
     <section id="start" class="start hidden">
       <div class="step title-step active" data-step="0">
         <div class="title-art"></div>
@@ -40,8 +40,9 @@
           <p>伝説のIT会社をつくれ</p>
         </div>
         <div class="title-actions">
-          <button class="big" data-next>はじめる</button>
-          <button class="sync login start-sync"></button>
+          <button class="big" id="btn-continue">つづきから</button>
+          <button class="big" id="btn-new">はじめから</button>
+          <div class="title-msg" id="title-msg"></div>
         </div>
       </div>
       <div class="step" data-step="1">
@@ -123,6 +124,6 @@
 
     <div id="version"></div>
 
-    <script type="module" src="src/main.js?v=12"></script>
+    <script type="module" src="src/main.js?v=13"></script>
   </body>
 </html>

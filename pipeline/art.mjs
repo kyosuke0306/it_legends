@@ -32,11 +32,9 @@ const ART = {
   title: {
     ratio: '9:16',
     prompt:
-      'Cinematic key visual for a mobile game about building a legendary IT company. ' +
-      'At night, a small cozy garage office with a glowing laptop on a desk; behind it a swirling glowing time portal of purple, pink and gold light, ' +
-      'from which several mysterious silhouettes of legendary pioneers are stepping out, backlit, faces not visible. ' +
-      'Floating subtle circuit lines and stars. Deep indigo color palette with purple and gold accents, dramatic, epic, polished 3D render. ' +
-      'Leave the upper third calm and dark for a title. No text, no letters, no logos.',
+      'A sleek dark indigo scene with a team of four IT specialists in silhouette with crisp rim light, each with a subtle glowing holographic element: code brackets, a server, a chart, a design grid. ' +
+      'Behind them a large thin golden ring of light like a portal. Very clean, geometric, minimal, high-end. ' +
+      'Vertical 9:16 mobile game title key visual. Sleek, smart, modern and minimal, premium tech brand aesthetic. Leave the top 35% as calm dark empty space for a title. No text, no letters, no logos, no watermark.',
   },
   icon: {
     ratio: '1:1',

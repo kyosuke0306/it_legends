@@ -90,33 +90,67 @@ function fillThumbs(root) {
   root.querySelectorAll('img[data-thumb]').forEach((img) => thumbnailFor(byId[img.dataset.thumb]).then((src) => (img.src = src)));
 }
 
-// ---------- はじめの画面（タイトル → 名前 → 会社 → 職種） ----------
+// ---------- タイトル → 名前 → 会社 → 職種 ----------
 // 職種の見た目：'icon'（線のアイコン）か '3d'（Gemini で作った3Dの絵）。アドレスに ?jobart=3d を付けると3Dで見られる
 const JOB_ART = new URLSearchParams(location.search).get('jobart') === '3d' ? '3d' : 'icon';
-function showStart() {
+const steps = [...document.querySelectorAll('#start .step')];
+let at = 0;
+let wantContinue = false; // 「つづきから」でログインを待っているか
+let pendingWelcome = null; // 留守の間のまとめ（ゲーム画面に入ったときに出す）
+function goStep(i) {
+  at = Math.max(0, Math.min(steps.length - 1, i));
+  steps.forEach((st, k) => st.classList.toggle('active', k === at));
+  steps[at].querySelector('input')?.focus();
+}
+
+// タイトル画面。記録があれば「つづきから」を大きく
+function showTitle() {
   $('#start').classList.remove('hidden');
   $('#game').classList.add('hidden');
-  const steps = [...document.querySelectorAll('#start .step')];
-  let at = 0;
-  const go = (i) => {
-    at = Math.max(0, Math.min(steps.length - 1, i));
-    steps.forEach((st, k) => st.classList.toggle('active', k === at));
-    steps[at].querySelector('input')?.focus();
-  };
+  $('#title-msg').textContent = '';
+  $('#btn-continue').classList.toggle('sub', !S);
+  $('#btn-new').classList.toggle('sub', Boolean(S));
+  if (S) $('#btn-continue').after($('#btn-new')); // 大きい方を上に
+  else $('#btn-new').after($('#btn-continue'));
+  goStep(0);
+}
+
+$('#btn-continue').onclick = () => {
+  if (S) return enterGame();
+  // この端末に記録がなければ、Google でログインしてクラウドの記録を読む
+  wantContinue = true;
+  $('#title-msg').textContent = '';
+  if (cloud.currentUser()) onSynced();
+  else cloud.login();
+};
+$('#btn-continue').addEventListener('pointerdown', cloud.warmUp, { once: true });
+$('#btn-new').onclick = () => {
+  if (S && !confirm('いまの記録は消えます。はじめからにしますか？')) return;
+  goStep(1);
+};
+
+// ログインしてクラウドと合わせ終わったとき
+function onSynced() {
+  if (!wantContinue) return;
+  wantContinue = false;
+  if (S) enterGame();
+  else $('#title-msg').textContent = '記録がありません';
+}
+
+function initStart() {
   document.querySelectorAll('#start .back').forEach((b) => {
     b.innerHTML = icon('back');
-    b.onclick = () => go(at - 1);
+    b.onclick = () => goStep(at - 1);
   });
   // 名前・会社は空なら次へ進めない
   const need = { 1: '#start-name', 2: '#start-company' };
-  const check = () =>
-    Object.entries(need).forEach(([i, sel]) => (steps[i].querySelector('[data-next]').disabled = !$(sel).value.trim()));
+  const check = () => Object.entries(need).forEach(([i, sel]) => (steps[i].querySelector('[data-next]').disabled = !$(sel).value.trim()));
   Object.values(need).forEach((sel) => {
     $(sel).oninput = check;
-    $(sel).onkeydown = (e) => e.key === 'Enter' && !e.isComposing && $(sel).value.trim() && go(at + 1);
+    $(sel).onkeydown = (e) => e.key === 'Enter' && !e.isComposing && $(sel).value.trim() && goStep(at + 1);
   });
   check();
-  document.querySelectorAll('#start [data-next]').forEach((b) => (b.onclick = () => go(at + 1)));
+  document.querySelectorAll('#start [data-next]').forEach((b) => (b.onclick = () => goStep(at + 1)));
 
   let chosen = null;
   const box = $('#start-jobs');
@@ -138,10 +172,13 @@ function showStart() {
   $('#start-go').onclick = () => {
     if (!chosen) return;
     S = G.newGame({ job: chosen, name: $('#start-name').value.trim(), company: $('#start-company').value.trim() });
+    pendingWelcome = null;
+    office?.reset();
     save();
     enterGame();
   };
 }
+initStart();
 
 // ---------- ゲーム画面 ----------
 function enterGame() {
@@ -150,6 +187,10 @@ function enterGame() {
   office ??= new Office($('#office-canvas'));
   preloadCharacters([...G.ownedLegends(S)]);
   renderAll();
+  if (pendingWelcome) {
+    welcomeBack(...pendingWelcome);
+    pendingWelcome = null;
+  }
 }
 
 document.querySelectorAll('.tab').forEach((tab) => {
@@ -170,7 +211,7 @@ function renderHeader() {
   $('#dot-work').classList.toggle('on', G.freeMembers(S).length > 0 && S.offers.length > 0);
 }
 function renderAll() {
-  if (!S) return;
+  if (!S || $('#game').classList.contains('hidden')) return; // タイトル画面にいる間は描かない
   renderHeader();
   ({ office: renderOffice, work: renderWork, team: renderTeam, product: renderProduct, legends: renderLegends })[view]();
   updateTimers();
@@ -549,7 +590,7 @@ function showSync(text, cls) {
   syncState = { text, cls };
   for (const el of document.querySelectorAll('.sync')) {
     el.innerHTML = icon(SYNC_ICON[cls], cls === 'busy' ? 'spin' : '') + `<span>${esc(text)}</span>`;
-    el.className = `sync ${cls}${el.classList.contains('start-sync') ? ' start-sync' : ''}`;
+    el.className = `sync ${cls}`;
     el.title = text;
   }
   if ($('#settings').open) renderSettings();
@@ -568,6 +609,7 @@ document.querySelectorAll('.sync').forEach((b) => {
 function renderSettings() {
   const u = cloud.currentUser();
   $('#settings-body').innerHTML = `
+    ${S && !$('#game').classList.contains('hidden') ? `<button class="set-row link-row" id="to-title">${icon('home')}<span class="grow">タイトルへ</span>${icon('back', 'flip')}</button>` : ''}
     <div class="set-row">${icon(u ? SYNC_ICON[syncState.cls] : 'cloud')}<span class="grow">${u ? esc(u.email ?? '') : 'Google'}</span>
       ${u ? '<button class="btn ghost" id="logout">ログアウト</button>' : '<button class="btn" id="login">ログイン</button>'}</div>
     ${S ? `<div class="set-row">${icon('error')}<span class="grow">最初から</span><button class="btn ghost danger" id="reset">消す</button></div>` : ''}`;
@@ -576,6 +618,12 @@ function renderSettings() {
     cloud.warmUp();
   }
   $('#logout') && ($('#logout').onclick = () => cloud.logout());
+  $('#to-title') &&
+    ($('#to-title').onclick = () => {
+      save();
+      $('#settings').close();
+      showTitle();
+    });
   $('#reset') &&
     ($('#reset').onclick = async () => {
       if (!confirm(`記録を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
@@ -613,20 +661,20 @@ function applyState(remote) {
     localStorage.setItem(SAVE_KEY, JSON.stringify(S));
   } catch {}
   $('#assign').close();
-  if (first || $('#game').classList.contains('hidden')) enterGame();
-  else renderAll();
+  if ($('#game').classList.contains('hidden')) {
+    // タイトル画面にいるときは入らない（「つづきから」を押していれば onSynced で入る）
+    if (!$('#start').classList.contains('hidden') && at === 0) showTitle();
+  } else renderAll();
+  void first;
 }
 
 // ---------- 起動 ----------
 S = loadLocal();
 if (S) {
   const away = Date.now() - S.time;
-  const ev = G.advance(S, Date.now());
+  pendingWelcome = [G.advance(S, Date.now()), away];
   save();
-  enterGame();
-  welcomeBack(ev, away);
-} else {
-  showStart();
 }
+showTitle();
 setInterval(tick, 1000);
-cloud.init({ getState: () => S, applyState, decide, onStatus: showSync });
+cloud.init({ getState: () => S, applyState, decide, onStatus: showSync, onSynced });

@@ -120,6 +120,7 @@ async function onUser(u) {
     } else {
       status('保存済み', 'ok');
     }
+    hooks.onSynced?.();
     // ほかの端末で保存された内容を反映する
     unsubscribe = store.onSnapshot(ref, (s) => {
       if (!s.exists() || s.metadata.hasPendingWrites) return;

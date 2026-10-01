@@ -30,6 +30,13 @@ export class Office {
     requestAnimationFrame(this.loop);
   }
 
+  // はじめからやり直すとき：人を全部消す
+  reset() {
+    for (const p of this.people.values()) this.scene.remove(p.holder);
+    this.people.clear();
+    this.level = -1;
+  }
+
   // ゲームの状態に合わせて、部屋と人をそろえる
   sync(state) {
     if (state.office !== this.level) this.buildRoom(state.office);
