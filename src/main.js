@@ -565,16 +565,17 @@ function renderLegends() {
     .sort((a, b) => order[a.rarity] - order[b.rarity])
     .map((l) => {
       const has = owned.has(l.id);
+      const left = G.leftLegend(S, l.id); // 自分から辞めた（呼び戻せる）
       // 出会いの条件を、短い言葉と進み具合の棒で
       const conds = has
         ? ''
         : `<div class="conds">${G.meetProgress(S, l.id)
             .map((c) => `<div class="cond ${c.ok ? 'ok' : ''}"><span>${esc(c.label)}</span><i><b style="width:${pct(c.ratio)}"></b></i></div>`)
             .join('')}</div>`;
-      return `<button class="card r-${l.rarity} ${has ? '' : 'locked'}" data-id="${l.id}">
+      return `<button class="card r-${l.rarity} ${has ? '' : left ? 'left' : 'locked'}" data-id="${l.id}">
         <span class="rarity r-${l.rarity}">${l.rarity}</span>
         <div class="thumb"><img data-thumb="${l.id}" alt=""></div>
-        ${has ? `<div class="name">${l.name}</div>` : conds}
+        ${has ? `<div class="name">${l.name}</div>` : left ? `<div class="name">${l.name}</div><div class="left-tag">${icon('back')}辞任</div>` : conds}
       </button>`;
     })
     .join('');
@@ -599,11 +600,21 @@ function legendHead(legend) {
 }
 function openLegend(id) {
   const legend = byId[id];
-  const m = S.members.find((x) => x.legend === id);
+  const left = G.leftLegend(S, id);
+  const m = S.members.find((x) => x.legend === id) ?? left;
+  // 辞めたレジェンドは、高いお金で呼び戻せる（また出会うのを待ってもよい）
+  const cost = G.rehireCost(S);
   $('#detail-info').innerHTML = `${legendHead(legend)}
     <div class="ability">${esc(R.LEGEND_RULES[id].abilityText)}</div>
     ${m ? `<div class="lvrow">Lv${m.level} ${statBars(G.statsOf(S, m))}</div>` : ''}
+    ${left ? `<p class="scene">${esc(R.LEGEND_RULES[id].quitText)}</p><button class="big" id="rehire" ${S.money >= cost ? '' : 'disabled'}>呼び戻す <small>${icon('coin')}${yen(cost)}</small></button>` : ''}
     <details><summary>くわしく</summary><p>${legend.summary}</p></details>`;
+  $('#rehire') &&
+    ($('#rehire').onclick = () => {
+      if (!G.rehire(S, id, Date.now())) return;
+      commit();
+      $('#detail-info').innerHTML = `${legendHead(legend)}<div class="joined">戻ってきた</div><div class="ability">${esc(R.LEGEND_RULES[id].abilityText)}</div>`;
+    });
   $('#detail').showModal();
   showOnDetail(legend);
 }
@@ -677,6 +688,8 @@ function tick() {
     if (l) parts.push(`${icon('coin', 'big-ic')}<h2>${esc(l.title)}</h2><div class="welcome">${val('coin', `+${yen(l.money)}`, 'ok')}</div>`);
     const rivals = rivalsHtml(ev);
     if (rivals) parts.push(rivals);
+    const quits = quitsHtml(ev);
+    if (quits) parts.push(quits);
     const done = resultsHtml(ev);
     if (done) parts.push(done);
     if (parts.length) notice(parts.join('<hr class="nsep">'));
@@ -720,6 +733,20 @@ function rivalsHtml(ev, { head = true } = {}) {
   return `${head ? `${icon('error', 'big-ic rival-ic')}<h2>冷やかし</h2>` : ''}<div class="results">${rows.join('')}</div>`;
 }
 
+// 自分から辞めたレジェンド（呼び戻すお金も出す）
+function quitsHtml(ev, { head = true } = {}) {
+  const qs = ev.filter((e) => e.type === 'quit');
+  if (!qs.length) return '';
+  const rows = qs.map(
+    (q) => `<div class="rival">
+      <span class="av legend" style="--c:var(--muted)"><img data-thumb="${q.id}" alt=""></span>
+      <span class="rival-what"><b>${esc(byId[q.id].name)}</b><small>${esc(R.LEGEND_RULES[q.id].quitText)}</small></span>
+      ${val('crown', '-1', 'bad')}
+    </div>`,
+  );
+  return `${head ? `${icon('back', 'big-ic rival-ic')}<h2>辞任</h2>` : ''}<div class="results">${rows.join('')}</div>`;
+}
+
 // 留守の間に起きたこと
 function welcomeBack(ev, away) {
   if (away < 10 * 60000) return;
@@ -732,7 +759,7 @@ function welcomeBack(ev, away) {
   if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '面接に来た', 'legend'));
   // 終わった仕事は1つずつ（resultsHtml の一覧だけを使う）
   const done = resultsHtml(ev, { head: false });
-  const rivals = rivalsHtml(ev, { head: false });
+  const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false });
   if (!rows.length && !done && !rivals) return;
   notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${rivals}${done}`);
 }

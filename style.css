@@ -515,3 +515,10 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .rival-what { flex: 1; display: flex; flex-direction: column; text-align: left; min-width: 0; }
 .rival-what b { font-size: 0.9rem; }
 .rival-what small { font-size: 0.78rem; color: var(--muted); }
+
+/* 自分から辞めたレジェンド（図鑑のカード・詳細） */
+.card.left .thumb img { filter: grayscale(1) opacity(0.6); }
+.left-tag { display: inline-flex; align-items: center; gap: 3px; margin-top: 2px; font-size: 0.72rem; font-weight: 700; color: var(--bad); }
+.left-tag .ic { width: 1em; height: 1em; }
+#rehire small { font-size: 0.8em; opacity: 0.9; display: inline-flex; align-items: center; gap: 2px; }
+#rehire small .ic { width: 1em; height: 1em; }

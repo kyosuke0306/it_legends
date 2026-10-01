@@ -137,9 +137,13 @@ export const RIVAL_HITS = [
   { title: '高いパソコンを壊された', amount: [2, 4] },
   { title: 'ライバル製品で客を持っていかれた', amount: [4, 8] },
 ];
+// 辞めたレジェンドを呼び戻すお金：今の会社の仕事 REHIRE_HOURS 時間ぶんの報酬
+export const REHIRE_HOURS = 120;
 export const MAX_CATCHUP = 30 * DAY; // 留守の間に進める最大の時間
 
 // 偉人の「出会いの条件」と「特別な力」。時を超えて現代に現れる
+// quit: 我の強いレジェンドは、仲間になっても平均この日数で自分から辞任する（性格による。無いものは辞めない）
+//   辞めたあとは REHIRE_HOURS ぶんの高いお金で呼び戻すか、また出会うのを待つ（レベルはそのまま）
 // meet: rep 評判 / office 会社の広さ / cat: { 種類: 回数 } / products 製品数 / staff 一般社員数 / legends 偉人の数 / tasks 仕事の総数
 // join: 口説いて仲間になる確率
 export const LEGEND_RULES = {
@@ -150,6 +154,8 @@ export const LEGEND_RULES = {
     join: 0.4,
     ability: { teamQuality: 0.6, income: 0.1 },
     abilityText: '製品の出来 +60%  全製品の収入 +10%',
+    quit: 20,
+    quitText: '「自分の会社をつくる」と言って去った',
     scene: 'ガレージの前で、黒いタートルネックの男がこちらを見ている…',
   },
   gates: {
@@ -159,6 +165,8 @@ export const LEGEND_RULES = {
     join: 0.4,
     ability: { income: 0.25 },
     abilityText: '全製品の収入 +25%',
+    quit: 50,
+    quitText: '「自分の会社を始める」と去った',
     scene: '製品の売れ行きを熱心に調べている眼鏡の若者がいる…',
   },
   zuckerberg: {
@@ -168,6 +176,8 @@ export const LEGEND_RULES = {
     join: 0.4,
     ability: { incomeGenre: { web: 0.6, app: 0.3 } },
     abilityText: 'Web の収入 +60%  アプリの収入 +30%',
+    quit: 40,
+    quitText: '「自分のサービスを作る」と寮に戻った',
     scene: 'パーカー姿の学生が、ノートPCで何かを作っている…',
   },
   torvalds: {
@@ -177,6 +187,8 @@ export const LEGEND_RULES = {
     join: 0.4,
     ability: { hireCost: 0.5, teamSpeed: 0.2 },
     abilityText: '雇う費用 半分  速さ +20%',
+    quit: 25,
+    quitText: '「自分のやり方でやる」と言って去った',
     scene: 'ペンギンのぬいぐるみを持った青年が、サーバーをのぞきこんでいる…',
   },
   ritchie: {
@@ -222,6 +234,8 @@ export const LEGEND_RULES = {
     join: 0.3,
     ability: { teamSpeed: 0.4, teamReward: 0.2 },
     abilityText: '速さ +40%  報酬 +20%',
+    quit: 30,
+    quitText: 'ほかの研究所に呼ばれて去った',
     scene: '暗算で何かを一瞬で解いた紳士が、にやりと笑った…',
   },
   turing: {

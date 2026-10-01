@@ -452,7 +452,9 @@ export function scout(s, now) {
   const ok = rand(s) < scoutChance(s, id);
   s.encounter = null;
   if (ok) {
-    s.members.push(makeLegend(s, id));
+    // 前に辞めたレジェンドなら、そのときのレベルのまま戻ってくる
+    s.members.push(met.left ? { ...met.left, busy: null } : makeLegend(s, id));
+    delete met.left;
     addLog(s, now, `${LEGEND_BY_ID[id].name}  仲間に`, 'legend');
     return 'joined';
   }
@@ -515,6 +517,33 @@ function rollWalkin(s, t, ev) {
   s.candidates.unshift(m);
   addLog(s, t, `${m.name}  面接に来た`, 'good');
   ev.push({ type: 'walkin', id: m.id, name: m.name });
+}
+
+// ---------- 辞任（我の強いレジェンドは、いつか自分から辞める） ----------
+function rollQuit(s, t, ev) {
+  for (const m of s.members.filter((x) => x.kind === 'legend' && !x.busy)) {
+    const days = R.LEGEND_RULES[m.legend].quit;
+    if (!days || rand(s) >= 1 / (days * 24)) continue;
+    s.members = s.members.filter((x) => x !== m);
+    // 辞めたときの姿（レベル・能力）を覚えておく。少しの間は出会えない
+    s.met[m.legend] = { ...s.met[m.legend], left: { ...m, busy: null }, cooldown: t + R.RETRY_COOLDOWN };
+    addLog(s, t, `${m.name}  辞任`, 'bad');
+    ev.push({ type: 'quit', id: m.legend });
+  }
+}
+export const leftLegend = (s, id) => s.met[id]?.left ?? null;
+export const rehireCost = (s) => round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * R.REHIRE_HOURS, 10000);
+// 高いお金を払って呼び戻す
+export function rehire(s, id, now) {
+  const m = leftLegend(s, id);
+  const cost = rehireCost(s);
+  if (!m || s.money < cost) return false;
+  s.money -= cost;
+  s.members.push({ ...m, busy: null });
+  delete s.met[id].left;
+  if (s.encounter?.id === id) s.encounter = null;
+  addLog(s, now, `${m.name}  復帰`, 'legend');
+  return true;
 }
 
 // ---------- 冷やかし（まだ仲間でないレジェンドがライバルとして来る） ----------
@@ -595,6 +624,7 @@ export function advance(s, now, ev = []) {
       rollLuck(s, next, ev);
       rollWalkOffer(s, next);
       rollRival(s, next, ev);
+      rollQuit(s, next, ev);
       rollWalkin(s, next, ev);
     }
     s.time = next;
