@@ -264,7 +264,12 @@ function finishTask(s, task, t, ev) {
   s.tasks = s.tasks.filter((x) => x !== task);
   addLog(s, t, ok ? `${task.title}  成功` : `${task.title}  失敗`, ok ? 'good' : 'bad');
   ev.push({ type: 'task', ok, money, rep, great: ok && pv.great, early: ok && early, title: task.title });
+  // これまでの仕事（仕事タブの「実績」で見る）。新しい順に最大 HISTORY_MAX 件
+  (s.history ??= []).unshift({ t, title: task.title, cat: task.cat, ok, money, rep, great: ok && pv.great, early: ok && early, who: team.map((m) => m.name) });
+  s.history.length = Math.min(s.history.length, HISTORY_MAX);
 }
+
+const HISTORY_MAX = 100;
 
 export const xpNeed = (level) => Math.round(12 * level ** 1.6);
 

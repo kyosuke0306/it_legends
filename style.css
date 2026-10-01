@@ -550,3 +550,28 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .title-legends img.own { filter: drop-shadow(0 0 10px rgba(62, 240, 255, 0.5)); opacity: 1; }
 @keyframes title-float { 50% { transform: translateY(-5px); } }
 @media (prefers-reduced-motion: reduce) { .title-legends img { animation: none; } }
+
+/* これまでの仕事（仕事タブの右上のボタン → 下から出るシート） */
+.work-top { display: flex; justify-content: flex-end; margin: -2px 0 8px; }
+.hist-btn { display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: var(--panel); padding: 6px 12px; font-weight: 800; font-size: 0.85rem; color: var(--ok); font-variant-numeric: tabular-nums; }
+.hist-btn .ic { width: 1.1em; height: 1.1em; }
+.sheet-head b .ic, .sheet-head b { display: inline-flex; align-items: center; gap: 4px; }
+.hist-cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+.hist-cat { display: flex; align-items: center; gap: 6px; border: 2px solid transparent; border-radius: 12px; background: var(--bg); padding: 8px 10px; font-size: 0.8rem; font-weight: 700; color: var(--text); }
+.hist-cat i { width: 4px; align-self: stretch; border-radius: 4px; background: var(--c); }
+.hist-cat b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.hist-cat.on { border-color: var(--c); }
+.hist-list { display: flex; flex-direction: column; gap: 6px; max-height: 45vh; overflow-y: auto; margin-bottom: 12px; }
+.hist-row { flex: none; display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 12px; padding: 8px 10px 8px 0; overflow: hidden; }
+.hist-row > i { width: 4px; align-self: stretch; background: var(--c); }
+.hist-row.ng { opacity: 0.7; }
+.hist-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.hist-main b { font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-main small { font-size: 0.7rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-vals { display: grid; grid-template-columns: repeat(3, auto); justify-items: end; align-items: center; gap: 0 3px; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.hist-vals .ic { width: 1em; height: 1em; }
+.hist-vals .ic.ok { color: var(--ok); }
+.hist-vals .ic.bad { color: var(--bad); }
+.hist-vals b { grid-column: 1 / -1; }
+.hist-vals small { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 2px; color: var(--muted); }
+.hist-vals small.bad { color: var(--bad); }

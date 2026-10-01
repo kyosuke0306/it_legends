@@ -349,12 +349,44 @@ function renderWork() {
       </button>`,
     )
     .join('');
+  // これまでの仕事：成功した数だけ出し、押すと下からくわしく出る（openHistory）
   $('#view-work').innerHTML = `
+    <div class="work-top"><button class="hist-btn" id="open-history">${icon('check')}${S.counts.tasks}</button></div>
     ${running}
     ${offers || `<p class="empty">${icon('clock')}<span data-left="${S.offerAt + R.OFFER_EVERY}"></span></p>`}`;
   fillThumbs($('#view-work'));
   $('#view-work').querySelectorAll('[data-offer]').forEach((b) => (b.onclick = () => assignTask(+b.dataset.offer)));
   $('#view-work').querySelectorAll('[data-run]').forEach((el) => (el.onclick = () => openRunning(+el.dataset.run)));
+  $('#open-history').onclick = () => openHistory();
+}
+
+// これまでの仕事。上に種類ごとの成功した回数（レジェンドの出会いの条件と同じ数）、押すとその種類だけにしぼる。下に最近の仕事
+function openHistory(cat = null) {
+  const dlg = $('#assign');
+  const list = (S.history ?? []).filter((h) => !cat || h.cat === cat);
+  const ago = (t) => dur(Date.now() - t);
+  $('#assign-body').innerHTML = `
+    <div class="sheet-head"><b>${icon('check')}${S.counts.tasks}</b><span class="muted">${icon('star')}${S.rep}</span></div>
+    <div class="hist-cats">${Object.entries(R.CAT_NAMES)
+      .map(([c, name]) => `<button class="hist-cat cat-${c} ${cat === c ? 'on' : ''}" data-cat="${c}"><i></i>${name}<b>${S.counts.cat[c] ?? 0}</b></button>`)
+      .join('')}</div>
+    <div class="hist-list">${
+      list.length
+        ? list
+            .slice(0, 50)
+            .map(
+              (h) => `<div class="hist-row cat-${h.cat} ${h.ok ? '' : 'ng'}"><i></i>
+                <span class="hist-main"><b>${esc(h.title)}</b><small>${esc(h.who.join('・'))}・${ago(h.t)}前</small></span>
+                <span class="hist-vals">${h.ok ? icon('check', 'ok') : icon('error', 'bad')}${h.great ? icon('bolt', 'res-great') : ''}${h.early ? icon('clock', 'res-early') : ''}<b>${yen(h.money)}</b><small class="${h.rep < 0 ? 'bad' : ''}">${icon('star')}${h.rep > 0 ? '+' : ''}${h.rep}</small></span>
+              </div>`,
+            )
+            .join('')
+        : `<p class="empty">${icon('task')}</p>`
+    }</div>
+    <button class="big ghost" id="hist-close">OK</button>`;
+  if (!dlg.open) dlg.showModal();
+  $('#assign-body').querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => openHistory(cat === b.dataset.cat ? null : b.dataset.cat)));
+  $('#hist-close').onclick = () => dlg.close();
 }
 
 // 仕事中の仕事の詳しいシート：担当している人と力、見込み（成功率・かかる時間・報酬・評判）、進み具合。空きがあれば人を足せる
