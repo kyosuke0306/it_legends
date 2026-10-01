@@ -260,7 +260,7 @@ function renderOffice() {
   $('#activity').innerHTML = Object.entries(R.ACTIVITIES)
     .map(
       ([id, a]) => `<button class="act ${S.activity === id ? 'active' : ''}" data-act="${id}" ${busyUntil ? 'disabled' : ''}>
-        ${icon(a.icon, 'act-ic')}<span>${a.name}</span>${icon(EVENT_ICON[a.event], `act-ev ev-${a.event}`)}
+        ${icon(a.icon, 'act-ic')}<span>${a.name}</span>${icon(EVENT_ICON[a.event], `act-ev ev-${a.event}`)}${a.offerPerHour ? icon('task', 'act-ev act-ev2 ev-offer') : ''}
       </button>`,
     )
     .join('') + (busyUntil ? `<div class="act-lock"><span class="pill">${icon('task')}<span class="what">仕事中</span><span class="left" data-left="${busyUntil}"></span></span></div>` : '');
@@ -282,11 +282,17 @@ function renderWork() {
   const byIdM = (id) => S.members.find((m) => m.id === id);
   const running = S.tasks
     .map((t) => {
-      // 任せている仕事の見込み（成功率・かかる時間・人数・報酬・成功したときの評判）
-      const p = G.taskPreview(S, t, t.members.filter(byIdM));
-      return `<div class="panel run"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>
-        <span class="vals">${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(t.endsAt - t.startAt))}${val('people', `${t.members.length + (t.temps?.length ?? 0)}/${t.team}`)}${val('coin', yen(p.reward), 'strong')}${val('star', `+${p.rep}`)}</span>
-        ${progress(t.startAt, t.endsAt)}</div>`;
+      const size = t.members.length + (t.temps?.length ?? 0);
+      // タップすると見込み（成功率・かかる時間・人数・報酬・成功したときの評判）と、人を足すボタンが出る
+      let more = '';
+      if (openTasks.has(t.id)) {
+        const p = G.taskPreview(S, t, t.members.filter(byIdM));
+        more = `<div class="run-more"><span class="vals">${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(t.endsAt - t.startAt))}${val('people', `${size}/${t.team}`)}${val('coin', yen(p.reward), 'strong')}${val('star', `+${p.rep}`)}</span>${
+          size < t.team ? `<button class="btn add-member" data-add="${t.id}">${icon('plus')}${icon('people')}</button>` : ''
+        }</div>`;
+      }
+      return `<div class="panel run ${openTasks.has(t.id) ? 'open' : ''}" data-run="${t.id}"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>
+        ${more}${progress(t.startAt, t.endsAt)}</div>`;
     })
     .join('');
   const canWork = G.freeMembers(S).length > 0;
@@ -303,6 +309,42 @@ function renderWork() {
     ${offers || `<p class="empty">${icon('clock')}<span data-left="${S.offerAt + R.OFFER_EVERY}"></span></p>`}`;
   fillThumbs($('#view-work'));
   $('#view-work').querySelectorAll('[data-offer]').forEach((b) => (b.onclick = () => assignTask(+b.dataset.offer)));
+  $('#view-work').querySelectorAll('[data-run]').forEach(
+    (el) =>
+      (el.onclick = (e) => {
+        const id = +el.dataset.run;
+        if (e.target.closest('[data-add]')) return addMembers(id);
+        openTasks.has(id) ? openTasks.delete(id) : openTasks.add(id);
+        renderWork();
+      }),
+  );
+}
+const openTasks = new Set(); // 詳しく見ている仕事中の仕事
+
+// 仕事中の仕事に人を足す（派遣も。足した分だけ残りが早く進む）
+function addMembers(taskId) {
+  const t = S.tasks.find((x) => x.id === taskId);
+  const base = [...t.members.map((id) => S.members.find((m) => m.id === id)).filter(Boolean), ...(t.temps ?? [])];
+  const have = t.temps?.length ?? 0;
+  const left = (ids, temps) => {
+    const done = Math.min(1, Math.max(0, (Date.now() - t.startAt) / (t.endsAt - t.startAt)));
+    return (1 - done) * G.taskPreview(S, t, [...t.members, ...ids], [...(t.temps ?? []), ...temps]).duration;
+  };
+  openAssign({
+    title: t.title,
+    max: t.team - base.length,
+    w: t.w,
+    need: t.diff,
+    base,
+    minOwn: 0,
+    go: '追加',
+    temp: { make: (i) => G.makeTemp(S, t, have + i), fee: G.tempFee(t) },
+    preview: (ids, temps) => {
+      const p = G.taskPreview(S, t, [...t.members, ...ids], [...(t.temps ?? []), ...temps]);
+      return `${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(left(ids, temps)), 'ok')}${val('coin', yen(p.reward))}${val('star', `+${p.rep}`)}`;
+    },
+    confirm: (ids, temps) => G.addToTask(S, taskId, ids, Date.now(), temps.length),
+  });
 }
 
 function assignTask(offerId) {
@@ -323,8 +365,9 @@ function assignTask(offerId) {
 }
 
 // 人を選ぶ（仕事・開発で共通）。下から出るシート
-// temp があれば要員派遣の人も選べる（自分の会社から1人は出す）
-function openAssign({ title, max, w, need, preview, confirm, temp = null, extra = '' }) {
+// temp があれば要員派遣の人も選べる（自分の会社から minOwn 人は出す）
+// base は仕事中に人を足すときの、もう働いている人（max は足せる人数）
+function openAssign({ title, max, w, need, preview, confirm, temp = null, base = [], minOwn = 1, go = '任せる', extra = '' }) {
   const dlg = $('#assign');
   const chosen = new Set();
   let nTemps = 0;
@@ -332,21 +375,22 @@ function openAssign({ title, max, w, need, preview, confirm, temp = null, extra 
   const free = G.freeMembers(S).sort((a, b) => power(b) - power(a));
   const draw = () => {
     // 席に空きがあるうちは派遣の人を減らし、自分の会社の人を優先する
-    nTemps = Math.max(0, Math.min(nTemps, max - Math.max(1, chosen.size)));
+    nTemps = Math.max(0, Math.min(nTemps, max - Math.max(minOwn, chosen.size)));
     const ids = [...chosen];
     const temps = temp ? Array.from({ length: nTemps }, (_, i) => temp.make(i)) : [];
     // 選んだ人の力の合計と、この仕事に必要な力（ゲージがいっぱいになれば十分）
-    const sum = ids.reduce((a, id) => a + power(free.find((m) => m.id === id)), 0) + temps.reduce((a, m) => a + power(m), 0);
-    const size = chosen.size + nTemps;
+    const sum = ids.reduce((a, id) => a + power(free.find((m) => m.id === id)), 0) + [...temps, ...base].reduce((a, m) => a + power(m), 0);
+    const size = base.length + chosen.size + nTemps;
+    const ready = ids.length >= Math.max(minOwn, 1) || (minOwn === 0 && nTemps > 0);
     // 派遣：借りている人（押すと帰す）と、もう1人借りるボタン
-    const room = temp && Math.max(1, chosen.size) + nTemps < max;
+    const room = temp && Math.max(minOwn, chosen.size) + nTemps < max;
     const canMore = room && S.money >= temp.fee * (nTemps + 1);
     const tempRow = (m, on) => `<button class="person temp ${on ? 'active' : ''}" data-temp="${on ? 'drop' : 'add'}" ${on || canMore ? '' : 'disabled'}>
         ${avatar(m)}<span class="pname">${esc(m.name)}<small>${R.JOBS[m.job].name} Lv${m.level}</small></span><span class="fee">${icon('coin')}${yen(temp.fee)}</span><span class="pw">${icon('bolt')}${power(m)}</span>
       </button>`;
     const tempHtml = temp ? `<div class="sec temp-head">${icon('plus')}<b>派遣</b></div>${temps.map((m) => tempRow(m, true)).join('')}${room ? tempRow(temp.make(nTemps), false) : ''}` : '';
     $('#assign-body').innerHTML = `
-      <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${icon('people')}${size}/${max > 20 ? free.length : max}</span></div>
+      <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${icon('people')}${size}/${max > 20 ? free.length : base.length + max}</span></div>
       ${extra}
       <div class="need ${sum >= need ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / need))}"></i></span><span class="need-num"><b>${sum}</b>/${need}</span></div>
       <div class="pick">${free
@@ -356,15 +400,15 @@ function openAssign({ title, max, w, need, preview, confirm, temp = null, extra 
           </button>`,
         )
         .join('')}${tempHtml}</div>
-      <div class="preview">${ids.length ? preview(ids, temps) : '&nbsp;'}</div>
-      <button class="big" id="assign-go" ${ids.length ? '' : 'disabled'}>任せる${nTemps ? ` <small>${icon('coin')}-${yen(temp.fee * nTemps)}</small>` : ''}</button>`;
+      <div class="preview">${ready ? preview(ids, temps) : '&nbsp;'}</div>
+      <button class="big" id="assign-go" ${ready ? '' : 'disabled'}>${go}${nTemps ? ` <small>${icon('coin')}-${yen(temp.fee * nTemps)}</small>` : ''}</button>`;
     fillThumbs($('#assign-body'));
-    $('#assign-body').querySelectorAll('.person').forEach(
+    $('#assign-body').querySelectorAll('.person[data-id]').forEach(
       (b) =>
         (b.onclick = () => {
           const id = +b.dataset.id;
           if (chosen.has(id)) chosen.delete(id);
-          else if (chosen.size < max) chosen.add(id);
+          else if (chosen.size < max) chosen.add(id); // 派遣の人があふれたら draw で減らす
           draw();
         }),
     );
@@ -699,8 +743,12 @@ document.querySelectorAll('.sync').forEach((b) => {
 
 function renderSettings() {
   const u = cloud.currentUser();
+  const inGame = S && !$('#game').classList.contains('hidden');
+  const hero = S?.members.find((m) => m.kind === 'hero');
   $('#settings-body').innerHTML = `
-    ${S && !$('#game').classList.contains('hidden') ? `<button class="set-row link-row" id="to-title">${icon('home')}<span class="grow">タイトルへ</span>${icon('back', 'flip')}</button>` : ''}
+    ${inGame ? `<label class="set-row rename"><b>CEO</b><input id="set-name" maxlength="12" autocomplete="off" value="${esc(hero.name)}" /></label>
+    <label class="set-row rename"><b>株式会社</b><input id="set-company" maxlength="16" autocomplete="off" value="${esc(S.company.replace('株式会社', ''))}" /></label>` : ''}
+    ${inGame ? `<button class="set-row link-row" id="to-title">${icon('home')}<span class="grow">タイトルへ</span>${icon('back', 'flip')}</button>` : ''}
     <div class="set-row">${icon(u ? SYNC_ICON[syncState.cls] : 'cloud')}<span class="grow">${u ? esc(u.email ?? '') : 'Google'}</span>
       ${u ? '<button class="btn ghost" id="logout">ログアウト</button>' : '<button class="btn" id="login">ログイン</button>'}</div>
     ${S ? `<div class="set-row">${icon('error')}<span class="grow">最初から</span><button class="btn ghost danger" id="reset">消す</button></div>` : ''}`;
@@ -709,6 +757,17 @@ function renderSettings() {
     cloud.warmUp();
   }
   $('#logout') && ($('#logout').onclick = () => cloud.logout());
+  // 名前と会社名は途中でも変えられる（空のときは元に戻す）
+  const rename = (el, apply) =>
+    el &&
+    (el.onchange = () => {
+      const v = el.value.trim();
+      if (v) apply(v);
+      el.value = v || el.defaultValue;
+      commit();
+    });
+  rename($('#set-name'), (v) => (hero.name = v));
+  rename($('#set-company'), (v) => (S.company = G.companyTitle(v)));
   $('#to-title') &&
     ($('#to-title').onclick = () => {
       save();

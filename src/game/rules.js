@@ -105,11 +105,13 @@ export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会える�
 // CEO の過ごし方（無料。いつもどれか1つを選んでいる）。選んだものに合った出来事がまれに起きる（1時間ごとに判定）
 //   event: legend 偉人と偶然出会う（条件を満たしていなくても） / luck 臨時収入 / walkin 入社したい人が面接に来る
 export const ACTIVITIES = {
-  walk: { name: '散歩', icon: 'walk', event: 'legend', perHour: 1 / 400 }, // 平均17日に1回くらい
+  // 散歩はご近所で仕事の相談も受ける（平均4時間に1件、依頼の上限を WALK_OFFER_EXTRA 件こえて届く）
+  walk: { name: '散歩', icon: 'walk', event: 'legend', perHour: 1 / 400, offerPerHour: 1 / 4 }, // 平均17日に1回くらい
   net: { name: 'ネット', icon: 'globe', event: 'luck', perHour: 1 / 36 }, // 平均1日半に1回くらい
   meetup: { name: '勉強会', icon: 'seminar', event: 'walkin', perHour: 1 / 48 }, // 平均2日に1回くらい
 };
 export const DEFAULT_ACTIVITY = 'net';
+export const WALK_OFFER_EXTRA = 2;
 export const WALKIN_LIFE = DAY; // 訪ねてきた人が待ってくれる時間
 // 臨時収入（ネットで見つかる）。amount は今の会社の仕事1時間ぶんの報酬の何倍か
 export const LUCKS = [

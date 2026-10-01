@@ -224,6 +224,26 @@ export function startTask(s, offerId, ids, now, nTemps = 0) {
   return true;
 }
 
+// 仕事中に人を足す（派遣も）。進んだ割合はそのままで、残りが新しい人数の速さで進む
+export function addToTask(s, taskId, ids, now, nTemps = 0) {
+  const task = s.tasks.find((x) => x.id === taskId);
+  const temps = task?.temps ?? [];
+  if (!task || !(ids.length + nTemps) || task.members.length + temps.length + ids.length + nTemps > task.team) return false;
+  if (ids.some((id) => !memberById(s, id) || memberById(s, id).busy)) return false;
+  const fee = tempFee(task) * nTemps;
+  if (nTemps && s.money < fee) return false;
+  s.money -= fee;
+  const done = Math.min(1, Math.max(0, (now - task.startAt) / (task.endsAt - task.startAt)));
+  task.begunAt ??= task.startAt; // 早く終わったかは、最初に始めた時刻から測る
+  task.members = [...task.members, ...ids];
+  task.temps = [...temps, ...Array.from({ length: nTemps }, (_, i) => makeTemp(s, task, temps.length + i))];
+  for (const id of ids) memberById(s, id).busy = task.id;
+  const full = taskPreview(s, task, task.members.filter((id) => memberById(s, id))).duration;
+  task.startAt = now - done * full;
+  task.endsAt = now + (1 - done) * full;
+  return true;
+}
+
 function finishTask(s, task, t, ev) {
   const team = task.members.map((id) => memberById(s, id)).filter(Boolean);
   const pv = taskPreview(s, task, team.map((m) => m.id));
@@ -231,7 +251,7 @@ function finishTask(s, task, t, ev) {
   const money = ok ? pv.reward : round(pv.reward * 0.2);
   s.money += money;
   // 早さは実際にかかった時間で決める
-  const early = task.endsAt - task.startAt <= task.hours * R.HOUR * R.REP_EARLY;
+  const early = task.endsAt - (task.begunAt ?? task.startAt) <= task.hours * R.HOUR * R.REP_EARLY;
   const rep = ok ? taskRep(task, pv.power, early) : -Math.min(s.rep, Math.max(1, Math.round(task.rep * R.FAIL_REP)));
   s.rep += rep;
   if (ok) {
@@ -467,6 +487,13 @@ function activityRoll(s, event) {
   return a?.event === event && !ceoBusyUntil(s) && rand(s) < a.perHour;
 }
 
+// 散歩：仕事の相談を受ける（依頼の上限を少しこえても届く）
+function rollWalkOffer(s, t) {
+  const a = R.ACTIVITIES[s.activity];
+  if (!a?.offerPerHour || ceoBusyUntil(s) || rand(s) >= a.offerPerHour) return;
+  if (s.offers.length < maxOffers(s) + R.WALK_OFFER_EXTRA) addOffer(s, t);
+}
+
 function rollLuck(s, t, ev) {
   if (!activityRoll(s, 'luck')) return;
   const L = pick(s, R.LUCKS);
@@ -536,6 +563,7 @@ export function advance(s, now, ev = []) {
     if (next === boundary) {
       rollEncounter(s, next, ev);
       rollLuck(s, next, ev);
+      rollWalkOffer(s, next);
       rollWalkin(s, next, ev);
     }
     s.time = next;
