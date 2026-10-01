@@ -31,9 +31,9 @@ IT会社を育てる放置ゲーム（2026-10-01 にガチャから作り変え�
 
 ## 読み込みを軽くする工夫（2026-10-01）
 - 起動後ひまなときに manifest の全モデルを先読み（`preloadCharacters`）。一度読んだモデルは覚えておき複製して使う
-- ガチャはカプセルを揺らしながら読み込み、読み終わるまで揺れ続ける（`Stage.reveal` に Promise を渡す）
+- 偉人が仲間になる演出はカプセルを揺らしながら読み込み、読み終わるまで揺れ続ける（`Stage.reveal` に Promise を渡す）
 - **キャラはこれ以上増やさない**（ユーザー指示 2026-10-01）
-- 通信を重くしない（ユーザー指示）。偉人の GLB は仲間にした偉人だけ先読み、Firebase はログインする人だけ読み込む、画面に出ていない 3D は描かない
+- 通信を重くしない（ユーザー指示）。偉人の GLB は仲間にした偉人だけ先読み、画面に出ていない 3D は描かない
 
 ## ゲームの形（2026-10-01 にユーザーと決定）
 - ガチャは廃止。キャラ1人1人の価値を重く、入手の喜びを大きく
@@ -46,7 +46,18 @@ IT会社を育てる放置ゲーム（2026-10-01 にガチャから作り変え�
 - 記録: localStorage ＋ Google ログイン（`src/cloud.js`。kyosuke0306/money_manage の sync.js と同じ方式: Firebase 12.18.0 を gstatic CDN から、Firestore `users/{uid}` に `{ data: JSONの文字列, updatedAt, device }`、onSnapshot でほかの端末の変更を反映）。Firebase は画面が落ち着いてから先読みする（押してから読むと iPhone の Safari でログインの窓が止められるため）。設定は `src/firebase-config.js`（プロジェクト itlegends-45d70）。この作業環境からは Google のログイン画面に行けないので、同期は偽の Firebase で2台の端末を再現して確認している
 - バランス確認は、1日3回のぞく自動プレイのシミュレーションで行った（効率的に遊んで11人そろうのに約3か月）
 
-スタート画面の絵（タイトル・アプリのアイコン・職種9つ）。職種はいまは線のアイコン（ユーザー指示）だが、3Dの絵に戻すか迷っているので assets/jobs/ に残し、`?jobart=3d` で見られる（main.js の JOB_ART）は `NODE_USE_ENV_PROXY=1 node pipeline/art.mjs [id]` で Gemini に作らせる（1枚約6円、元画像は pipeline/out/art/、軽くした画像は assets/）
+## 画面の作り（2026-10-01 時点、v13）
+- 起動するとまずタイトル（`#start` の step 0）。「つづきから」＝記録があればゲームへ、なければ Google ログインしてクラウドの記録を読む（なければ「記録がありません」）。「はじめから」＝名前 → 会社 → 職種のページを「次へ」で進む。ゲーム中は歯車の設定から「タイトルへ」
+- ゲーム画面は下のタブ（会社・仕事・仲間・製品・偉人）。文字は少なく、線のアイコン（`src/icons.js`）と数字で見せる。人選びは下から出るシート
+- タイトルの絵はITのスペシャリスト4人のシルエットと金色の光の輪（Gemini で3案作り、案Cを採用。元画像 pipeline/out/art/title_a〜c.png は Git に入っていない）
+- 職種はいまは線のアイコン（ユーザー指示、四角で囲まない）。3Dの絵に戻すか**ユーザーが迷っている**ので assets/jobs/ に残し、`?jobart=3d` で見られる（main.js の JOB_ART）。決まったら固定する
+- 絵は `NODE_USE_ENV_PROXY=1 node pipeline/art.mjs [title|icon|職種id]` で Gemini に作らせる（1枚約6円、元画像は pipeline/out/art/、軽くした画像は assets/）。作り直す前に費用を伝える
+- 公開のたびに `node scripts/bump-version.mjs`（?v=番号 で古いファイルが混ざらないようにする）
+
+## まだ確かめられていないこと・次の候補
+- **Google ログインが本物の端末で成功するか未確認**。ユーザーの iPhone（Safari）で「ログインしても表示が変わらない」と言われ、v9 で古いファイルが混ざる問題と、ページを切り替えるログインをやめる修正をした。その後の結果はまだ聞けていない。Firebase の承認済みドメインに kyosuke0306.github.io は追加済み（`curl "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getProjectConfig?key=<apiKey>"` で確認できる）。Firestore のルールが `users/{uid}` 用になっているかは未確認
+- 本社ビルまで1〜2か月で着き、その後の目標がない（「世界を変える製品」など、長く遊ぶための目標が必要）
+- 動作確認のやり方: scratchpad に `npm i three@0.170.0 playwright firebase@12.18.0` し、ローカルサーバー＋route で CDN を差し替えて Playwright で画面を撮る。同期は Firebase の代わりの偽モジュールで2台の端末を再現する
 
 | 項目 | クレジット |
 | --- | --- |
