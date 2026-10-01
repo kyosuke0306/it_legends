@@ -53,6 +53,7 @@ IT会社を育てる放置ゲーム（2026-10-01 にガチャから作り変え�
 - ゲーム画面は下のタブ（会社・仕事・仲間・製品・偉人）。文字は少なく、線のアイコン（`src/icons.js`）と数字で見せる。人選びは下から出るシート
 - タイトルの絵はITのスペシャリスト4人のシルエットと金色の光の輪（Gemini で3案作り、案Cを採用。元画像 pipeline/out/art/title_a〜c.png は Git に入っていない）
 - 職種の絵は3D（assets/jobs/*.webp）に決定（2026-10-01 ユーザー指示）。線のアイコン job_* は icons.js に残っているが使っていない
+- アプリのアイコンは2026-10-01に描き直した（深い紺に金色の光の輪、中に白い </>。タイトルの輪に合わせた）。元は `assets/icon.svg`（コードで描いた絵。Gemini は使っていない）で、Playwright で 512/180/64px の PNG にしている。角の丸みは端末が付けるので四角いまま。差し替えたら index.html の ?v= を上げる（iPhone は覚えたアイコンを使い続けるため）。art.mjs の icon（金の回路の王冠）は使っていない
 - 絵は `NODE_USE_ENV_PROXY=1 node pipeline/art.mjs [title|icon|職種id]` で Gemini に作らせる（1枚約6円、元画像は pipeline/out/art/、軽くした画像は assets/）。作り直す前に費用を伝える
 - 公開のたびに `node scripts/bump-version.mjs`（?v=番号 で古いファイルが混ざらないようにする）
 

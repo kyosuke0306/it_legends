@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><defs>
+  <radialGradient id="bg" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#1b2160"/><stop offset="1" stop-color="#070a24"/></radialGradient>
+  <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe7a3"/><stop offset="1" stop-color="#f2b13a"/></linearGradient>
+</defs><rect width="512" height="512" fill="url(#bg)"/><circle cx="256" cy="256" r="150" fill="none" stroke="url(#gold)" stroke-width="12" filter="url(#glow)"/>
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#cfe0ff" stroke-width="16" filter="url(#soft)"><path d="M210 196l-60 60 60 60M302 196l60 60-60 60"/><path d="M276 180l-40 152" stroke="url(#gold)"/></g></svg>
