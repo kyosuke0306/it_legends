@@ -89,6 +89,13 @@ export const BASE_OFFERS = 4;
 // 要員派遣: お金を払うと、席の数を超えて仕事の間だけ人を借りられる（仕事が終わると帰る。成長はしない）
 // 1人ぶんの料金は仕事の報酬の TEMP_FEE 倍。来る人は今の会社で雇える人くらいの腕で、その仕事に向いた職種
 export const TEMP_FEE = 0.3;
+// 人数が多いほど早く終わる。1人増えるごとに TEAM_SPEEDUP ぶん速くなる（2人で 1.3倍、3人で 1.6倍…）
+export const TEAM_SPEEDUP = 0.3;
+// 仕事が終わったときの評判。力が必要な分の GREAT 倍以上なら出来が良い（評判 1.5倍）、足りないままの成功は 0.7倍
+// 希望納期（依頼の時間）の EARLY 倍以内に終われば +50%。失敗すると評判が FAIL_REP 倍ぶん下がる
+export const REP_GREAT = 1.5;
+export const REP_EARLY = 0.75;
+export const FAIL_REP = 0.5;
 export const CANDIDATE_EVERY = DAY; // 採用候補が入れ替わる間隔
 // 1日に面接に来る人の数（会社の広さごとの平均）。小さいうちはなかなか来ないので、勉強会で人を呼ぶ
 export const CANDIDATES_PER_DAY = [0.25, 1, 2, 3, 3];

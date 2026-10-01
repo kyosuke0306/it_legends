@@ -6,7 +6,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildChibi, createCharacter, animateCharacter } from './character.js';
 import { byId as LEGEND_BY_ID } from './data.js';
 import { OFFICES, JOBS } from './game/rules.js';
-import { displayName } from './game/state.js';
+import { displayName, workOf } from './game/state.js';
 import { dress } from './outfits.js';
 
 const mat = (color, opts) => new THREE.MeshToonMaterial({ color, ...opts });
@@ -95,7 +95,7 @@ export class Office {
       }
       p.busy = Boolean(m.busy);
       p.hero = m.kind === 'hero';
-      p.label = labelOf(m);
+      p.label = { ...labelOf(m), work: workOf(state, m)?.title ?? '' }; // 仕事中なら仕事の名前も出す
       const desk = this.desks[i % this.desks.length];
       p.desk = i < this.desks.length ? desk : desk.clone().add(new THREE.Vector3(0.32 * Math.ceil(i / this.desks.length), 0, 0.15));
     });
@@ -279,9 +279,10 @@ export class Office {
     clearTimeout(this.tagTimer);
     this.tagged = best;
     if (!best) return this.tag.classList.remove('show');
-    this.tag.innerHTML = `<b></b><small></small>`;
+    this.tag.innerHTML = `<b></b><small></small>${best.label.work ? '<span class="work"></span>' : ''}`;
     this.tag.querySelector('b').textContent = best.label.name;
     this.tag.querySelector('small').textContent = best.label.sub;
+    if (best.label.work) this.tag.querySelector('.work').textContent = best.label.work;
     this.tag.classList.add('show');
     this.tagTimer = setTimeout(() => {
       this.tagged = null;
@@ -296,7 +297,13 @@ export class Office {
     this.tagged.holder.getWorldPosition(v);
     v.y += 1.35;
     v.project(this.camera);
-    this.tag.style.left = `${((v.x + 1) / 2) * this.canvas.clientWidth}px`;
+    // 札が画面の端からはみ出さないように寄せる（矢印は人のほうを指したまま）
+    const W = this.canvas.clientWidth;
+    const x = ((v.x + 1) / 2) * W;
+    const half = this.tag.offsetWidth / 2;
+    const cx = Math.min(Math.max(x, half + 4), Math.max(half + 4, W - half - 4));
+    this.tag.style.left = `${cx}px`;
+    this.tag.style.setProperty('--ax', `${Math.max(-half + 12, Math.min(half - 12, x - cx))}px`);
     this.tag.style.top = `${((1 - v.y) / 2) * this.canvas.clientHeight}px`;
   }
 

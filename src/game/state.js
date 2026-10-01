@@ -196,8 +196,15 @@ export function taskPreview(s, offer, ids, temps = offer.temps ?? []) {
   const te = teamEffects(team);
   const power = teamPower(s, team, offer.w);
   const chance = te.alwaysSuccess ? 1 : Math.min(0.98, Math.max(0.05, 0.9 * (power / offer.diff) + te.teamSuccess));
-  const duration = offer.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed));
-  return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)) };
+  const duration = (offer.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed))) / (1 + R.TEAM_SPEEDUP * (team.length - 1));
+  const great = power >= offer.diff * R.REP_GREAT;
+  const early = duration <= offer.hours * R.HOUR * R.REP_EARLY;
+  return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)), rep: taskRep(offer, power, early), great, early };
+}
+// 成功したときの評判（出来と早さで変わる）
+function taskRep(offer, power, early) {
+  const q = power >= offer.diff * R.REP_GREAT ? 1.5 : power >= offer.diff ? 1 : 0.7;
+  return Math.max(1, Math.round(offer.rep * q * (early ? 1.5 : 1)));
 }
 
 // nTemps は派遣で借りる人数（自分の会社から1人は出す）
@@ -223,8 +230,11 @@ function finishTask(s, task, t, ev) {
   const ok = rand(s) < pv.chance;
   const money = ok ? pv.reward : round(pv.reward * 0.2);
   s.money += money;
+  // 早さは実際にかかった時間で決める
+  const early = task.endsAt - task.startAt <= task.hours * R.HOUR * R.REP_EARLY;
+  const rep = ok ? taskRep(task, pv.power, early) : -Math.min(s.rep, Math.max(1, Math.round(task.rep * R.FAIL_REP)));
+  s.rep += rep;
   if (ok) {
-    s.rep += task.rep;
     s.counts.tasks++;
     s.counts.cat[task.cat] = (s.counts.cat[task.cat] ?? 0) + 1;
   }
@@ -233,7 +243,7 @@ function finishTask(s, task, t, ev) {
   for (const m of team) m.busy = null;
   s.tasks = s.tasks.filter((x) => x !== task);
   addLog(s, t, ok ? `${task.title}  成功` : `${task.title}  失敗`, ok ? 'good' : 'bad');
-  ev.push({ type: 'task', ok, money, rep: ok ? task.rep : 0, title: task.title });
+  ev.push({ type: 'task', ok, money, rep, great: ok && pv.great, early: ok && early, title: task.title });
 }
 
 export const xpNeed = (level) => Math.round(12 * level ** 1.6);
@@ -270,7 +280,8 @@ export function devPreview(s, genre, ids) {
   const team = ids.map((id) => memberById(s, id));
   const te = teamEffects(team);
   const power = teamPower(s, team, g.w);
-  return { power, quality: (power / g.need) * (1 + te.teamQuality), duration: g.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed)) };
+  const duration = (g.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed))) / (1 + R.TEAM_SPEEDUP * (team.length - 1));
+  return { power, quality: (power / g.need) * (1 + te.teamQuality), duration };
 }
 
 export function startDev(s, genre, ids, now) {
@@ -440,13 +451,14 @@ export function setActivity(s, id) {
 export function ceoBusyUntil(s) {
   return ceoWork(s)?.endsAt ?? 0;
 }
-// CEO がいま任されている仕事か開発（なければ null）。画面に名前を出すため title を付けて返す
-export function ceoWork(s) {
-  const hero = s.members.find((m) => m.kind === 'hero');
-  if (!hero?.busy) return null;
-  const task = s.tasks.find((x) => x.id === hero.busy);
+// CEO がいま任されている仕事か開発（なければ null）
+export const ceoWork = (s) => workOf(s, s.members.find((m) => m.kind === 'hero'));
+// その人がいま任されている仕事か開発（なければ null）。画面に名前を出すため title を付けて返す
+export function workOf(s, m) {
+  if (!m?.busy) return null;
+  const task = s.tasks.find((x) => x.id === m.busy);
   if (task) return { title: task.title, endsAt: task.endsAt };
-  const dev = s.devs.find((x) => x.id === hero.busy);
+  const dev = s.devs.find((x) => x.id === m.busy);
   return dev ? { title: R.GENRES[dev.genre].name, endsAt: dev.endsAt } : null;
 }
 // いまの過ごし方で、その出来事が起きるか（CEO の手が空いているときだけ）

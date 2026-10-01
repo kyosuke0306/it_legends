@@ -263,7 +263,7 @@ function renderOffice() {
         ${icon(a.icon, 'act-ic')}<span>${a.name}</span>${icon(EVENT_ICON[a.event], `act-ev ev-${a.event}`)}
       </button>`,
     )
-    .join('') + (busyUntil ? `<div class="act-lock"><span class="pill">${icon('task')}<span class="what">${esc(work.title)}</span><span class="left" data-left="${busyUntil}"></span></span></div>` : '');
+    .join('') + (busyUntil ? `<div class="act-lock"><span class="pill">${icon('task')}<span class="what">仕事中</span><span class="left" data-left="${busyUntil}"></span></span></div>` : '');
   $('#activity').querySelectorAll('[data-act]').forEach((b) => (b.onclick = () => G.setActivity(S, b.dataset.act) && commit()));
   const next = R.OFFICES[S.office + 1];
   if (next) {
@@ -281,7 +281,13 @@ function renderOffice() {
 function renderWork() {
   const byIdM = (id) => S.members.find((m) => m.id === id);
   const running = S.tasks
-    .map((t) => `<div class="panel run"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>${progress(t.startAt, t.endsAt)}</div>`)
+    .map((t) => {
+      // 任せている仕事の見込み（成功率・かかる時間・人数・報酬・成功したときの評判）
+      const p = G.taskPreview(S, t, t.members.filter(byIdM));
+      return `<div class="panel run"><div class="row1"><b>${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>
+        <span class="vals">${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(t.endsAt - t.startAt))}${val('people', `${t.members.length + (t.temps?.length ?? 0)}/${t.team}`)}${val('coin', yen(p.reward), 'strong')}${val('star', `+${p.rep}`)}</span>
+        ${progress(t.startAt, t.endsAt)}</div>`;
+    })
     .join('');
   const canWork = G.freeMembers(S).length > 0;
   const offers = S.offers
@@ -310,7 +316,7 @@ function assignTask(offerId) {
     temp: { make: (i) => G.makeTemp(S, o, i), fee: G.tempFee(o) },
     preview: (ids, temps) => {
       const p = G.taskPreview(S, o, ids, temps);
-      return `${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(p.duration))}${val('coin', yen(p.reward))}`;
+      return `${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(p.duration), p.early ? 'ok' : '')}${val('coin', yen(p.reward))}${val('star', `+${p.rep}`, p.great || p.early ? 'ok' : '')}`;
     },
     confirm: (ids, temps) => G.startTask(S, offerId, ids, Date.now(), temps.length),
   });
@@ -401,7 +407,7 @@ function memberRow(m, { candidate = false } = {}) {
       open || candidate
         ? `<div class="more"><span class="perk">${esc(perkText(m))}</span>${
             m.salary ? `<span class="muted">${val('wallet', `${yen(m.salary)}/日`)}</span>` : ''
-          }${!candidate && m.kind === 'staff' && !m.busy ? `<button class="link small" data-dismiss="${m.id}">やめてもらう</button>` : ''}${
+          }${!candidate && m.kind === 'staff' ? `<button class="btn fire" data-dismiss="${m.id}" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}${
             m.kind === 'legend' ? `<button class="link small" data-legend="${m.legend}">見る</button>` : ''
           }${candidate ? hireBtn() : ''}</div>`
         : ''
@@ -436,7 +442,7 @@ function renderTeam() {
       document.querySelector('.tab[data-view="office"]').click();
     });
   v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
-  v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('やめてもらいますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
+  v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('解雇しますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));
 }
 
@@ -642,7 +648,7 @@ function resultsHtml(ev, { head = true } = {}) {
   const rows = [
     ...tasks.slice(0, 5).map(
       (t) => `<div class="result ${t.ok ? 'ok' : 'bad'}">${icon(t.ok ? 'check' : 'error')}<b>${esc(t.title)}</b>
-        <span class="vals">${val('coin', `+${yen(t.money)}`, t.ok ? 'ok' : '')}${t.rep ? val('star', `+${t.rep}`) : ''}</span></div>`,
+        <span class="vals">${t.great ? icon('bolt', 'res-great') : ''}${t.early ? icon('clock', 'res-early') : ''}${val('coin', `+${yen(t.money)}`, t.ok ? 'ok' : '')}${t.rep ? val('star', `${t.rep > 0 ? '+' : ''}${t.rep}`, t.rep < 0 ? 'bad' : '') : ''}</span></div>`,
     ),
     tasks.length > 5 ? `<div class="muted">+${tasks.length - 5}</div>` : '',
     ...prods.map((p) => `<div class="result ok">${icon('box')}<b>${esc(p.name)}</b><span class="vals">${rating(p.q)}</span></div>`),
