@@ -64,7 +64,7 @@ function dur(ms) {
   return h % 24 ? `${Math.floor(h / 24)}日${h % 24}時間` : `${Math.floor(h / 24)}日`;
 }
 const val = (name, text, cls = '') => `<span class="val ${cls}">${icon(name)}${text}</span>`;
-const jobShort = (m) => (m.kind === 'legend' ? byId[m.legend].rarity : m.kind === 'hero' ? `CEO・${R.JOBS[m.job].name}` : R.JOBS[m.job].name);
+const jobShort = (m) => (m.kind === 'legend' ? byId[m.legend].rarity : R.JOBS[m.job].name);
 const perkText = (m) => (m.kind === 'legend' ? R.LEGEND_RULES[m.legend].abilityText : R.JOBS[m.job].perkText);
 const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
 function avatar(m) {
@@ -317,7 +317,7 @@ function openAssign({ title, max, w, preview, confirm, extra = '' }) {
       <div class="pick">${free
         .map(
           (m) => `<button class="person ${chosen.has(m.id) ? 'active' : ''}" data-id="${m.id}">
-            ${avatar(m)}<span class="pname">${esc(m.name)}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${power(m)}</span>
+            ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${power(m)}</span>
           </button>`,
         )
         .join('')}</div>
@@ -358,7 +358,7 @@ function memberRow(m, { candidate = false } = {}) {
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''} ${open ? 'open' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
-      <span class="pname">${esc(m.name)}<small>${jobShort(m)} Lv${m.level}</small></span>
+      <span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>
       ${statBars(st)}
     </button>
     ${
@@ -569,7 +569,7 @@ function tick() {
   const ev = G.advance(S, Date.now());
   if (ev.length) {
     if (ev.some((e) => e.type === 'encounter')) notice(`${icon('spark', 'big-ic spin')}<h2>誰かが現れた</h2>`);
-    else if (ev.some((e) => e.type === 'walkin')) notice(`${icon('people', 'big-ic')}<h2>入社したい人が来た</h2><p class="muted">${esc(ev.find((e) => e.type === 'walkin').name)}</p>`);
+    else if (ev.some((e) => e.type === 'walkin')) notice(`${icon('people', 'big-ic')}<h2>面接に来た</h2><p class="muted">${esc(ev.find((e) => e.type === 'walkin').name)}</p>`);
     else if (ev.some((e) => e.type === 'luck')) {
       const l = ev.find((e) => e.type === 'luck');
       notice(`${icon('coin', 'big-ic')}<h2>${esc(l.title)}</h2><div class="welcome">${val('coin', `+${yen(l.money)}`, 'ok')}</div>`);
@@ -595,7 +595,7 @@ function welcomeBack(ev, away) {
   const net = (ev.income ?? 0) - (ev.salary ?? 0) + luck;
   if (Math.abs(net) >= 1) rows.push(val('coin', `${net >= 0 ? '+' : ''}${yen(net)}`, net >= 0 ? 'ok' : 'bad'));
   if (ev.some((e) => e.type === 'encounter')) rows.push(val('spark', '誰かが現れた', 'legend'));
-  if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '入社したい人が来た', 'legend'));
+  if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '面接に来た', 'legend'));
   if (!rows.length) return;
   notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>`);
 }

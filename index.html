@@ -7,25 +7,25 @@
     <meta name="theme-color" content="#14123a" />
     <link rel="icon" href="assets/favicon.png" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
-    <link rel="stylesheet" href="style.css?v=15" />
+    <link rel="stylesheet" href="style.css?v=16" />
     <script type="importmap">
       {
         "imports": {
           "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-          "./src/character.js": "./src/character.js?v=15",
-          "./src/cloud.js": "./src/cloud.js?v=15",
-          "./src/data.js": "./src/data.js?v=15",
-          "./src/firebase-config.js": "./src/firebase-config.js?v=15",
-          "./src/game/names.js": "./src/game/names.js?v=15",
-          "./src/game/rules.js": "./src/game/rules.js?v=15",
-          "./src/game/state.js": "./src/game/state.js?v=15",
-          "./src/icons.js": "./src/icons.js?v=15",
-          "./src/main.js": "./src/main.js?v=15",
-          "./src/office.js": "./src/office.js?v=15",
-          "./src/show.js": "./src/show.js?v=15",
-          "./src/stage.js": "./src/stage.js?v=15",
-          "./src/version.js": "./src/version.js?v=15"
+          "./src/character.js": "./src/character.js?v=16",
+          "./src/cloud.js": "./src/cloud.js?v=16",
+          "./src/data.js": "./src/data.js?v=16",
+          "./src/firebase-config.js": "./src/firebase-config.js?v=16",
+          "./src/game/names.js": "./src/game/names.js?v=16",
+          "./src/game/rules.js": "./src/game/rules.js?v=16",
+          "./src/game/state.js": "./src/game/state.js?v=16",
+          "./src/icons.js": "./src/icons.js?v=16",
+          "./src/main.js": "./src/main.js?v=16",
+          "./src/office.js": "./src/office.js?v=16",
+          "./src/show.js": "./src/show.js?v=16",
+          "./src/stage.js": "./src/stage.js?v=16",
+          "./src/version.js": "./src/version.js?v=16"
         }
       }
     </script>
@@ -47,12 +47,12 @@
       </div>
       <div class="step" data-step="1">
         <div class="step-head"><button class="back" data-back aria-label="戻る"></button><div class="dots"><i class="on"></i><i></i><i></i></div></div>
-        <label class="field"><span>あなたの名前</span><input id="start-name" maxlength="12" placeholder="例：山田 太郎" autocomplete="off" /></label>
+        <label class="field"><span>あなたの名前</span><div class="pre-input"><b>CEO</b><input id="start-name" maxlength="12" placeholder="例：山田 太郎" autocomplete="off" /></div></label>
         <button class="big" data-next>次へ</button>
       </div>
       <div class="step" data-step="2">
         <div class="step-head"><button class="back" data-back aria-label="戻る"></button><div class="dots"><i class="on"></i><i class="on"></i><i></i></div></div>
-        <label class="field"><span>会社の名前</span><input id="start-company" maxlength="16" placeholder="例：ガレージ・ラボ" autocomplete="off" /></label>
+        <label class="field"><span>会社の名前</span><div class="pre-input"><b>株式会社</b><input id="start-company" maxlength="16" placeholder="例：ガレージ・ラボ" autocomplete="off" /></div></label>
         <button class="big" data-next>次へ</button>
       </div>
       <div class="step" data-step="3">
@@ -125,6 +125,6 @@
 
     <div id="version"></div>
 
-    <script type="module" src="src/main.js?v=15"></script>
+    <script type="module" src="src/main.js?v=16"></script>
   </body>
 </html>

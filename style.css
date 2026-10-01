@@ -110,6 +110,9 @@ button:disabled { cursor: default; }
 .field span { font-size: 1.5rem; font-weight: 800; }
 .field input { font: inherit; font-size: 1.3rem; padding: 16px 18px; border-radius: 16px; border: 2px solid var(--line); background: var(--panel); color: var(--text); outline: none; }
 .field input:focus { border-color: var(--accent); }
+.pre-input { display: flex; align-items: center; gap: 10px; }
+.pre-input b { flex: none; font-size: 1.1rem; color: var(--accent); }
+.pre-input input { flex: 1; min-width: 0; }
 
 /* 職種 */
 .jobs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0 90px; }

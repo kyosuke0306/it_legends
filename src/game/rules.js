@@ -91,7 +91,7 @@ export const ENCOUNTER_PER_HOUR = 1 / 110; // 条件を満たした偉人と出�
 export const ENCOUNTER_LIFE = DAY; // 出会いのチャンスが続く時間
 export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会えるまで
 // CEO の過ごし方（無料。いつもどれか1つを選んでいる）。選んだものに合った出来事がまれに起きる（1時間ごとに判定）
-//   event: legend 偉人と偶然出会う（条件を満たしていなくても） / luck 臨時収入 / walkin 入社したい人が訪ねてくる
+//   event: legend 偉人と偶然出会う（条件を満たしていなくても） / luck 臨時収入 / walkin 入社したい人が面接に来る
 export const ACTIVITIES = {
   walk: { name: '散歩', icon: 'walk', event: 'legend', perHour: 1 / 400 }, // 平均17日に1回くらい
   net: { name: 'ネット', icon: 'globe', event: 'luck', perHour: 1 / 36 }, // 平均1日半に1回くらい

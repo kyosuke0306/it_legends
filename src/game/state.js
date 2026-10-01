@@ -23,6 +23,10 @@ function hash01(...xs) {
 }
 
 // ---------- はじめる ----------
+// 会社名には「株式会社」、主人公の名前には「CEO」を付けて見せる
+export const companyTitle = (c) => (c.includes('株式会社') ? c : `株式会社${c}`);
+export const displayName = (m) => (m.kind === 'hero' ? `CEO ${m.name}` : m.name);
+
 export function newGame({ job, name, company }, now = Date.now()) {
   const seed = (Math.random() * 2 ** 31) | 0;
   const s = {
@@ -31,7 +35,7 @@ export function newGame({ job, name, company }, now = Date.now()) {
     rng: seed,
     createdAt: now,
     time: now,
-    company,
+    company: companyTitle(company),
     money: R.START_MONEY,
     rep: 0,
     office: 0,
@@ -55,7 +59,7 @@ export function newGame({ job, name, company }, now = Date.now()) {
   s.members.push(hero);
   for (let i = 0; i < 3; i++) addOffer(s, now, 0, true); // 最初は短くてやさしい仕事
   refreshCandidates(s);
-  addLog(s, now, `${company} 創業`);
+  addLog(s, now, `${s.company} 創業`);
   return s;
 }
 
@@ -217,8 +221,8 @@ function giveXp(s, team, base, t, ev) {
       const w = m.kind === 'legend' ? Object.fromEntries(R.STAT_KEYS.map((k) => [k, m.stats[k] / 40])) : R.JOBS[m.job].w;
       for (const k of R.STAT_KEYS) m.stats[k] += Math.round(w[k] * between(s, 0.8, 1.4));
       if (m.salary) m.salary = round(m.salary * 1.08, 500);
-      addLog(s, t, `${m.name}  Lv${m.level}`, 'good');
-      ev.push({ type: 'level', name: m.name, level: m.level });
+      addLog(s, t, `${displayName(m)}  Lv${m.level}`, 'good');
+      ev.push({ type: 'level', name: displayName(m), level: m.level });
     }
   }
 }
@@ -425,7 +429,7 @@ function rollWalkin(s, t, ev) {
   m.walkin = true;
   m.until = t + R.WALKIN_LIFE;
   s.candidates.unshift(m);
-  addLog(s, t, `${m.name}  勉強会で出会い、入社したいと訪ねてきた`, 'good');
+  addLog(s, t, `${m.name}  面接に来た`, 'good');
   ev.push({ type: 'walkin', id: m.id, name: m.name });
 }
 
@@ -486,6 +490,7 @@ export function advance(s, now, ev = []) {
 // 古い記録を今の形にそろえる（以前あった知識ノートのデータは使わないので消す）
 export function migrate(s) {
   if (!R.ACTIVITIES[s.activity]) s.activity = R.DEFAULT_ACTIVITY;
+  s.company = companyTitle(s.company);
   delete s.notes;
   s.log = s.log.filter((l) => l.kind !== 'note');
   return s;
