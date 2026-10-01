@@ -3,6 +3,7 @@
 import * as R from './rules.js';
 import { byId as LEGEND_BY_ID, LEGENDS } from '../data.js';
 import { randomPerson, productName } from './names.js';
+import { NOTES, noteById } from './knowledge.js';
 
 // ---------- 乱数（記録に種を持たせ、毎回同じ結果になるように） ----------
 export function rand(s) {
@@ -47,6 +48,7 @@ export function newGame({ job, name, company }, now = Date.now()) {
     met: {},
     counts: { tasks: 0, cat: {}, products: 0 },
     log: [],
+    notes: {},
     nextId: 1,
   };
   const hero = makePerson(s, job, { hero: true });
@@ -55,6 +57,7 @@ export function newGame({ job, name, company }, now = Date.now()) {
   for (let i = 0; i < 3; i++) addOffer(s, now, 0, true); // 最初は短くてやさしい仕事
   refreshCandidates(s);
   addLog(s, now, `${company} を立ち上げた！ まずは仕事を受けてみよう`);
+  unlockNotes(s, now, [], { job });
   return s;
 }
 
@@ -194,6 +197,7 @@ function finishTask(s, task, t, ev) {
     s.rep += task.rep;
     s.counts.tasks++;
     s.counts.cat[task.cat] = (s.counts.cat[task.cat] ?? 0) + 1;
+    unlockNotes(s, t, ev, { cat: task.cat, tasks: s.counts.tasks });
   }
   const xp = task.xp * (ok ? 1 : 0.4);
   giveXp(s, team, xp, t, ev);
@@ -217,6 +221,7 @@ function giveXp(s, team, base, t, ev) {
       for (const k of R.STAT_KEYS) m.stats[k] += Math.round(w[k] * between(s, 0.8, 1.4));
       if (m.salary) m.salary = round(m.salary * 1.08, 500);
       addLog(s, t, `${m.name} がレベル ${m.level} になった！`, 'good');
+      if (m.kind === 'legend') unlockNotes(s, t, ev, { legend: m.legend, level: m.level });
       ev.push({ type: 'level', name: m.name, level: m.level });
     }
   }
@@ -261,6 +266,7 @@ function finishDev(s, dev, t, ev) {
   const product = { id: newId(s), genre: dev.genre, name: productName(dev.genre, () => rand(s)), q, launchedAt: t, earned: 0 };
   s.products.push(product);
   s.counts.products++;
+  unlockNotes(s, t, ev, { genre: dev.genre });
   s.rep += Math.round(5 * q * (g.office + 1));
   giveXp(s, team, g.hours * 2, t, ev);
   for (const m of team) m.busy = null;
@@ -306,6 +312,7 @@ export function hire(s, candId, now) {
   s.candidates = s.candidates.filter((c) => c !== m);
   s.members.push(m);
   addLog(s, now, `${R.JOBS[m.job].full}の ${m.name} が入社した！`, 'good');
+  unlockNotes(s, now, [], { job: m.job });
   return true;
 }
 
@@ -324,6 +331,7 @@ export function upgradeOffice(s, now) {
   s.money -= next.cost;
   s.office++;
   addLog(s, now, `${next.name}に引っ越した！ ${next.cap} 人まで入れるようになった`, 'good');
+  unlockNotes(s, now, [], { office: s.office });
   return true;
 }
 
@@ -384,6 +392,7 @@ export function scout(s, now) {
   if (ok) {
     s.members.push(makeLegend(s, id));
     addLog(s, now, `${LEGEND_BY_ID[id].name} が仲間になった！！`, 'legend');
+    unlockNotes(s, now, [], { legend: id, level: 1 });
     return 'joined';
   }
   met.tries = (met.tries ?? 0) + 1;
@@ -439,6 +448,57 @@ export function advance(s, now, ev = []) {
     s.time = next;
   }
   return ev;
+}
+
+// ---------- 知識ノート ----------
+// 起きたこと（what）に合うカードを手に入れる。仕事の種類のカードは1回に1枚ずつ前から順に
+function unlockNotes(s, t, ev, what) {
+  s.notes ??= {};
+  const add = (n) => {
+    s.notes[n.id] = { at: t, read: false };
+    addLog(s, t, `📘 ノートに「${n.title}」が加わった`, 'note');
+    ev.push({ type: 'note', id: n.id });
+  };
+  const fresh = NOTES.filter((n) => !s.notes[n.id]);
+  if (what.cat) {
+    const n = fresh.find((n) => n.unlock.cat === what.cat);
+    if (n) add(n);
+  }
+  for (const n of fresh) {
+    const u = n.unlock;
+    if (
+      (u.tasks && what.tasks >= u.tasks) ||
+      (u.job && u.job === what.job) ||
+      (u.office != null && u.office === what.office) ||
+      (u.genre && u.genre === what.genre) ||
+      (u.legend && u.legend === what.legend && (u.level ?? 1) <= (what.level ?? 1))
+    )
+      add(n);
+  }
+}
+
+// 読んだら評判が少し上がる（おまけ）
+export function readNote(s, id) {
+  const n = s.notes?.[id];
+  if (!n || n.read || !noteById[id]) return false;
+  n.read = true;
+  s.rep += 1;
+  return true;
+}
+
+// 古い記録（ノートができる前）を今の形にそろえる
+export function migrate(s) {
+  if (!s.notes) {
+    s.notes = {};
+    const now = s.time;
+    for (const m of s.members) {
+      if (m.job) unlockNotes(s, now, [], { job: m.job });
+      if (m.legend) unlockNotes(s, now, [], { legend: m.legend, level: m.level });
+    }
+    for (let o = 1; o <= s.office; o++) unlockNotes(s, now, [], { office: o });
+    unlockNotes(s, now, [], { tasks: s.counts.tasks });
+  }
+  return s;
 }
 
 // ---------- 記録 ----------

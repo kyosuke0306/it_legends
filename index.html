@@ -47,6 +47,7 @@
         <button class="tab" data-view="team">仲間</button>
         <button class="tab" data-view="product">製品</button>
         <button class="tab" data-view="legends">偉人 <span id="progress"></span></button>
+        <button class="tab" data-view="notes">ノート <span class="badge" id="badge-notes"></span></button>
       </nav>
 
       <main>
@@ -61,6 +62,7 @@
         <section id="view-team" class="view"></section>
         <section id="view-product" class="view"></section>
         <section id="view-legends" class="view"><div id="zukan-grid" class="grid"></div></section>
+        <section id="view-notes" class="view"></section>
       </main>
     </div>
 
@@ -90,6 +92,7 @@
       <div id="settings-body"></div>
     </dialog>
 
+    <div id="toast" class="toast hidden"></div>
     <div id="version"></div>
 
     <script type="module" src="src/main.js"></script>

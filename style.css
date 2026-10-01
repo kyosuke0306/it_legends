@@ -50,10 +50,14 @@ nav.tabs {
 .tab {
   border: 0;
   border-radius: 999px;
-  padding: 8px 14px;
+  padding: 7px 12px;
   background: var(--panel);
   color: var(--text);
   white-space: nowrap;
+}
+@media (max-width: 480px) {
+  nav.tabs { gap: 4px; padding: 4px 10px 10px; }
+  .tab { padding: 7px 9px; font-size: 0.85rem; }
 }
 .badge:not(:empty) { background: #ff4d6d; color: #fff; border-radius: 999px; padding: 0 6px; font-size: 0.75rem; margin-left: 2px; }
 .tab.active { background: var(--accent); color: #fff; }
@@ -371,3 +375,18 @@ h3 { font-size: 1rem; margin: 18px 0 8px; }
   .ability { background: #33295a; color: #d6c2ff; }
   .form input { border-color: #44446a; }
 }
+
+/* ---------- 知識ノート ---------- */
+.chip-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 10px; }
+.chip-tab { border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 999px; padding: 5px 12px; }
+.chip-tab.active { background: var(--accent); color: #fff; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff4d6d; vertical-align: 2px; }
+.notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; align-items: start; }
+.note { display: block; width: 100%; text-align: left; border: 0; border-radius: 12px; background: var(--panel); color: var(--text); padding: 10px 12px; }
+.note.open { grid-column: 1 / -1; box-shadow: inset 0 0 0 2px var(--accent); }
+.note p { margin: 8px 0 0; line-height: 1.8; font-size: 0.92rem; }
+.note.locked { opacity: 0.55; }
+.note .new { font-size: 0.65rem; padding: 0 5px; margin: 0; vertical-align: 2px; }
+.log .note { color: #2f7fb8; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #22223a; color: #fff; border-radius: 999px; padding: 10px 18px; font-size: 0.9rem; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); z-index: 10; animation: bubble-pop 0.25s ease-out; }
+.new { display: inline-block; color: #fff; background: #ff4d6d; border-radius: 6px; padding: 1px 8px; font-weight: bold; }

@@ -7,6 +7,7 @@ import { VERSION } from './version.js';
 import * as G from './game/state.js';
 import * as R from './game/rules.js';
 import * as cloud from './cloud.js';
+import { NOTES, NOTE_KINDS, noteHint } from './game/knowledge.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -23,7 +24,7 @@ let office;
 function loadLocal() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    return s?.v === 1 ? s : null;
+    return s?.v === 1 ? G.migrate(s) : null;
   } catch {
     return null;
   }
@@ -100,6 +101,7 @@ function showStart() {
 
 // ---------- ゲーム画面 ----------
 function enterGame() {
+  noteCount = Object.keys(S.notes).length;
   $('#start').classList.add('hidden');
   $('#game').classList.remove('hidden');
   office ??= new Office($('#office-canvas'));
@@ -125,7 +127,9 @@ function renderAll() {
   $('#progress').textContent = `${G.ownedLegends(S).size}/${LEGENDS.length}`;
   const free = G.freeMembers(S).length;
   $('#badge-work').textContent = free && S.offers.length ? free : '';
-  ({ office: renderOffice, work: renderWork, team: renderTeam, product: renderProduct, legends: renderLegends })[view]();
+  const unread = Object.values(S.notes).filter((n) => !n.read).length;
+  $('#badge-notes').textContent = unread || '';
+  ({ office: renderOffice, work: renderWork, team: renderTeam, product: renderProduct, legends: renderLegends, notes: renderNotes })[view]();
   updateTimers();
 }
 
@@ -429,6 +433,56 @@ function renderLegends() {
   }
 }
 
+// ----- 知識ノート（おまけ：遊んでいるとたまる IT・人物・IT会社のカード） -----
+let noteKind = 'it';
+let openNote = null;
+function renderNotes() {
+  const tabs = Object.entries(NOTE_KINDS)
+    .map(([k, name]) => {
+      const all = NOTES.filter((n) => n.kind === k);
+      const got = all.filter((n) => S.notes[n.id]).length;
+      const unread = all.filter((n) => S.notes[n.id] && !S.notes[n.id].read).length;
+      return `<button class="chip-tab ${k === noteKind ? 'active' : ''}" data-kind="${k}">${name} ${got}/${all.length}${unread ? ' <span class="dot"></span>' : ''}</button>`;
+    })
+    .join('');
+  const list = NOTES.filter((n) => n.kind === noteKind)
+    .map((n) => {
+      const got = S.notes[n.id];
+      if (!got) return `<div class="note locked"><b>？？？</b><div class="muted small">${noteHint(n)}</div></div>`;
+      const open = openNote === n.id;
+      return `<button class="note ${open ? 'open' : ''}" data-note="${n.id}">
+        <b>${got.read ? '' : '<span class="new">NEW</span> '}${esc(n.title)}</b>
+        ${open ? `<p>${esc(n.text)}</p>` : ''}
+      </button>`;
+    })
+    .join('');
+  $('#view-notes').innerHTML = `
+    <p class="muted small">仕事や出来事に合わせて、ITのこと・偉人のこと・IT会社のことがノートにたまっていきます。はじめて読むと評判 +1。</p>
+    <div class="chip-tabs">${tabs}</div>
+    <div class="notes">${list}</div>`;
+  const v = $('#view-notes');
+  v.querySelectorAll('[data-kind]').forEach((b) => (b.onclick = () => ((noteKind = b.dataset.kind), (openNote = null), renderNotes())));
+  v.querySelectorAll('[data-note]').forEach(
+    (b) =>
+      (b.onclick = () => {
+        const id = b.dataset.note;
+        openNote = openNote === id ? null : id;
+        if (G.readNote(S, id)) commit();
+        else renderNotes();
+      }),
+  );
+}
+
+// 画面の下に少しだけ出るお知らせ
+let toastTimer;
+function toast(html) {
+  const el = $('#toast');
+  el.innerHTML = html;
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
 // ---------- 偉人の詳細・出会い ----------
 let detailStage;
 let detailToken;
@@ -518,7 +572,11 @@ function notice(html) {
 }
 
 // ---------- 時間を進める ----------
+let noteCount = null;
 function commit() {
+  const n = Object.keys(S.notes).length;
+  if (noteCount != null && n > noteCount) toast(`📘 ノートに ${n - noteCount} 枚加わりました`);
+  noteCount = n;
   save();
   renderAll();
 }
@@ -526,6 +584,8 @@ function tick() {
   if (!S) return;
   const ev = G.advance(S, Date.now());
   if (ev.length) {
+    const notes = ev.filter((e) => e.type === 'note');
+    if (notes.length) toast(`📘 ノートに ${notes.length} 枚加わりました`);
     if (ev.some((e) => e.type === 'encounter')) notice(`<h2>✦ 時空のゆがみ…</h2><p>誰かが現れたようです。「会社」の画面から会いに行こう！</p>`);
     commit();
   } else {
@@ -543,6 +603,8 @@ function welcomeBack(ev, away) {
   if (tasks.length) lines.push(`仕事が ${tasks.length} 件終わった（成功 ${ok} 件）`);
   for (const e of ev.filter((e) => e.type === 'product')) lines.push(`新製品「${esc(e.name)}」を発売した`);
   for (const e of ev.filter((e) => e.type === 'level')) lines.push(`${esc(e.name)} がレベル ${e.level} になった`);
+  const notes = ev.filter((e) => e.type === 'note').length;
+  if (notes) lines.push(`📘 ノートに ${notes} 枚加わった`);
   if (ev.income > 1) lines.push(`製品の収入 +${yen(ev.income)}`);
   if (ev.salary > 1) lines.push(`給料の支払い −${yen(ev.salary)}`);
   if (ev.some((e) => e.type === 'encounter')) lines.push('<b>✦ 誰かが時を超えて現れた！</b>');
@@ -616,6 +678,7 @@ async function syncWithCloud() {
     rs = remote?.state ? JSON.parse(remote.state) : null;
   } catch {}
   if (rs?.v !== 1) rs = null;
+  else G.migrate(rs);
   let useRemote = false;
   if (rs && !S) useRemote = true;
   else if (rs && S && rs.seed === S.seed) useRemote = (rs.savedAt ?? 0) > (S.savedAt ?? 0);
