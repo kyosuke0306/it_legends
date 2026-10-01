@@ -654,6 +654,7 @@ document.querySelectorAll('dialog').forEach((d) => d.addEventListener('click', (
 $('#notice-ok').onclick = () => $('#notice').close();
 function notice(html) {
   $('#notice-body').innerHTML = html;
+  fillThumbs($('#notice-body'));
   if (!$('#notice').open) $('#notice').showModal();
 }
 
@@ -664,8 +665,9 @@ function commit() {
 }
 function tick() {
   if (!S) return;
+  const rival = S.rival;
   const ev = G.advance(S, Date.now());
-  if (ev.length) {
+  if (ev.length || S.rival !== rival) {
     // 起きたことを1つのポップアップにまとめて出す
     const parts = [];
     if (ev.some((e) => e.type === 'encounter')) parts.push(`${icon('spark', 'big-ic spin')}<h2>誰かが現れた</h2>`);
@@ -673,6 +675,8 @@ function tick() {
     if (w) parts.push(`${icon('people', 'big-ic')}<h2>面接に来た</h2><p class="muted">${esc(w.name)}</p>`);
     const l = ev.find((e) => e.type === 'luck');
     if (l) parts.push(`${icon('coin', 'big-ic')}<h2>${esc(l.title)}</h2><div class="welcome">${val('coin', `+${yen(l.money)}`, 'ok')}</div>`);
+    const rivals = rivalsHtml(ev);
+    if (rivals) parts.push(rivals);
     const done = resultsHtml(ev);
     if (done) parts.push(done);
     if (parts.length) notice(parts.join('<hr class="nsep">'));
@@ -702,20 +706,35 @@ function resultsHtml(ev, { head = true } = {}) {
   return head ? `${icon(tasks.some((t) => t.ok) || prods.length ? 'check' : 'task', 'big-ic done-ic')}<h2>完了</h2>${list}` : list;
 }
 
+// 冷やかしに来たレジェンドと、されたこと（お金を減らされた・社員を引き抜かれた）
+function rivalsHtml(ev, { head = true } = {}) {
+  const rs = ev.filter((e) => e.type === 'rival');
+  if (!rs.length) return '';
+  const rows = rs.slice(0, 3).map(
+    (r) => `<div class="rival">
+      <span class="av legend" style="--c:var(--bad)"><img data-thumb="${r.id}" alt=""></span>
+      <span class="rival-what"><b>${esc(byId[r.id].name)}</b><small>${esc(r.poached ? `${r.poached} を引き抜かれた` : r.title)}</small></span>
+      ${r.poached ? val('people', '-1', 'bad') : val('coin', `-${yen(r.money)}`, 'bad')}
+    </div>`,
+  );
+  return `${head ? `${icon('error', 'big-ic rival-ic')}<h2>冷やかし</h2>` : ''}<div class="results">${rows.join('')}</div>`;
+}
+
 // 留守の間に起きたこと
 function welcomeBack(ev, away) {
   if (away < 10 * 60000) return;
   const rows = [];
   // お金の増減の合計（製品の収入・給料・臨時収入・仕事の報酬）
-  const gained = ev.filter((e) => e.type === 'luck' || e.type === 'task').reduce((a, e) => a + e.money, 0);
+  const gained = ev.filter((e) => e.type === 'luck' || e.type === 'task').reduce((a, e) => a + e.money, 0) - ev.filter((e) => e.type === 'rival').reduce((a, e) => a + (e.money ?? 0), 0);
   const net = (ev.income ?? 0) - (ev.salary ?? 0) + gained;
   if (Math.abs(net) >= 1) rows.push(val('coin', `${net >= 0 ? '+' : ''}${yen(net)}`, net >= 0 ? 'ok' : 'bad'));
   if (ev.some((e) => e.type === 'encounter')) rows.push(val('spark', '誰かが現れた', 'legend'));
   if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '面接に来た', 'legend'));
   // 終わった仕事は1つずつ（resultsHtml の一覧だけを使う）
   const done = resultsHtml(ev, { head: false });
-  if (!rows.length && !done) return;
-  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${done}`);
+  const rivals = rivalsHtml(ev, { head: false });
+  if (!rows.length && !done && !rivals) return;
+  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${rivals}${done}`);
 }
 
 // ---------- ログイン（Google で保存・同期。src/cloud.js） ----------

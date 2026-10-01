@@ -15,6 +15,7 @@ const SPEED = 0.45;
 function labelOf(m) {
   if (m.kind === 'legend') return { name: m.name, sub: LEGEND_BY_ID[m.legend].title };
   if (m.kind === 'temp') return { name: m.name, sub: `${JOBS[m.job].full}・派遣` };
+  if (m.kind === 'rival') return { name: m.name, sub: '冷やかし' };
   return { name: displayName(m), sub: JOBS[m.job].full };
 }
 const GUEST_LOOKS = [
@@ -72,6 +73,8 @@ export class Office {
     if (state.office !== this.level) this.buildRoom(state.office);
     // 派遣の人は仕事の間だけ事務所にいる（席が足りないときは机の横に立つ）
     const people = [...state.members, ...state.tasks.flatMap((x) => x.temps ?? [])];
+    // 冷やかしに来たレジェンド（まだ仲間でない）。しばらく事務所をうろうろして帰る
+    if (state.rival && state.rival.until > Date.now()) people.push({ id: `rival-${state.rival.id}`, kind: 'rival', legend: state.rival.id, name: LEGEND_BY_ID[state.rival.id].name, busy: null });
     const ids = new Set(people.map((m) => m.id));
     for (const [id, p] of this.people) {
       if (!ids.has(id)) {
@@ -83,7 +86,7 @@ export class Office {
       let p = this.people.get(m.id);
       if (!p) {
         p = { holder: new THREE.Group(), obj: null, target: null, wait: Math.random() * 2 };
-        p.holder.position.copy(m.kind === 'temp' ? this.spots.door : this.randomSpot());
+        p.holder.position.copy(m.kind === 'temp' || m.kind === 'rival' ? this.spots.door : this.randomSpot());
         this.scene.add(p.holder);
         this.people.set(m.id, p);
         this.makeBody(m).then((obj) => {
@@ -143,7 +146,7 @@ export class Office {
   }
 
   async makeBody(m) {
-    if (m.kind === 'legend') return createCharacter(LEGEND_BY_ID[m.legend]);
+    if (m.kind === 'legend' || m.kind === 'rival') return createCharacter(LEGEND_BY_ID[m.legend]);
     // 職種ごとの小物を付ける（データ分析とコンサルはメガネ）。CEO は金のネクタイと頭の上の印
     return dress(buildChibi({ hairStyle: 'short', ...m.look, glasses: m.look.glasses || ['data', 'consul'].includes(m.job) }), m.job, { ceo: m.kind === 'hero' });
   }

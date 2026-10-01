@@ -517,6 +517,32 @@ function rollWalkin(s, t, ev) {
   ev.push({ type: 'walkin', id: m.id, name: m.name });
 }
 
+// ---------- 冷やかし（まだ仲間でないレジェンドがライバルとして来る） ----------
+function rollRival(s, t, ev) {
+  if (!s.tasks.length && !s.devs.length) return; // 仕事中だけ
+  if (rand(s) >= R.RIVAL_PER_HOUR) return;
+  const owned = ownedLegends(s);
+  const pool = LEGENDS.filter((l) => !owned.has(l.id) && l.id !== s.encounter?.id);
+  if (!pool.length) return;
+  const l = pick(s, pool);
+  const free = s.members.filter((m) => m.kind === 'staff' && !m.busy);
+  const e = { type: 'rival', id: l.id };
+  if (free.length && s.members.filter((m) => m.kind === 'staff').length >= 2 && rand(s) < R.RIVAL_POACH) {
+    const m = pick(s, free);
+    s.members = s.members.filter((x) => x !== m);
+    e.poached = displayName(m);
+    addLog(s, t, `${l.name}  ${m.name}を引き抜いた`, 'bad');
+  } else {
+    const hit = pick(s, R.RIVAL_HITS);
+    e.title = hit.title;
+    e.money = round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * between(s, ...hit.amount));
+    s.money -= e.money; // 赤字になってもよい
+    addLog(s, t, `${l.name}  ${hit.title}`, 'bad');
+  }
+  s.rival = { id: l.id, until: t + R.RIVAL_STAY };
+  ev.push(e);
+}
+
 // ---------- 時間を進める ----------
 // ゲームを閉じていた間も含めて now まで進める。起きたことを ev に入れて返す
 export function advance(s, now, ev = []) {
@@ -560,6 +586,7 @@ export function advance(s, now, ev = []) {
       s.met[s.encounter.id] = { ...s.met[s.encounter.id], cooldown: s.encounter.until + R.RETRY_COOLDOWN };
       s.encounter = null;
     }
+    if (s.rival && s.rival.until <= next) s.rival = null; // 冷やかしに来たレジェンドは帰る
     // 選ばれないまま待てる期限が過ぎた人は辞退する
     for (const c of s.candidates.filter((c) => c.until <= next)) addLog(s, c.until, `${c.name}  辞退`);
     s.candidates = s.candidates.filter((c) => c.until > next);
@@ -567,6 +594,7 @@ export function advance(s, now, ev = []) {
       rollEncounter(s, next, ev);
       rollLuck(s, next, ev);
       rollWalkOffer(s, next);
+      rollRival(s, next, ev);
       rollWalkin(s, next, ev);
     }
     s.time = next;
