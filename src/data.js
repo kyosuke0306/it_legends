@@ -181,6 +181,8 @@ export const LEGENDS = [
       'ビル＆メリンダ・ゲイツ財団で世界の健康問題に取り組む',
     ],
     look: { skin: 0xf6dac8, hairStyle: 'side', hairColor: 0x9a7a55, shirt: 0x6b8fb3, glasses: true },
+    // おなじみの、襟つきシャツにセーターの姿で作る
+    outfit: 'a light blue collared button-down shirt under a navy blue V-neck sweater, beige chino pants and brown loafers',
   },
   {
     id: 'zuckerberg',
