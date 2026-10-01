@@ -144,6 +144,8 @@ async function geminiChibi(photoPath, legend) {
     'The face must clearly look like this specific person: keep the face shape, nose, mouth, eyebrows, hairstyle and hair color from the photo.',
     'Give the figure natural, realistic eyes like in the photo, with whites, colored irises and eyelids. Do not use black dot eyes, bead eyes or button eyes.',
     'Add glasses or facial hair only if they are clearly visible in the photo; otherwise the figure has none.',
+    // 顔を直したいときは data.js の face に英語で書く（例: 顔が横に広くなったとき）
+    legend.face ? `Face details: ${legend.face}` : '',
     // 写真と違う服にしたいときは data.js の outfit に英語で書く
     legend.outfit ? `Dress the figure in ${legend.outfit}, not the clothes from the photo.` : '',
     'Full body, standing straight facing the camera in an A-pose, arms slightly away from the body, legs slightly apart.',

@@ -239,6 +239,8 @@ export const LEGENDS = [
       'ポッドキャストやオーディオブックにも広げる',
     ],
     look: { skin: 0xf3d6c4, hairStyle: 'bald', hairColor: 0x6b5a48, shirt: 0x2a2a2e },
+    // 1回目は顔が横に広くなったので、細めの顔を指定する
+    face: 'a slim, slightly long oval face that is clearly narrower than it is wide, with a defined jawline and a pointed chin, not round or chubby; short light stubble on the jaw and chin; a closely shaved head',
     // ふだんの、黒いTシャツにパーカーの姿で作る
     outfit: 'a plain black crew-neck T-shirt under an open dark charcoal zip-up hoodie, black slim jeans and white sneakers',
   },
