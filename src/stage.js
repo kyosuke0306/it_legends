@@ -69,8 +69,8 @@ export class Stage {
     }
   }
 
-  // ガチャ演出：カプセルが揺れて弾け、キャラが飛び出す
-  reveal(obj, rarityColor) {
+  // ガチャ演出：カプセルが揺れて弾け、キャラが飛び出す。objPromise はキャラの読み込み（終わるまで揺れ続ける）
+  reveal(objPromise, rarityColor) {
     this.setCharacter(null);
     if (this.capsule) this.scene.remove(this.capsule);
     const g = new THREE.Group();
@@ -85,16 +85,29 @@ export class Stage {
     g.add(top, bottom);
     g.position.y = 0.8;
     this.scene.add(g);
-    this.capsule = { group: g, top, bottom, start: this.clock.elapsedTime, obj };
-    return new Promise((resolve) => (this.capsule.resolve = resolve));
+    const c = (this.capsule = { group: g, top, bottom, start: this.clock.elapsedTime, obj: null });
+    return new Promise((resolve, reject) => {
+      c.resolve = resolve;
+      Promise.resolve(objPromise).then(
+        (obj) => (c.obj = obj),
+        (e) => {
+          this.scene.remove(g);
+          this.capsule = null;
+          reject(e);
+        },
+      );
+    });
   }
 
   updateCapsule(t) {
     const c = this.capsule;
-    const k = t - c.start;
+    // 揺れは最低 1.2 秒。読み込みが終わっていなければ終わるまで揺らす
+    if (c.openAt == null && t - c.start >= 1.2 && c.obj) c.openAt = t;
+    const k = c.openAt == null ? Math.min(t - c.start, 1.19) : 1.2 + (t - c.openAt);
     if (k < 1.2) {
-      c.group.rotation.z = Math.sin(k * 30) * 0.12 * Math.min(k * 2, 1);
-      c.group.position.y = 0.8 + Math.abs(Math.sin(k * 8)) * 0.1;
+      const w = t - c.start;
+      c.group.rotation.z = Math.sin(w * 30) * 0.12 * Math.min(w * 2, 1);
+      c.group.position.y = 0.8 + Math.abs(Math.sin(w * 8)) * 0.1;
     } else if (k < 1.6) {
       const u = (k - 1.2) / 0.4;
       c.top.position.y = u * 1.5;

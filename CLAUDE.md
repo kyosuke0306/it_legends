@@ -20,11 +20,18 @@ ITの偉人をガチャで集めるブラウザゲーム。公開先: https://ky
 1. `node pipeline/generate.mjs <id> --fetch-photo --image-only` … Gemini のちびキャラ画像だけ作って見せる（安い）
 2. OK なら `node pipeline/generate.mjs <id>` … 確認済みの画像を Tripo で3D化（高品質テクスチャ・PBRなし、40 クレジット）→ 自動で軽量化
    - 作り直すときは `models/<id>.glb` と `pipeline/out/<id>_task.json` を消す（画像も作り直すなら `--force`）
+   - 軽量化は2段階（optimize.mjs → slim.mjs: 模様1024px・凹凸/つや画像なし・三角形を半分）。1体 0.3〜0.5MB
 3. `npm install` 後 `node pipeline/rig.mjs <id> greet_01 walk fold_arms agree` … 骨組み(25)＋動き(10/種類)→1つの GLB にまとめ、首より上を頭の骨だけで動かし（メガネの歪み防止）、軽量化
    - 動きはまとめて頼むと最後の1つしか入らない（料金は全部かかる）ので、スクリプトは1つずつ頼む
    - 動きの一覧: https://developers.tripo3d.ai/en/docs/animations-retarget （preset:biped:<名前>）
 4. `src/data.js` の `show` にセリフ・動き・小物・ステージを書く（`src/show.js`）。小物や背景は show.js の `PROPS` に three.js で作る
-5. ゲームで動画・スクショを撮って見せる → main に push
+5. `node scripts/make-thumbs.mjs <id>` … 図鑑の一覧用の絵 `models/<id>.webp` を作る（図鑑で3Dを読まないため。モデルを作り直したら必ず実行）
+6. ゲームで動画・スクショを撮って見せる → main に push
+
+## 読み込みを軽くする工夫（2026-10-01）
+- 起動後ひまなときに manifest の全モデルを先読み（`preloadCharacters`）。一度読んだモデルは覚えておき複製して使う
+- ガチャはカプセルを揺らしながら読み込み、読み終わるまで揺れ続ける（`Stage.reveal` に Promise を渡す）
+- **キャラはこれ以上増やさない**（ユーザー指示 2026-10-01）。次はゲームの中身（会社経営など）を考える段階
 
 | 項目 | クレジット |
 | --- | --- |

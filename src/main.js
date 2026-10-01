@@ -1,5 +1,5 @@
 import { LEGENDS, RARITY, byId } from './data.js';
-import { createCharacter } from './character.js';
+import { createCharacter, preloadCharacters, thumbnailUrl } from './character.js';
 import { Stage, renderThumbnail } from './stage.js';
 import { VERSION } from './version.js';
 
@@ -50,6 +50,7 @@ async function pull(n) {
   });
   save();
   updateProgress();
+preloadCharacters();
 
   // 一番レアなものを演出で見せる
   const order = ['SSR', 'SR', 'R'];
@@ -76,9 +77,12 @@ async function withLoading(el, promise) {
 }
 
 async function showOnGachaStage({ legend, isNew }, withCapsule) {
-  const obj = await withLoading($('#gacha-canvas').parentElement, createCharacter(legend));
-  if (withCapsule) await gachaStage.reveal(obj, RARITY[legend.rarity].color);
-  else gachaStage.setCharacter(obj);
+  if (withCapsule) {
+    // カプセルを揺らしている間にモデルを読み込む（読み終わるまで揺れ続ける）
+    await gachaStage.reveal(createCharacter(legend), RARITY[legend.rarity].color);
+  } else {
+    gachaStage.setCharacter(await withLoading($('#gacha-canvas').parentElement, createCharacter(legend)));
+  }
   const el = $('#gacha-result');
   el.innerHTML = `
     <span class="rarity r-${legend.rarity}">${legend.rarity}</span>
@@ -108,7 +112,9 @@ $('#pull10').onclick = () => pull(10);
 // ---------- 図鑑 ----------
 const thumbs = {};
 async function thumbnailFor(legend) {
-  thumbs[legend.id] ??= createCharacter(legend).then((obj) => renderThumbnail(obj));
+  thumbs[legend.id] ??= thumbnailUrl(legend).then(
+    (url) => url ?? createCharacter(legend).then((obj) => renderThumbnail(obj)),
+  );
   return thumbs[legend.id];
 }
 
@@ -177,3 +183,4 @@ document.querySelectorAll('.tab').forEach((tab) => {
 });
 
 updateProgress();
+preloadCharacters();

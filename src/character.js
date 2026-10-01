@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 
 // GLB は pipeline/optimize.mjs で meshopt 圧縮しているので、その展開器を設定する
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -164,9 +165,31 @@ function addHair(head, style, hair, R) {
   }
 }
 
-// GLB（Gemini + Tripo で作ったモデル）を読み込み、全長2・足元y=0にそろえる
-async function loadGlb(url) {
-  const gltf = await loader.loadAsync(url);
+// 一度読み込んだ GLB は覚えておき、2回目からは複製して使う（読み直さないので一瞬で出る）
+const glbCache = {};
+function loadGltf(url) {
+  glbCache[url] ??= loader.loadAsync(url).then(prepareGltf);
+  glbCache[url].catch(() => delete glbCache[url]); // 失敗したら次回やり直す
+  return glbCache[url];
+}
+
+// 起動後、ひまなときに 3D モデルを先に読んでおく（ガチャを引いたときに待たせないため）
+export async function preloadCharacters() {
+  const manifest = await loadManifest();
+  for (const id of manifest) {
+    await new Promise((r) => (window.requestIdleCallback ?? setTimeout)(r));
+    await loadGltf(`models/${id}.glb`).catch(() => {});
+  }
+}
+
+// 図鑑の一覧用の絵。3D モデルのある偉人は用意した画像（models/<id>.webp）を使う
+export async function thumbnailUrl(legend) {
+  const manifest = await loadManifest();
+  return manifest.includes(legend.id) ? `models/${legend.id}.webp` : null;
+}
+
+// GLB（Gemini + Tripo で作ったモデル）を、全長2・足元y=0にそろえる
+function prepareGltf(gltf) {
   const model = gltf.scene;
   // Tripo のモデルは +X 向きで出てくるので、カメラ(+Z)側を向かせる
   model.rotation.y = -Math.PI / 2;
@@ -188,6 +211,12 @@ async function loadGlb(url) {
   box.setFromObject(model);
   const c = box.getCenter(new THREE.Vector3());
   model.position.set(-c.x, -box.min.y, -c.z);
+  return gltf;
+}
+
+async function loadGlb(url) {
+  const gltf = await loadGltf(url);
+  const model = cloneSkinned(gltf.scene); // 形や画像は共有し、骨と位置だけ別にする
   const root = new THREE.Group();
   root.add(model);
   let mixer = null;
