@@ -58,7 +58,7 @@ export function newGame({ job, name, company }, now = Date.now()) {
   hero.name = name;
   s.members.push(hero);
   for (let i = 0; i < 3; i++) addOffer(s, now, 0, true); // 最初は短くてやさしい仕事
-  refreshCandidates(s);
+  refreshCandidates(s, now);
   addLog(s, now, `${s.company} 創業`);
   return s;
 }
@@ -353,19 +353,20 @@ function growTo(s, m, lv) {
     m.salary = round(m.salary * 1.08, 500);
   }
 }
+// 1日ごとに新しい人が面接に来る。前から待っている人は、待てる期限（until）までは残る
 function refreshCandidates(s, t = 0) {
   const jobs = Object.keys(R.JOBS);
-  const walkins = s.candidates.filter((c) => c.walkin && c.until > t); // 訪ねてきた人は待っている間は残す
+  s.candidates = s.candidates.filter((c) => c.until > t);
   // 平均 n 人（小数のぶんは確率で1人増える）
   const n = R.CANDIDATES_PER_DAY[s.office] ?? 3;
-  const count = Math.floor(n) + (rand(s) < n % 1 ? 1 : 0);
-  s.candidates = Array.from({ length: count }, () => {
+  const count = Math.min(Math.floor(n) + (rand(s) < n % 1 ? 1 : 0), R.MAX_CANDIDATES - s.candidates.length);
+  for (let i = 0; i < count; i++) {
     const m = makePerson(s, pick(s, jobs));
     // 会社が大きくなると、育った人も応募してくる
     growTo(s, m, 1 + Math.floor(rand(s) * (s.office + 1) * 1.5));
-    return m;
-  });
-  s.candidates.unshift(...walkins);
+    m.until = t + between(s, ...R.CANDIDATE_LIFE) * R.DAY;
+    s.candidates.push(m);
+  }
 }
 // 訪ねてきた人は雇うのにお金がかからない
 export const hireCost = (s, m) => (m.walkin ? 0 : round(m.salary * 5 * (1 - Math.min(0.8, companyEffects(s).hireCost))));
@@ -559,7 +560,9 @@ export function advance(s, now, ev = []) {
       s.met[s.encounter.id] = { ...s.met[s.encounter.id], cooldown: s.encounter.until + R.RETRY_COOLDOWN };
       s.encounter = null;
     }
-    s.candidates = s.candidates.filter((c) => !c.walkin || c.until > next);
+    // 選ばれないまま待てる期限が過ぎた人は辞退する
+    for (const c of s.candidates.filter((c) => c.until <= next)) addLog(s, c.until, `${c.name}  辞退`);
+    s.candidates = s.candidates.filter((c) => c.until > next);
     if (next === boundary) {
       rollEncounter(s, next, ev);
       rollLuck(s, next, ev);
@@ -573,6 +576,7 @@ export function advance(s, now, ev = []) {
 
 // 古い記録を今の形にそろえる（以前あった知識ノートのデータは使わないので消す）
 export function migrate(s) {
+  for (const c of s.candidates) c.until ??= s.candAt + R.CANDIDATE_EVERY; // 前の記録の人は、次の入れ替えまで待つ
   if (!R.ACTIVITIES[s.activity]) s.activity = R.DEFAULT_ACTIVITY;
   s.company = companyTitle(s.company);
   delete s.notes;

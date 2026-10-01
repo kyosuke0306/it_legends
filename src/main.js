@@ -439,7 +439,7 @@ function memberRow(m, { candidate = false } = {}) {
   const hireBtn = () => {
     const cost = G.hireCost(S, m);
     const can = G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
-    const wait = m.walkin ? `<span class="muted">${val('clock', `<span data-left="${m.until}"></span>`)}</span>` : '';
+    const wait = `<span class="muted">${val('clock', `<span data-left="${m.until}"></span>`)}</span>`; // 辞退するまでの時間
     return `${wait}<button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>採用 ${yen(cost)}</button>`;
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''} ${open ? 'open' : ''}">

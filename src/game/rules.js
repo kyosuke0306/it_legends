@@ -96,7 +96,10 @@ export const TEAM_SPEEDUP = 0.3;
 export const REP_GREAT = 1.5;
 export const REP_EARLY = 0.75;
 export const FAIL_REP = 0.5;
-export const CANDIDATE_EVERY = DAY; // 採用候補が入れ替わる間隔
+export const CANDIDATE_EVERY = DAY;
+// 面接に来た人は、選ばれないまま CANDIDATE_LIFE（日数の幅）がたつと辞退していなくなる。並んで待てるのは MAX_CANDIDATES 人まで
+export const CANDIDATE_LIFE = [1, 2.5];
+export const MAX_CANDIDATES = 5; // 採用候補が入れ替わる間隔
 // 1日に面接に来る人の数（会社の広さごとの平均）。小さいうちはなかなか来ないので、勉強会で人を呼ぶ
 export const CANDIDATES_PER_DAY = [0.25, 1, 2, 3, 3];
 export const ENCOUNTER_PER_HOUR = 1 / 110; // 条件を満たした偉人と出会う確率（1時間あたり。平均4〜5日に1回）
