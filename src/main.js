@@ -125,6 +125,21 @@ function fillThumbs(root) {
   requestAnimationFrame(draw);
 })();
 
+// タイトルに、3Dのできているレジェンドを並べる。仲間にした人だけ姿を見せ、ほかは影（シークレット）
+async function titleLegends() {
+  const box = $('#title-legends');
+  if (!box) return;
+  let ids = [];
+  try {
+    ids = await (await fetch('models/manifest.json')).json();
+  } catch {}
+  const owned = new Set((S ?? loadLocal())?.members.filter((m) => m.kind === 'legend').map((m) => m.legend) ?? []);
+  const mid = (ids.length - 1) / 2;
+  box.innerHTML = ids
+    .map((id, i) => `<img src="models/${id}.webp" alt="" class="${owned.has(id) ? 'own' : ''} ${Math.abs(i - mid) < 1 ? 'mid' : ''}" style="animation-delay:${(i * 0.37).toFixed(2)}s">`)
+    .join('');
+}
+
 // ---------- タイトル → 名前 → 会社 → 職種 ----------
 const steps = [...document.querySelectorAll('#start .step')];
 let at = 0;
@@ -141,6 +156,7 @@ function showTitle() {
   $('#start').classList.remove('hidden');
   $('#game').classList.add('hidden');
   $('#title-msg').textContent = '';
+  titleLegends();
   $('#btn-continue').classList.toggle('sub', !S);
   $('#btn-new').classList.toggle('sub', Boolean(S));
   if (S) $('#btn-continue').after($('#btn-new')); // 大きい方を上に

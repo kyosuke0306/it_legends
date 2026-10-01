@@ -91,7 +91,7 @@ button:disabled { cursor: default; }
   background: linear-gradient(90deg, transparent, #3ef0ff 30%, #8b5cff 70%, transparent);
   box-shadow: 0 0 22px 2px rgba(62, 240, 255, 0.6);
 }
-.title-emblem { display: block; width: 92px; height: 92px; margin: 0 auto 22px; filter: drop-shadow(0 0 14px rgba(62, 240, 255, 0.55)); }
+.title-emblem { display: block; width: 84px; height: 84px; margin: 0 auto 22px; filter: drop-shadow(0 0 14px rgba(62, 240, 255, 0.55)); }
 .title-text { position: relative; text-align: center; padding-top: max(16vh, calc(env(safe-area-inset-top) + 60px)); }
 .title-text h1 {
   margin: 0;
@@ -542,3 +542,11 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .mw-row b { font-variant-numeric: tabular-nums; }
 .mw-row b.ok { color: var(--ok); }
 .mw-row b.bad { color: var(--bad); }
+
+/* タイトルに並ぶレジェンド。まだ仲間でない人は影（シークレット）、仲間にした人は姿を見せる */
+.title-legends { position: absolute; left: 0; right: 0; bottom: calc(52% - 70px); display: flex; justify-content: center; align-items: flex-end; pointer-events: none; }
+.title-legends img { width: clamp(62px, 18vw, 104px); margin: 0 -9px; filter: brightness(0) drop-shadow(0 0 1.5px #3ef0ff) drop-shadow(0 0 8px rgba(62, 240, 255, 0.45)); opacity: 0.9; animation: title-float 4s ease-in-out infinite; }
+.title-legends img.mid { width: clamp(74px, 22vw, 122px); }
+.title-legends img.own { filter: drop-shadow(0 0 10px rgba(62, 240, 255, 0.5)); opacity: 1; }
+@keyframes title-float { 50% { transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) { .title-legends img { animation: none; } }

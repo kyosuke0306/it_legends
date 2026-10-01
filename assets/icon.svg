@@ -5,22 +5,12 @@
   <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ef0ff" stop-opacity="0"/><stop offset="1" stop-color="#3ef0ff" stop-opacity="0.35"/></linearGradient>
 </defs>
 <rect width="512" height="512" fill="url(#bg)"/>
-<mask id="m"><rect width="512" height="512" fill="url(#mg)"/></mask><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0.6" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient><g stroke="#3ef0ff" stroke-opacity="0.45" stroke-width="2" mask="url(#m)"><line x1='0' y1='360' x2='512' y2='360'/>
-<line x1='0' y1='374' x2='512' y2='374'/>
-<line x1='0' y1='396' x2='512' y2='396'/>
-<line x1='0' y1='426' x2='512' y2='426'/>
-<line x1='0' y1='464' x2='512' y2='464'/>
-<line x1='0' y1='510' x2='512' y2='510'/>
-<line x1='0' y1='564' x2='512' y2='564'/><line x1='256' y1='300' x2='-200' y2='512'/>
-<line x1='256' y1='300' x2='-100' y2='512'/>
-<line x1='256' y1='300' x2='0' y2='512'/>
-<line x1='256' y1='300' x2='100' y2='512'/>
-<line x1='256' y1='300' x2='200' y2='512'/>
-<line x1='256' y1='300' x2='300' y2='512'/>
-<line x1='256' y1='300' x2='400' y2='512'/>
-<line x1='256' y1='300' x2='500' y2='512'/>
-<line x1='256' y1='300' x2='600' y2='512'/>
-<line x1='256' y1='300' x2='700' y2='512'/></g>
-<polygon points="256,86 403,171 403,341 256,426 109,341 109,171" fill="none" stroke="url(#neon)" stroke-width="10" stroke-linejoin="round" filter="url(#glow)"/>
-<g fill="none" stroke="#e9fbff" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><path d="M214 206l-50 50 50 50M298 206l50 50-50 50"/><path d="M272 192l-32 128" stroke="url(#neon)"/></g>
+<g fill="none" stroke="url(#neon)" stroke-width="7" filter="url(#glow)">
+<circle cx="256" cy="256" r="150"/>
+<ellipse cx="256" cy="256" rx="62" ry="150"/>
+<ellipse cx="256" cy="256" rx="118" ry="150" opacity="0.6"/>
+<path d="M106 256h300"/><path d="M128 180h256M128 332h256" opacity="0.6"/>
+</g>
+<g stroke="#e9fbff" stroke-width="5" stroke-linecap="round" opacity="0.9"><path d="M176 150L318 210L360 330L210 372L150 270Z" fill="none"/><path d="M318 210L210 372M176 150L360 330" opacity="0.5"/></g>
+<g fill="#e9fbff" filter="url(#glow)"><circle cx="176" cy="150" r="15"/><circle cx="318" cy="210" r="15"/><circle cx="360" cy="330" r="15"/><circle cx="210" cy="372" r="15"/><circle cx="150" cy="270" r="15"/></g>
 </svg>
