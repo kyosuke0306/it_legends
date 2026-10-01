@@ -281,21 +281,27 @@ export function stopProduct(s, id) {
 }
 
 // ---------- 採用 ----------
-function refreshCandidates(s) {
+// 採用候補を lv まで育った状態にする
+function growTo(s, m, lv) {
+  while (m.level < lv) {
+    m.level++;
+    for (const k of R.STAT_KEYS) m.stats[k] += Math.round(R.JOBS[m.job].w[k] * between(s, 0.8, 1.4));
+    m.salary = round(m.salary * 1.08, 500);
+  }
+}
+function refreshCandidates(s, t = 0) {
   const jobs = Object.keys(R.JOBS);
+  const walkins = s.candidates.filter((c) => c.walkin && c.until > t); // 訪ねてきた人は待っている間は残す
   s.candidates = Array.from({ length: 3 }, () => {
     const m = makePerson(s, pick(s, jobs));
     // 会社が大きくなると、育った人も応募してくる
-    const lv = 1 + Math.floor(rand(s) * (s.office + 1) * 1.5);
-    for (let i = 1; i < lv; i++) {
-      m.level++;
-      for (const k of R.STAT_KEYS) m.stats[k] += Math.round(R.JOBS[m.job].w[k] * between(s, 0.8, 1.4));
-      m.salary = round(m.salary * 1.08, 500);
-    }
+    growTo(s, m, 1 + Math.floor(rand(s) * (s.office + 1) * 1.5));
     return m;
   });
+  s.candidates.unshift(...walkins);
 }
-export const hireCost = (s, m) => round(m.salary * 5 * (1 - Math.min(0.8, companyEffects(s).hireCost)));
+// 訪ねてきた人は雇うのにお金がかからない
+export const hireCost = (s, m) => (m.walkin ? 0 : round(m.salary * 5 * (1 - Math.min(0.8, companyEffects(s).hireCost))));
 
 export function hire(s, candId, now) {
   const m = s.candidates.find((c) => c.id === candId);
@@ -304,6 +310,8 @@ export function hire(s, candId, now) {
   if (s.money < cost) return false;
   s.money -= cost;
   s.candidates = s.candidates.filter((c) => c !== m);
+  delete m.walkin;
+  delete m.until;
   s.members.push(m);
   addLog(s, now, `${m.name}  入社`, 'good');
   return true;
@@ -348,13 +356,14 @@ export function meetProgress(s, id) {
 function rollEncounter(s, t, ev) {
   if (s.encounter) return;
   const owned = ownedLegends(s);
-  const ready = LEGENDS.filter(
-    (l) => !owned.has(l.id) && !((s.met[l.id]?.cooldown ?? 0) > t) && meetProgress(s, l.id).every((c) => c.ok),
-  );
-  if (!ready.length) return;
+  const free = LEGENDS.filter((l) => !owned.has(l.id) && !((s.met[l.id]?.cooldown ?? 0) > t));
+  const ready = free.filter((l) => meetProgress(s, l.id).every((c) => c.ok));
+  let l;
   const p = R.ENCOUNTER_PER_HOUR * (owned.size === 0 ? 2 : 1); // 最初の1人目は少し会いやすい
-  if (rand(s) >= p) return;
-  const l = pick(s, ready);
+  if (ready.length && rand(s) < p) l = pick(s, ready);
+  // 条件を満たしていなくても、ごくまれに偶然出会う
+  else if (free.length && rand(s) < R.STRAY_LEGEND_PER_HOUR) l = pick(s, free);
+  if (!l) return;
   s.encounter = { id: l.id, at: t, until: t + R.ENCOUNTER_LIFE };
   s.met[l.id] = { ...s.met[l.id], seen: true };
   addLog(s, t, `誰かが現れた`, 'legend');
@@ -382,6 +391,29 @@ export function scout(s, now) {
   met.cooldown = now + R.RETRY_COOLDOWN;
   addLog(s, now, `${LEGEND_BY_ID[id].name}  去った`, 'bad');
   return 'refused';
+}
+
+// ---------- まれに起きる出来事（何もしていなくても起きる） ----------
+function rollLuck(s, t, ev) {
+  if (rand(s) >= R.LUCK_PER_HOUR) return;
+  const L = pick(s, R.LUCKS);
+  const money = round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * between(s, ...L.amount));
+  s.money += money;
+  addLog(s, t, `${L.title}  +${money.toLocaleString('ja-JP')}円`, 'good');
+  ev.push({ type: 'luck', title: L.title, money });
+}
+
+function rollWalkin(s, t, ev) {
+  if (rand(s) >= R.WALKIN_PER_HOUR) return;
+  s.candidates = s.candidates.filter((c) => !c.walkin); // 訪ねてくるのは1人ずつ
+  const m = makePerson(s, pick(s, Object.keys(R.JOBS)));
+  // 腕のいい人が訪ねてくる（今の会社より少し育っている）
+  growTo(s, m, 2 + s.office * 2 + Math.floor(rand(s) * 3));
+  m.walkin = true;
+  m.until = t + R.WALKIN_LIFE;
+  s.candidates.unshift(m);
+  addLog(s, t, `${m.name}  入社したいと訪ねてきた`, 'good');
+  ev.push({ type: 'walkin', id: m.id, name: m.name });
 }
 
 // ---------- 時間を進める ----------
@@ -419,7 +451,7 @@ export function advance(s, now, ev = []) {
     // 採用候補の入れ替え
     while (s.candAt + R.CANDIDATE_EVERY <= next) {
       s.candAt += R.CANDIDATE_EVERY;
-      refreshCandidates(s);
+      refreshCandidates(s, s.candAt);
     }
     // 偉人との出会い（1時間ごとに判定）
     if (s.encounter && s.encounter.until <= next) {
@@ -427,7 +459,12 @@ export function advance(s, now, ev = []) {
       s.met[s.encounter.id] = { ...s.met[s.encounter.id], cooldown: s.encounter.until + R.RETRY_COOLDOWN };
       s.encounter = null;
     }
-    if (next === boundary) rollEncounter(s, next, ev);
+    s.candidates = s.candidates.filter((c) => !c.walkin || c.until > next);
+    if (next === boundary) {
+      rollEncounter(s, next, ev);
+      rollLuck(s, next, ev);
+      rollWalkin(s, next, ev);
+    }
     s.time = next;
   }
   return ev;

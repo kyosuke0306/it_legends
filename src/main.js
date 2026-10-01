@@ -64,7 +64,7 @@ function dur(ms) {
   return h % 24 ? `${Math.floor(h / 24)}日${h % 24}時間` : `${Math.floor(h / 24)}日`;
 }
 const val = (name, text, cls = '') => `<span class="val ${cls}">${icon(name)}${text}</span>`;
-const jobShort = (m) => (m.kind === 'legend' ? byId[m.legend].rarity : R.JOBS[m.job].name);
+const jobShort = (m) => (m.kind === 'legend' ? byId[m.legend].rarity : m.kind === 'hero' ? `CEO・${R.JOBS[m.job].name}` : R.JOBS[m.job].name);
 const perkText = (m) => (m.kind === 'legend' ? R.LEGEND_RULES[m.legend].abilityText : R.JOBS[m.job].perkText);
 const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
 function avatar(m) {
@@ -91,8 +91,6 @@ function fillThumbs(root) {
 }
 
 // ---------- タイトル → 名前 → 会社 → 職種 ----------
-// 職種の見た目：'icon'（線のアイコン）か '3d'（Gemini で作った3Dの絵）。アドレスに ?jobart=3d を付けると3Dで見られる
-const JOB_ART = new URLSearchParams(location.search).get('jobart') === '3d' ? '3d' : 'icon';
 const steps = [...document.querySelectorAll('#start .step')];
 let at = 0;
 let wantContinue = false; // 「つづきから」でログインを待っているか
@@ -156,8 +154,8 @@ function initStart() {
   const box = $('#start-jobs');
   box.innerHTML = Object.entries(R.JOBS)
     .map(
-      ([id, j]) => `<button class="job art-${JOB_ART}" data-job="${id}" style="--c:${hex(j.shirt)}">
-        ${JOB_ART === '3d' ? `<img src="assets/jobs/${id}.webp" alt="">` : `<span class="job-ic">${icon(`job_${id}`)}</span>`}
+      ([id, j]) => `<button class="job art-3d" data-job="${id}" style="--c:${hex(j.shirt)}">
+        <img src="assets/jobs/${id}.webp" alt="">
         <b>${j.full}</b><small>${j.perkText}</small>
       </button>`,
     )
@@ -208,6 +206,7 @@ function renderHeader() {
   $('#money').innerHTML = val('coin', yen(S.money), S.money < 0 ? 'minus' : '');
   $('#rep').innerHTML = val('star', S.rep);
   $('#dot-office').classList.toggle('on', Boolean(S.encounter));
+  $('#dot-team').classList.toggle('on', S.candidates.some((c) => c.walkin));
   $('#dot-work').classList.toggle('on', G.freeMembers(S).length > 0 && S.offers.length > 0);
 }
 function renderAll() {
@@ -344,9 +343,10 @@ function memberRow(m, { candidate = false } = {}) {
   const hireBtn = () => {
     const cost = G.hireCost(S, m);
     const can = G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
-    return `<button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>${yen(cost)}</button>`;
+    const wait = m.walkin ? `<span class="muted">${val('clock', `<span data-left="${m.until}"></span>`)}</span>` : '';
+    return `${wait}<button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>${yen(cost)}</button>`;
   };
-  return `<div class="member ${m.kind} ${open ? 'open' : ''}">
+  return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''} ${open ? 'open' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
       <span class="pname">${esc(m.name)}<small>${jobShort(m)} Lv${m.level}</small></span>
       ${statBars(st)}
@@ -559,6 +559,11 @@ function tick() {
   const ev = G.advance(S, Date.now());
   if (ev.length) {
     if (ev.some((e) => e.type === 'encounter')) notice(`${icon('spark', 'big-ic spin')}<h2>誰かが現れた</h2>`);
+    else if (ev.some((e) => e.type === 'walkin')) notice(`${icon('people', 'big-ic')}<h2>入社したい人が来た</h2><p class="muted">${esc(ev.find((e) => e.type === 'walkin').name)}</p>`);
+    else if (ev.some((e) => e.type === 'luck')) {
+      const l = ev.find((e) => e.type === 'luck');
+      notice(`${icon('coin', 'big-ic')}<h2>${esc(l.title)}</h2><div class="welcome">${val('coin', `+${yen(l.money)}`, 'ok')}</div>`);
+    }
     commit();
   } else {
     renderHeader();
@@ -576,9 +581,11 @@ function welcomeBack(ev, away) {
   if (levels) rows.push(val('level', `+${levels}`));
   const prods = ev.filter((e) => e.type === 'product').length;
   if (prods) rows.push(val('box', `+${prods}`));
-  const net = (ev.income ?? 0) - (ev.salary ?? 0);
+  const luck = ev.filter((e) => e.type === 'luck').reduce((a, e) => a + e.money, 0); // 臨時収入も含める
+  const net = (ev.income ?? 0) - (ev.salary ?? 0) + luck;
   if (Math.abs(net) >= 1) rows.push(val('coin', `${net >= 0 ? '+' : ''}${yen(net)}`, net >= 0 ? 'ok' : 'bad'));
   if (ev.some((e) => e.type === 'encounter')) rows.push(val('spark', '誰かが現れた', 'legend'));
+  if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '入社したい人が来た', 'legend'));
   if (!rows.length) return;
   notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>`);
 }
