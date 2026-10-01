@@ -193,6 +193,8 @@ button.panel:disabled { opacity: 0.45; }
 .link { border: 0; background: none; color: var(--accent); padding: 4px 0; }
 .link.small { font-size: 0.8rem; }
 .sec { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.8rem; margin: 16px 2px 8px; }
+.hint-meetup { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; color: var(--accent); font-weight: 700; border: 2px dashed color-mix(in srgb, var(--accent) 40%, transparent); background: none; }
+.hint-meetup .ic { width: 1.4em; height: 1.4em; }
 .sec.interview b { color: var(--text); font-size: 0.95rem; }
 .sec .grow { flex: 1; }
 .empty { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--muted); padding: 30px 0; }

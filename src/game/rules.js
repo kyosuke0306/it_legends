@@ -87,6 +87,8 @@ export const OFFER_EVERY = 2 * HOUR; // 新しい依頼が届く間隔
 export const OFFER_LIFE = 18 * HOUR; // 依頼の受付期限
 export const BASE_OFFERS = 4;
 export const CANDIDATE_EVERY = DAY; // 採用候補が入れ替わる間隔
+// 1日に面接に来る人の数（会社の広さごとの平均）。小さいうちはなかなか来ないので、勉強会で人を呼ぶ
+export const CANDIDATES_PER_DAY = [0.25, 1, 2, 3, 3];
 export const ENCOUNTER_PER_HOUR = 1 / 110; // 条件を満たした偉人と出会う確率（1時間あたり。平均4〜5日に1回）
 export const ENCOUNTER_LIFE = DAY; // 出会いのチャンスが続く時間
 export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会えるまで

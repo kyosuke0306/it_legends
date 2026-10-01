@@ -389,7 +389,11 @@ function renderTeam() {
   v.innerHTML = `
     <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
     <div class="sec interview">${icon('people')}<b>面接</b><span class="grow"></span>${val('home', `${G.seatsUsed(S)}/${G.capacity(S)}`)}${val('clock', `<span data-left="${S.candAt + R.CANDIDATE_EVERY}"></span>`)}</div>
-    <div class="list">${S.candidates.map((c) => memberRow(c, { candidate: true })).join('')}</div>`;
+    <div class="list">${
+      S.candidates.length
+        ? S.candidates.map((c) => memberRow(c, { candidate: true })).join('')
+        : `<button class="panel hint-meetup" id="go-meetup">${icon('seminar')}<span>${R.ACTIVITIES.meetup.name}</span></button>`
+    }</div>`;
   fillThumbs(v);
   v.querySelectorAll('[data-open]').forEach(
     (b) =>
@@ -400,6 +404,13 @@ function renderTeam() {
         renderTeam();
       }),
   );
+  // 面接に来る人がいないときは、勉強会へ（会社タブに移って勉強会を選ぶ）
+  $('#go-meetup') &&
+    ($('#go-meetup').onclick = () => {
+      if (!G.ceoBusyUntil(S)) G.setActivity(S, 'meetup');
+      save();
+      document.querySelector('.tab[data-view="office"]').click();
+    });
   v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
   v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('やめてもらいますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));

@@ -297,7 +297,10 @@ function growTo(s, m, lv) {
 function refreshCandidates(s, t = 0) {
   const jobs = Object.keys(R.JOBS);
   const walkins = s.candidates.filter((c) => c.walkin && c.until > t); // 訪ねてきた人は待っている間は残す
-  s.candidates = Array.from({ length: 3 }, () => {
+  // 平均 n 人（小数のぶんは確率で1人増える）
+  const n = R.CANDIDATES_PER_DAY[s.office] ?? 3;
+  const count = Math.floor(n) + (rand(s) < n % 1 ? 1 : 0);
+  s.candidates = Array.from({ length: count }, () => {
     const m = makePerson(s, pick(s, jobs));
     // 会社が大きくなると、育った人も応募してくる
     growTo(s, m, 1 + Math.floor(rand(s) * (s.office + 1) * 1.5));
