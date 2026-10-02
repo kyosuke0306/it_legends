@@ -3,7 +3,7 @@
 import { LEGENDS, byId } from './data.js';
 const LEGEND_COLOR = 0xf0b93a; // レジェンドはランクを付けず、みんな同じ金色（ユーザー指示 2026-10-01）
 import { createCharacter, preloadCharacters, thumbnailUrl } from './character.js';
-import { Stage, renderThumbnail, renderFace } from './stage.js';
+import { Stage, renderThumbnail } from './stage.js';
 import { buildPerson } from './outfits.js';
 import { Office } from './office.js';
 import { VERSION } from './version.js';
@@ -107,7 +107,8 @@ function drawFaces() {
   if (!next) return;
   const [k, m] = next;
   try {
-    faces.set(k, renderFace(buildPerson(m.look, m.job, { ceo: m.kind === 'hero' })));
+    // レジェンドの絵（models/<id>.webp）と同じ写し方・同じ切り抜きにする
+    faces.set(k, renderThumbnail(buildPerson(m.look, m.job, { ceo: m.kind === 'hero' })));
     document.querySelectorAll('.av.face').forEach((el) => {
       if (el.dataset.face === k) el.innerHTML = `<img src="${faces.get(k)}" alt="">`;
     });

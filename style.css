@@ -619,5 +619,6 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .lv-to .ic { color: var(--accent); }
 .lv-to b { font-size: 1rem; color: var(--accent); }
 .lv-to .arrow { opacity: 0.6; }
-/* 社員・CEO の顔のアイコン（職種の色の丸の上に顔） */
-.av.face img { width: 100%; height: 100%; object-fit: cover; }
+/* 社員・CEO の顔：レジェンドと同じ見え方（頭と肩）に。仮の体は頭が大きいので、レジェンドより少し引いて切り抜く */
+.av.face:has(img) { background: var(--panel); box-shadow: 0 0 0 2px var(--c); }
+.av.face img { width: 145%; height: 145%; object-position: 50% 12%; }
