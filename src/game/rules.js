@@ -24,19 +24,19 @@ export const JOBS = {
 
 // 会社の広さ。cap は入れる人数（自分も含む）、tier は受けられる仕事の大きさ
 // lv は面接に来る人のレベルの幅、temp は派遣で来る人のレベル（大きな会社ほど育った人が来る）
-// 見た目: floor 床 / wall 壁 / win 窓の色 / winW 窓の幅（部屋の幅に対して）/ ground 外の地面 / path 道 / trees 外の木
+// 見た目（床・壁・窓・机・飾り）は office-decor.js の THEMES
 // 本社ビルのあと（2026-10-01 ユーザー指示「終わりが見えないくらいやり込めるように」）: 高層タワー → … → 宇宙ステーション
 export const OFFICES = [
-  { name: '自宅の部屋', cap: 2, cost: 0, rep: 0, lv: [1, 2], temp: 1, floor: 0xa89474, wall: 0xcfc3a6 }, // 古くて薄汚れた部屋
-  { name: 'ガレージ', cap: 4, cost: 300_000, rep: 30, lv: [1, 3], temp: 3, floor: 0x9a9a9a, wall: 0xc9c2b4 },
-  { name: '小さな事務所', cap: 7, cost: 2_000_000, rep: 150, lv: [1, 5], temp: 5, floor: 0xb59a76, wall: 0xeeeeea },
-  { name: 'オフィスビル', cap: 12, cost: 15_000_000, rep: 600, lv: [1, 7], temp: 7, floor: 0x8f9bab, wall: 0xe4e8ef },
-  { name: '本社ビル', cap: 20, cost: 100_000_000, rep: 2000, lv: [1, 8], temp: 9, floor: 0x6f6a80, wall: 0xf5f3fa },
-  { name: '高層タワー', cap: 28, cost: 300_000_000, rep: 6000, lv: [6, 16], temp: 14, floor: 0x4f5a6a, wall: 0xdfe8f0, win: 0x9fd0ff, winW: 0.8 },
-  { name: 'テックキャンパス', cap: 38, cost: 1_200_000_000, rep: 15000, lv: [12, 26], temp: 22, floor: 0xd8c3a0, wall: 0xf4f7f2, win: 0xbfe8d0, winW: 0.7, ground: 0x8fcf7a },
-  { name: '世界本社', cap: 50, cost: 5_000_000_000, rep: 40000, lv: [20, 36], temp: 30, floor: 0xeeeae2, wall: 0xf8f4ea, win: 0xcfe6ff, winW: 0.8 },
-  { name: 'スマートシティ', cap: 64, cost: 20_000_000_000, rep: 100000, lv: [28, 48], temp: 40, floor: 0x26304a, wall: 0xd6eef6, win: 0x2a3a6a, winW: 0.9, ground: 0x3a4152, path: 0x5ad0e0 },
-  { name: '宇宙ステーション', cap: 80, cost: 100_000_000_000, rep: 250000, lv: [38, 62], temp: 52, floor: 0x5a6472, wall: 0xe6ecf2, win: 0x070b18, winW: 0.9, ground: 0x151a28, path: 0x2c3550, trees: false },
+  { name: '自宅の部屋', cap: 2, cost: 0, rep: 0, lv: [1, 2], temp: 1 }, // 古くて薄汚れた部屋
+  { name: 'ガレージ', cap: 4, cost: 300_000, rep: 30, lv: [1, 3], temp: 3 },
+  { name: '小さな事務所', cap: 7, cost: 2_000_000, rep: 150, lv: [1, 5], temp: 5 },
+  { name: 'オフィスビル', cap: 12, cost: 15_000_000, rep: 600, lv: [1, 7], temp: 7 },
+  { name: '本社ビル', cap: 20, cost: 100_000_000, rep: 2000, lv: [1, 8], temp: 9 },
+  { name: '高層タワー', cap: 28, cost: 300_000_000, rep: 6000, lv: [6, 16], temp: 14 },
+  { name: 'テックキャンパス', cap: 38, cost: 1_200_000_000, rep: 15000, lv: [12, 26], temp: 22 },
+  { name: '世界本社', cap: 50, cost: 5_000_000_000, rep: 40000, lv: [20, 36], temp: 30 },
+  { name: 'スマートシティ', cap: 64, cost: 20_000_000_000, rep: 100000, lv: [28, 48], temp: 40 },
+  { name: '宇宙ステーション', cap: 80, cost: 100_000_000_000, rep: 250000, lv: [38, 62], temp: 52 },
 ];
 // いちばん上の会社のあとは、いくらでも増築できる（1回ごとに席 +FLOOR_CAP。費用は FLOOR_COST から FLOOR_GROW 倍ずつ上がる）
 export const FLOOR_CAP = 8;

@@ -8,6 +8,7 @@ import { byId as LEGEND_BY_ID } from './data.js';
 import { OFFICES, JOBS } from './game/rules.js';
 import { displayName, workOf, capacity } from './game/state.js';
 import { dress } from './outfits.js';
+import { themeOf, LIGHT, makeDesk, decorate, windowMaterial } from './office-decor.js';
 
 const mat = (color, opts) => new THREE.MeshToonMaterial({ color, ...opts });
 const SPEED = 0.45;
@@ -30,10 +31,14 @@ export class Office {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); // 細かすぎると重いので抑える
     this.scene = new THREE.Scene();
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8899bb, 1.6));
+    // 明るさは会社ごとに変える（前半は暗い部屋、後半は明るい。buildRoom で合わせる）
+    this.hemi = new THREE.HemisphereLight(0xffffff, 0x8899bb, 1.6);
+    this.scene.add(this.hemi);
     const sun = new THREE.DirectionalLight(0xffffff, 1.6);
     sun.position.set(3, 6, 4);
     this.scene.add(sun);
+    this.sun = sun;
+    this.blink = []; // 点滅するサーバーの LED
     this.camera = new THREE.PerspectiveCamera(35, 1, 0.1, 200);
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enablePan = false;
@@ -158,12 +163,22 @@ export class Office {
 
   buildRoom(level, cap = OFFICES[level].cap) {
     if (this.room) this.scene.remove(this.room);
-    const o = OFFICES[level];
+    const o = themeOf(level); // 見た目（office-decor.js）
     cap = Math.min(cap, 64); // 増築を重ねても、机を並べるのはここまで（重く・広くなりすぎないように。あふれた人は机の横）
     const room = new THREE.Group();
+    // 明るさと背景。前半は夜の暗い部屋で画面だけが光る
+    const L = LIGHT[o.mood];
+    this.hemi.color.set(L.hemi[0]);
+    this.hemi.groundColor.set(L.hemi[1]);
+    this.hemi.intensity = L.hemi[2];
+    this.sun.color.set(L.sun[0]);
+    this.sun.intensity = L.sun[1];
+    this.canvas.parentElement.style.background = o.bg ? `linear-gradient(${o.bg[0]}, ${o.bg[1]})` : '';
+    this.blink = [];
     // 部屋の広さは人数に合わせて広げる
     // 最初の自宅の部屋だけは、狭くて散らかった部屋にする
     const home = level === 0;
+    const night = o.mood === 'night';
     const w = home ? 3.6 : 3 + Math.ceil(Math.sqrt(cap)) * 1.3;
     const d = w * 0.75;
     this.size = { w, d };
@@ -176,57 +191,73 @@ export class Office {
     const side = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.6, d), wallMat);
     side.position.set(-w / 2, 0.8, 0);
     room.add(back, side);
-    // 窓
-    const win = new THREE.Mesh(new THREE.PlaneGeometry(w * (o.winW ?? 0.4), 0.6), new THREE.MeshBasicMaterial({ color: o.win ?? 0xbfe3ff }));
-    win.position.set(Math.min(w * 0.15, w * (0.48 - (o.winW ?? 0.4) / 2)), 1.0, -d / 2 + 0.06); // 広い窓は壁からはみ出さないように
-    room.add(win);
-    if (home) {
-      win.scale.set(0.6, 0.8, 1);
-      win.material.color.set(0x9fb4c2); // くもった窓
-      room.add(messyRoom(w, d));
+    // 窓（後半はほぼ壁いっぱいのガラス）
+    if (o.sky) {
+      const ww = w * o.winW;
+      const win = new THREE.Mesh(new THREE.PlaneGeometry(ww, o.winH), windowMaterial(o.sky));
+      win.position.set(Math.min(w * 0.15, w * (0.48 - o.winW / 2)), o.winH > 1 ? 0.15 + o.winH / 2 : 1.0, -d / 2 + 0.06); // 広い窓は壁からはみ出さないように
+      room.add(win);
+      // 窓わく
+      const fm = mat(night ? 0x2a2a30 : 0xe8e8ea);
+      for (let k = 0; k <= Math.round(ww / 1.2); k++) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.03, o.winH, 0.02), fm);
+        bar.position.set(win.position.x - ww / 2 + (k * ww) / Math.round(ww / 1.2), win.position.y, -d / 2 + 0.07);
+        room.add(bar);
+      }
     }
-    room.add(grandRoom(level, w, d, win.position));
+    if (home) room.add(messyRoom(w, d));
+    room.add(decorate(level, w, d, this.blink));
     // 机（定員の数だけ、奥に並べる）
     this.desks = [];
     const cols = Math.ceil(Math.sqrt(cap * 1.5));
-    const deskMat = mat(home ? 0x7a6450 : 0xe8d5b5); // 自宅は古い木の机
-    const pcMat = mat(0x2a2a33);
-    const screenMat = new THREE.MeshBasicMaterial({ color: 0x8fd3ff });
+    const span = (w - 1) / cols;
     for (let i = 0; i < cap; i++) {
       const c = i % cols;
       const r = Math.floor(i / cols);
-      const x = (c - (cols - 1) / 2) * ((w - 1) / cols);
+      const x = (c - (cols - 1) / 2) * span;
       const z = -d / 2 + 0.7 + r * 1.1;
-      const desk = new THREE.Group();
-      const top = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 0.4), deskMat);
-      top.position.y = 0.4;
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.38, 0.3), deskMat);
-      leg.position.y = 0.19;
-      const pc = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.03), pcMat);
-      pc.position.set(0, 0.55, -0.1);
-      const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.18), screenMat);
-      screen.position.set(0, 0.55, -0.084);
-      desk.add(top, leg, pc, screen);
+      const desk = makeDesk(o.desk, i, { span, home });
       desk.position.set(x, 0, z);
       room.add(desk);
       this.desks.push(new THREE.Vector3(x, 0, z + 0.4));
     }
+    // 暗い部屋は、画面の青や紫の光がまわりを照らす
+    if (night) {
+      const colors = [0x36e0ff, 0xb04fff, 0xff4fd8];
+      const n = Math.min(3, this.desks.length);
+      for (let k = 0; k < n; k++) {
+        const pl = new THREE.PointLight(colors[k % 3], 2.2, w * 0.9, 1.2);
+        const dp = this.desks[Math.round((k * (this.desks.length - 1)) / Math.max(1, n - 1))];
+        pl.position.set(dp.x, 0.9, dp.z - 0.2);
+        room.add(pl);
+      }
+    }
     // 事務所の前の外（散歩の道・面接に来た人が待つところ）
     const out = 1.5; // 外の奥行き
-    const ground = new THREE.Mesh(new THREE.BoxGeometry(w + 2, 0.08, out), mat(o.ground ?? (level <= 1 ? 0x9fd08a : 0xc4c4cc)));
+    const ground = new THREE.Mesh(new THREE.BoxGeometry(w + 2, 0.08, out), mat(o.ground ?? (night ? 0x2e4034 : level <= 1 ? 0x9fd08a : 0xc4c4cc)));
     ground.position.set(0, -0.06, d / 2 + out / 2);
-    const path = new THREE.Mesh(new THREE.BoxGeometry(w + 2, 0.09, 0.5), mat(o.path ?? (level <= 1 ? 0xe6d6b0 : 0x9a9aa6)));
+    const path = new THREE.Mesh(new THREE.BoxGeometry(w + 2, 0.09, 0.5), mat(o.path ?? (night ? 0x4a4a54 : 0x9a9aa6)));
     path.position.set(0, -0.05, d / 2 + out * 0.55);
     room.add(ground, path);
     for (const tx of o.trees === false ? [] : home ? [-w / 2 - 0.45, w / 2 + 0.35] : [-w * 0.42, w * 0.3]) { // 自宅は散らかった物が木で隠れないよう外側に
       const tree = new THREE.Group();
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.5, 8), mat(0x8a5a3a));
       trunk.position.y = 0.25;
-      const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 10), mat(0x5cae5c));
+      const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 10), mat(night ? 0x2f6a3a : 0x5cae5c));
       leaves.position.y = 0.7;
       tree.add(trunk, leaves);
       tree.position.set(tx, 0, d / 2 + out * 0.15);
       room.add(tree);
+    }
+    // 夜の道の街灯
+    if (night) {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 1.1, 8), mat(0x3a3a44));
+      pole.position.set(w / 2 + 0.35, 0.55, d / 2 + out * 0.15); // 部屋の右の外（部屋の中を隠さないように）
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffe7a3 }));
+      lamp.position.set(w / 2 + 0.35, 1.12, d / 2 + out * 0.15);
+      const pl = new THREE.PointLight(0xffd88a, 1.5, 2.5, 1.2);
+      pl.position.copy(lamp.position);
+      room.add(pole, lamp, pl);
     }
     const pathZ = d / 2 + out * 0.55;
     // 勉強会のホワイトボード（左の壁ぎわ、手前）
@@ -279,9 +310,11 @@ export class Office {
     if (fit) {
       const half = Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect);
       const seen = 2 * cw * 2 * Math.tan(half); // 今の距離で見える横幅
-      k = Math.max(1, Math.min(1.8, (1.05 * this.size.w) / seen));
+      k = Math.max(0.8, Math.min(1.8, (0.95 * this.size.w) / seen));
     }
-    this.camera.position.set(cw * 0.3 * k, cw * 1.0 * k, cw * 1.7 * k);
+    // 広い部屋は上から見下ろす（縦長の画面で部屋が小さくならないように）
+    if (fit) this.camera.position.set(cw * 0.2 * k, cw * 1.55 * k, cw * 1.25 * k);
+    else this.camera.position.set(cw * 0.3 * k, cw * 1.0 * k, cw * 1.7 * k);
     this.controls.target.set(0, 0.2, z);
     this.controls.minDistance = cw * 0.6;
     this.controls.maxDistance = cw * 3 * k;
@@ -355,6 +388,7 @@ export class Office {
     // 画面に出ていないとき（ほかのタブ・裏に回したとき）は描かない（電池と処理を節約）
     if (document.hidden || !this.canvas.offsetParent || !this.resize()) return;
     const t = this.clock.elapsedTime;
+    for (const l of this.blink) l.visible = Math.sin(t * 4 + l.userData.phase * 3) > -0.4;
     for (const p of this.people.values()) {
       this.step(p, t, dt);
       const mark = p.obj?.userData.ceoMark;
@@ -444,73 +478,6 @@ export class Office {
 }
 
 // 自宅の部屋の散らかりよう：しみ、はがれた壁紙、敷きっぱなしの布団、脱いだ服の山、段ボール、ピザの箱、カップ麺、ゴミ袋、裸電球
-// 本社ビルより先の会社の飾り（2026-10-01 追加）。win は窓の位置
-//   5 高層タワー＝窓の外のビル街 / 6 テックキャンパス＝鉢植えの木 / 7 世界本社＝光る地球儀
-//   8 スマートシティ＝床のふちの光る線・夜の街 / 9 宇宙ステーション＝窓の外の星と地球
-function grandRoom(level, w, d, win) {
-  const g = new THREE.Group();
-  const o = OFFICES[level];
-  const ww = w * (o.winW ?? 0.4);
-  const glow = (c) => new THREE.MeshBasicMaterial({ color: c });
-  // 窓の外のビルの影（タワー・スマートシティ）
-  if (level === 5 || level === 8) {
-    const c = level === 5 ? 0x7da6cf : 0x14203f;
-    for (let i = 0; i < 14; i++) {
-      const bw = ww / 14;
-      const h = 0.12 + ((i * 37) % 11) / 30;
-      const b = new THREE.Mesh(new THREE.PlaneGeometry(bw * 0.85, h), glow(c));
-      b.position.set(win.x - ww / 2 + bw * (i + 0.5), win.y - 0.3 + h / 2, win.z + 0.005);
-      g.add(b);
-      if (level === 8 && i % 2 === 0) {
-        const lit = new THREE.Mesh(new THREE.PlaneGeometry(bw * 0.2, 0.03), glow(0xffe08a));
-        lit.position.set(b.position.x, b.position.y + h * 0.2, win.z + 0.01);
-        g.add(lit);
-      }
-    }
-  }
-  if (level === 6) {
-    // 壁ぎわの鉢植えの木
-    for (const x of [-w / 2 + 0.35, w / 2 - 0.35]) {
-      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.22, 12), mat(0xe8e2d4));
-      pot.position.set(x, 0.11, -d / 2 + 0.3);
-      const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), mat(0x5cae5c));
-      leaves.position.set(x, 0.5, -d / 2 + 0.3);
-      g.add(pot, leaves);
-    }
-  }
-  if (level === 7) {
-    // 奥の壁の前に光る地球儀
-    const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.5, 16), mat(0xd9b65a));
-    stand.position.set(-w / 2 + 0.6, 0.25, -d / 2 + 0.4);
-    const globe = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 14), glow(0x5ab0ff));
-    globe.position.set(-w / 2 + 0.6, 0.72, -d / 2 + 0.4);
-    g.add(stand, globe);
-  }
-  if (level === 8) {
-    // 床のふちの光る線
-    const line = glow(0x5ad0e0);
-    const a = new THREE.Mesh(new THREE.BoxGeometry(w, 0.02, 0.04), line);
-    a.position.set(0, 0.01, -d / 2 + 0.07);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, d), line);
-    b.position.set(-w / 2 + 0.07, 0.01, 0);
-    g.add(a, b);
-  }
-  if (level === 9) {
-    // 窓の外の星と、青い地球
-    for (let i = 0; i < 40; i++) {
-      const star = new THREE.Mesh(new THREE.PlaneGeometry(0.025, 0.025), glow(0xffffff));
-      star.position.set(win.x + (((i * 53) % 100) / 100 - 0.5) * ww * 0.96, win.y + (((i * 29) % 100) / 100 - 0.5) * 0.55, win.z + 0.005);
-      g.add(star);
-    }
-    const earth = new THREE.Mesh(new THREE.CircleGeometry(0.42, 32, 0, Math.PI), glow(0x3a7fd8));
-    earth.position.set(win.x + ww * 0.25, win.y - 0.3, win.z + 0.01);
-    const land = new THREE.Mesh(new THREE.CircleGeometry(0.14, 16, 0, Math.PI), glow(0x5cae5c));
-    land.position.set(win.x + ww * 0.2, win.y - 0.3, win.z + 0.015);
-    g.add(earth, land);
-  }
-  return g;
-}
-
 function messyRoom(w, d) {
   const g = new THREE.Group();
   const flat = (geo, color, x, z, ry = 0) => {
