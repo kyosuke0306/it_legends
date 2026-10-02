@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中（壁に ZOZO の文字）。'matsue' はまつもとさんが Ruby を育てた島根・松江の夜の書斎（壁に光る Ruby の赤い宝石）
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中（壁に ZOZO の文字）。'matsue' はまつもとさんが Ruby を育てた島根・松江の夜の書斎（壁に光る Ruby の公式ロゴ）
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -647,7 +647,7 @@ const PROPS = {
     return g;
   },
 
-  // 島根・松江の夜の書斎：木の壁と本棚、窓の外に松江城、壁で光る Ruby の赤い宝石
+  // 島根・松江の夜の書斎：木の壁と本棚、窓の外に松江城、壁で光る Ruby のロゴ
   matsue() {
     const g = new THREE.Group();
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: matsueWallTexture() }));
@@ -674,16 +674,16 @@ const PROPS = {
     return g;
   },
 
-  // Ruby の赤い宝石：「プログラマーを幸せに」のときに手の横に浮かんで、きらきら回る
+  // Ruby のロゴ：「プログラマーを幸せに」のときに手の横に浮かんで、ゆっくり揺れる
   rubyGem() {
     const g = new THREE.Group();
-    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.17, 0), new THREE.MeshStandardMaterial({ color: 0xd8202a, roughness: 0.15, metalness: 0.2, flatShading: true, emissive: 0x5a0508 }));
-    gem.scale.set(1, 0.8, 1);
-    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.24, 24, 12), new THREE.MeshBasicMaterial({ color: 0xff4050, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
-    g.add(gem, halo);
+    const logo = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.42), new THREE.MeshBasicMaterial({ map: rubyLogoTexture(false), transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.8), new THREE.MeshBasicMaterial({ map: rubyLogoTexture(true), transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending }));
+    halo.position.z = -0.01;
+    g.add(halo, logo);
     g.userData.animate = (p, t, o) => {
       p.position.set(o.position.x + 0.9, 1.25 + Math.sin(t * 2.2) * 0.05, 0.3);
-      gem.rotation.y = t * 1.2;
+      p.rotation.y = Math.sin(t * 1.4) * 0.5;
     };
     return g;
   },
@@ -1852,47 +1852,21 @@ function matsueWallTexture() {
   x.fillRect(0, 0, W, H);
   return canvasTexture(c);
 }
-// Ruby のマーク（赤い宝石。上が平らで、下がとがった形に面の線）。blur=true なら後光用のぼかし
+// Ruby のロゴ（公式の赤い宝石、assets/ruby-logo.svg）。読み込めたら描く。blur=true なら後光用のぼかし
 function rubyLogoTexture(blur) {
   const c = document.createElement('canvas');
   c.width = 512;
   c.height = 512;
-  const x = c.getContext('2d');
-  if (blur) x.filter = 'blur(40px)';
-  const top = 150;
-  const mid = 230;
-  const bottom = 420;
-  const pts = [[150, top], [362, top], [430, mid], [256, bottom], [82, mid]];
-  const grad = x.createLinearGradient(0, top, 0, bottom);
-  grad.addColorStop(0, '#ff5a5f');
-  grad.addColorStop(1, '#a50d16');
-  x.fillStyle = blur ? '#ff3040' : grad;
-  x.shadowColor = 'rgba(255,60,70,0.9)';
-  x.shadowBlur = blur ? 0 : 24;
-  x.beginPath();
-  pts.forEach(([px, py], i) => (i ? x.lineTo(px, py) : x.moveTo(px, py)));
-  x.closePath();
-  x.fill();
-  if (!blur) {
-    // 面の線
-    x.shadowBlur = 0;
-    x.strokeStyle = 'rgba(255,220,220,0.75)';
-    x.lineWidth = 6;
-    x.lineJoin = 'round';
-    x.beginPath();
-    x.moveTo(82, mid);
-    x.lineTo(430, mid);
-    x.moveTo(150, top);
-    x.lineTo(200, mid);
-    x.lineTo(256, top);
-    x.lineTo(312, mid);
-    x.lineTo(362, top);
-    x.moveTo(200, mid);
-    x.lineTo(256, bottom);
-    x.lineTo(312, mid);
-    x.stroke();
-  }
-  return canvasTexture(c);
+  const tex = canvasTexture(c);
+  const img = new Image();
+  img.onload = () => {
+    const x = c.getContext('2d');
+    if (blur) x.filter = 'blur(36px) brightness(1.4)';
+    x.drawImage(img, 56, 56, 400, 400);
+    tex.needsUpdate = true;
+  };
+  img.src = 'assets/ruby-logo.svg';
+  return tex;
 }
 // Ruby のプログラムの画面（黒い画面に色付きの文字）
 function rubyCodeTexture() {
