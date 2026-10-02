@@ -113,6 +113,7 @@ export class Office {
       const desk = this.desks[i % this.desks.length];
       p.desk = i < this.desks.length ? desk : desk.clone().add(new THREE.Vector3(0.32 * Math.ceil(i / this.desks.length), 0, 0.15));
     });
+    this.setWallArt(state.wallArt ?? null);
     this.activity = state.activity;
     this.board.visible = state.activity === 'meetup';
     this.setGuests(state.activity === 'meetup' ? 3 : 0);
@@ -210,7 +211,10 @@ export class Office {
     // 部屋を作り直したら、座っていた人は立ち上がる
     for (const p of this.people.values()) this.standUp(p);
     this.seats = [];
-    room.add(decorate(level, w, d, this.blink, this.seats));
+    const extra = {};
+    room.add(decorate(level, w, d, this.blink, this.seats, extra));
+    this.artPlane = extra.artPlane ?? null; // 自分で落書きできる壁（自宅だけ）
+    this.artSrc = undefined; // 作り直したら、描いた絵を貼り直す
     // 机（定員の数だけ、奥に並べる）
     this.desks = [];
     const cols = Math.ceil(Math.sqrt(cap * 1.5));
@@ -325,6 +329,29 @@ export class Office {
     this.controls.update();
   }
 
+  // 自分で描いた壁の絵を貼る（null なら点線の枠に戻す）
+  setWallArt(src) {
+    if (!this.artPlane || this.artSrc === src) return;
+    this.artSrc = src;
+    const m = this.artPlane.material;
+    if (!src) {
+      m.map = this.artPlane.userData.blank;
+      m.needsUpdate = true;
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      if (this.artSrc !== src) return;
+      const t = new THREE.Texture(img);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.needsUpdate = true;
+      if (m.map !== this.artPlane.userData.blank) m.map?.dispose();
+      m.map = t;
+      m.needsUpdate = true;
+    };
+    img.src = src;
+  }
+
   // クッションから立ち上がる（席を空ける）
   standUp(p) {
     if (p.seat) p.seat.taken = null;
@@ -375,6 +402,11 @@ export class Office {
     for (const [holder, label] of targets) {
       const hit = ray.intersectObject(holder, true)[0];
       if (hit && (!best || hit.distance < best.d)) best = { holder, label, d: hit.distance };
+    }
+    // 人がいなければ、自分で描ける壁をタップしたか見る
+    if (!best && this.artPlane && ray.intersectObject(this.artPlane)[0]) {
+      this.tag.classList.remove('show');
+      return this.onArt?.();
     }
     clearTimeout(this.tagTimer);
     this.tagged = best;

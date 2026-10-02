@@ -191,6 +191,25 @@ function skyTex(kind) {
 }
 export const windowMaterial = (kind) => glow(0xffffff, { map: skyTex(kind) });
 
+// 自分で描く壁の、まだ何も描いていないときの絵（点線の枠と、真ん中にペン）
+export const artBlankTex = () =>
+  canvasTex('art-blank', 400, 200, (c, W, H) => {
+    c.strokeStyle = 'rgba(255,255,255,0.45)';
+    c.lineWidth = 4;
+    c.setLineDash([16, 12]);
+    c.strokeRect(6, 6, W - 12, H - 12);
+    c.setLineDash([]);
+    c.lineWidth = 7;
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    c.strokeStyle = 'rgba(255,255,255,0.7)';
+    c.translate(W / 2 - 36, H / 2 - 36);
+    c.scale(3, 3);
+    c.lineWidth = 2;
+    c.stroke(new Path2D('M4.5 19.5l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3l-10 10z'));
+    c.stroke(new Path2D('M13.5 7l3 3'));
+  });
+
 // ---------- 机 ----------
 // span は机と机の間（長い机をつなげて見せるのに使う）。blink は光らせる LED を入れる箱
 const shared = {};
@@ -273,7 +292,8 @@ export function makeDesk(style, i, { span = 1, home = false } = {}) {
 // ---------- 部屋の飾り ----------
 // blink: 点滅させる LED を入れる配列（office.js が光らせる）
 // seats: クッションに座る場所 { pos, ry } を入れる配列（手の空いた社員が座ってノートPCで働く）
-export function decorate(level, w, d, blink, seats = []) {
+// extra.artPlane: 自分で描ける壁（自宅のいちばん目立つところ）。office.js がタップを受けて絵を貼る
+export function decorate(level, w, d, blink, seats = [], extra = {}) {
   const g = new THREE.Group();
   const back = -d / 2 + 0.06;
   const left = -w / 2 + 0.06;
@@ -565,7 +585,12 @@ export function decorate(level, w, d, blink, seats = []) {
 
   if (level === 0) {
     // 自宅：壁はペンの落書きだらけ。床じゅうの缶とペットボトル、空き缶のタワー、夜中4時の目覚まし
-    scribble('hungry', 512, 150, 1.05, words(['STAY HUNGRY.', 'STAY FOOLISH.'], '#f2f2f2', 58), { x: -0.95, y: 1.27, rot: 0.04 });
+    // いちばん目立つところは空けておき、自分で落書きできる（タップで描く。空のときは点線の枠とペン）
+    const art = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55), glow(0xffffff, { map: artBlankTex(), transparent: true, depthWrite: false }));
+    art.position.set(-0.95, 1.2, back + 0.007);
+    art.userData.blank = art.material.map;
+    add(art);
+    extra.artPlane = art;
     scribble('sleep', 420, 140, 0.7, words(['404:', 'SLEEP NOT FOUND'], '#7cff6b', 50), { x: -1.25, y: 0.62, rot: -0.06 });
     scribble('loop', 380, 150, 0.62, words(['while (alive)', ' { code(); }'], '#5fe6ff', 46), { x: 1.38, y: 1.25, rot: 0.05 });
     // 寝ていない日を数えた正の字のような線
@@ -601,7 +626,7 @@ export function decorate(level, w, d, blink, seats = []) {
       c.beginPath();
       c.arc(100, 95, 18, 0, Math.PI * 2);
       c.stroke();
-    }, { x: -0.25, y: 1.25, rot: 0.25 });
+    }, { x: -0.17, y: 1.25, rot: 0.25 });
     // 変な宇宙人の顔（目が3つ）
     scribble('alien', 240, 220, 0.4, (c) => {
       pen(c, '#b6ff5c', 7);

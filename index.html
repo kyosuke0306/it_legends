@@ -7,27 +7,27 @@
     <meta name="theme-color" content="#04060d" />
     <link rel="icon" href="assets/favicon.png?v=4" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=4" />
-    <link rel="stylesheet" href="style.css?v=1.0.59" />
+    <link rel="stylesheet" href="style.css?v=1.0.60" />
     <script type="importmap">
       {
         "imports": {
           "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-          "./src/character.js": "./src/character.js?v=1.0.59",
-          "./src/cloud.js": "./src/cloud.js?v=1.0.59",
-          "./src/data.js": "./src/data.js?v=1.0.59",
-          "./src/firebase-config.js": "./src/firebase-config.js?v=1.0.59",
-          "./src/game/names.js": "./src/game/names.js?v=1.0.59",
-          "./src/game/rules.js": "./src/game/rules.js?v=1.0.59",
-          "./src/game/state.js": "./src/game/state.js?v=1.0.59",
-          "./src/icons.js": "./src/icons.js?v=1.0.59",
-          "./src/main.js": "./src/main.js?v=1.0.59",
-          "./src/office-decor.js": "./src/office-decor.js?v=1.0.59",
-          "./src/office.js": "./src/office.js?v=1.0.59",
-          "./src/outfits.js": "./src/outfits.js?v=1.0.59",
-          "./src/show.js": "./src/show.js?v=1.0.59",
-          "./src/stage.js": "./src/stage.js?v=1.0.59",
-          "./src/version.js": "./src/version.js?v=1.0.59"
+          "./src/character.js": "./src/character.js?v=1.0.60",
+          "./src/cloud.js": "./src/cloud.js?v=1.0.60",
+          "./src/data.js": "./src/data.js?v=1.0.60",
+          "./src/firebase-config.js": "./src/firebase-config.js?v=1.0.60",
+          "./src/game/names.js": "./src/game/names.js?v=1.0.60",
+          "./src/game/rules.js": "./src/game/rules.js?v=1.0.60",
+          "./src/game/state.js": "./src/game/state.js?v=1.0.60",
+          "./src/icons.js": "./src/icons.js?v=1.0.60",
+          "./src/main.js": "./src/main.js?v=1.0.60",
+          "./src/office-decor.js": "./src/office-decor.js?v=1.0.60",
+          "./src/office.js": "./src/office.js?v=1.0.60",
+          "./src/outfits.js": "./src/outfits.js?v=1.0.60",
+          "./src/show.js": "./src/show.js?v=1.0.60",
+          "./src/stage.js": "./src/stage.js?v=1.0.60",
+          "./src/version.js": "./src/version.js?v=1.0.60"
         }
       }
     </script>
@@ -116,6 +116,17 @@
       </div>
     </dialog>
 
+    <dialog id="artpad" class="sheet">
+      <div class="art-wrap"><canvas id="art-canvas" width="600" height="300"></canvas></div>
+      <div class="art-tools">
+        <div class="art-colors"></div>
+        <button class="art-btn" id="art-size" aria-label="太さ"></button>
+        <button class="art-btn" id="art-undo" aria-label="戻す"></button>
+        <button class="art-btn" id="art-clear" aria-label="消す"></button>
+      </div>
+      <button class="big" id="art-save"></button>
+    </dialog>
+
     <dialog id="notice">
       <div id="notice-body"></div>
       <button class="big" id="notice-ok">OK</button>
@@ -128,6 +139,6 @@
 
     <div id="version"></div>
 
-    <script type="module" src="src/main.js?v=1.0.59"></script>
+    <script type="module" src="src/main.js?v=1.0.60"></script>
   </body>
 </html>

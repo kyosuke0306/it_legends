@@ -244,7 +244,10 @@ function enterGame() {
   $('#start').classList.add('hidden');
   $('#game').classList.remove('hidden');
   fitScreen();
-  office ??= new Office($('#office-canvas'));
+  if (!office) {
+    office = new Office($('#office-canvas'));
+    office.onArt = openArtPad; // 自宅の壁の空いているところをタップすると、落書きを描く
+  }
   preloadCharacters([...G.ownedLegends(S)]);
   renderAll();
   if (pendingWelcome) {
@@ -785,6 +788,102 @@ function notice(html) {
   if (!$('#notice').open) $('#notice').showModal();
 }
 
+// ---------- 壁の落書き（自分で描く） ----------
+// 描いた絵は透明な背景の PNG にして S.wallArt に入れる（記録・クラウドに一緒に保存される）
+const ART_COLORS = ['#f2f2f2', '#7cff6b', '#ff5bd8', '#5fe6ff', '#ffd84a', '#ff9a2e'];
+const ART_WALL = '#4e4a52'; // 描くときの下地（部屋の壁の色に近く）
+const art = { color: ART_COLORS[0], size: 10, strokes: [], base: null, cur: null };
+function openArtPad() {
+  const dlg = $('#artpad');
+  const cv = $('#art-canvas');
+  art.strokes = [];
+  art.base = null;
+  const draw = () => drawArt(cv.getContext('2d'), true);
+  if (S.wallArt) {
+    const img = new Image();
+    img.onload = () => {
+      art.base = img;
+      draw();
+    };
+    img.src = S.wallArt;
+  }
+  $('#artpad .art-colors').innerHTML = ART_COLORS.map((c) => `<button class="art-color" style="--c:${c}" data-c="${c}" aria-label="色"></button>`).join('');
+  const markColor = () => $('#artpad .art-colors').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.c === art.color));
+  $('#artpad .art-colors').querySelectorAll('button').forEach((b) => (b.onclick = () => ((art.color = b.dataset.c), markColor())));
+  markColor();
+  const sizeBtn = $('#art-size');
+  const markSize = () => (sizeBtn.innerHTML = `<i style="width:${art.size}px;height:${art.size}px"></i>`);
+  sizeBtn.onclick = () => ((art.size = art.size === 10 ? 20 : art.size === 20 ? 5 : 10), markSize());
+  markSize();
+  $('#art-undo').innerHTML = icon('undo');
+  $('#art-undo').onclick = () => {
+    if (art.strokes.length) art.strokes.pop();
+    else art.base = null; // 前に描いた絵も消せる
+    draw();
+  };
+  $('#art-clear').innerHTML = icon('trash');
+  $('#art-clear').onclick = () => {
+    art.strokes = [];
+    art.base = null;
+    draw();
+  };
+  $('#art-save').innerHTML = icon('check');
+  $('#art-save').onclick = () => {
+    const out = document.createElement('canvas');
+    out.width = cv.width;
+    out.height = cv.height;
+    drawArt(out.getContext('2d'), false);
+    S.wallArt = art.base || art.strokes.length ? out.toDataURL('image/png') : null;
+    dlg.close();
+    commit();
+  };
+  // 指やマウスで描く
+  const at = (e) => {
+    const r = cv.getBoundingClientRect();
+    return [((e.clientX - r.left) / r.width) * cv.width, ((e.clientY - r.top) / r.height) * cv.height];
+  };
+  cv.onpointerdown = (e) => {
+    cv.setPointerCapture(e.pointerId);
+    art.cur = { color: art.color, size: art.size, pts: [at(e)] };
+    art.strokes.push(art.cur);
+    draw();
+  };
+  cv.onpointermove = (e) => {
+    if (!art.cur) return;
+    art.cur.pts.push(at(e));
+    draw();
+  };
+  cv.onpointerup = cv.onpointercancel = () => (art.cur = null);
+  draw();
+  dlg.showModal();
+}
+function drawArt(c, wall) {
+  const { width: W, height: H } = c.canvas;
+  c.clearRect(0, 0, W, H);
+  if (wall) {
+    c.fillStyle = ART_WALL;
+    c.fillRect(0, 0, W, H);
+  }
+  if (art.base) c.drawImage(art.base, 0, 0, W, H);
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  for (const st of art.strokes) {
+    c.strokeStyle = st.color;
+    c.fillStyle = st.color;
+    c.lineWidth = st.size;
+    if (st.pts.length === 1) {
+      c.beginPath();
+      c.arc(st.pts[0][0], st.pts[0][1], st.size / 2, 0, Math.PI * 2);
+      c.fill();
+      continue;
+    }
+    c.beginPath();
+    c.moveTo(...st.pts[0]);
+    for (const p of st.pts.slice(1)) c.lineTo(...p);
+    c.stroke();
+  }
+}
+
 // ---------- 時間を進める ----------
 function commit() {
   save();
@@ -836,10 +935,8 @@ function resultsHtml(ev, { head = true } = {}) {
     levels.length ? `<div class="vals center">${levels.map((x) => val('level', `${esc(x.name)} Lv${x.level}`)).join('')}</div>` : '',
   ];
   const list = `<div class="results">${rows.join('')}</div>`;
-  // 仕事が全部失敗したときは、見出しも赤い「失敗」にする（失敗でも報酬の2割は入るので、成功と見分けやすく）
-  const allFail = tasks.length && !tasks.some((t) => t.ok) && !prods.length;
-  if (!head) return list;
-  return allFail ? `${icon('error', 'big-ic fail-ic')}<h2 class="fail-h">失敗</h2>${list}` : `${icon('check', 'big-ic done-ic')}<h2>完了</h2>${list}`;
+  // 見出しはいつも「完了」（成功・失敗は1行ずつの札で見せる。見出しまで「失敗」にすると二重になる）
+  return head ? `${icon(tasks.some((t) => t.ok) || prods.length ? 'check' : 'task', 'big-ic done-ic')}<h2>完了</h2>${list}` : list;
 }
 
 // 冷やかしに来たレジェンドと、されたこと（お金を減らされた・社員を引き抜かれた）
