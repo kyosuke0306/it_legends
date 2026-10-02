@@ -329,8 +329,9 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf0cfb4, hairStyle: 'short', hairColor: 0x1d1a1a, shirt: 0x5a5a60 },
     // ユーザーからもらった写真が元。メガネは細い銀のふち（下半分にふちがない）、ひげは短い無精ひげ
-    face: 'an East Asian Japanese man in his fifties with thick black hair with some gray strands, short on the sides and swept up and slightly messy on top; thin silver half-rim glasses with narrow rectangular lenses and no frame on the bottom of the lenses; short light stubble around the mouth and on the chin, a thin mustache, not a full beard; a gentle, kind smile with slightly narrowed eyes',
-    outfit: 'a gray textured blazer over a black collared shirt with the top button open, dark gray trousers and black leather shoes',
+    face: 'an East Asian Japanese man in his fifties with thick black hair with some gray strands, short on the sides and a little messy and unstyled on top, like he did not bother with it much; thin silver half-rim glasses with narrow rectangular lenses and no frame on the bottom of the lenses; short light stubble around the mouth and on the chin, a thin mustache, not a full beard; a gentle, kind smile with slightly narrowed eyes',
+    // 少しだけエンジニア・オタクっぽく（ユーザー指示「しすぎないように」）：開けたパーカーに Ruby の赤い宝石の小さな絵の T シャツ、勉強会の名札
+    outfit: 'an open dark gray zip-up hoodie over a black T-shirt with a small red ruby gemstone printed on the chest, a blue conference lanyard with a blank white name badge, slightly loose dark jeans and simple gray sneakers; no text or logos anywhere',
   },
 ];
 
