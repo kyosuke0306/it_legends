@@ -331,6 +331,16 @@ export const LEGENDS = [
     // ユーザーからもらった写真が元。メガネは細い銀のふち（下半分にふちがない）、ひげは短い無精ひげ
     face: 'an East Asian Japanese man in his fifties with thick black hair with some gray strands, short on the sides and swept up and slightly messy on top; thin silver half-rim glasses with narrow rectangular lenses and no frame on the bottom of the lenses; short light stubble around the mouth and on the chin, a thin mustache, not a full beard; a gentle, kind smile with slightly narrowed eyes',
     outfit: 'a gray textured blazer over a black collared shirt with the top button open, dark gray trousers and black leather shoes',
+    // Ruby を育てた島根・松江の夜の書斎で話す
+    show: {
+      stage: 'matsue',
+      props: ['matsue'],
+      lines: [
+        { text: 'プログラマーを、幸せに。', sub: 'Make programmers happy.', prop: 'rubyGem', anim: 'agree' },
+        { text: '機械ではなく、人間に目を向けよう。', sub: 'We need to focus on humans, not machines.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: '楽しんでプログラミングしよう。', sub: 'Enjoy programming!', prop: 'rubyCode', anim: 'greet_01' },
+      ],
+    },
   },
 ];
 

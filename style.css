@@ -505,6 +505,8 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .stage-studio .loading { color: #c9cbd3; }
 .stage-wrap.stage-iss { background: #2a3038; }
 .stage-iss .loading { color: #c9cbd3; }
+.stage-wrap.stage-matsue { background: #1e1610; }
+.stage-matsue .loading { color: #c9cbd3; }
 .spinner {
   width: 32px;
   height: 32px;

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中（壁に ZOZO の文字）
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中（壁に ZOZO の文字）。'matsue' はまつもとさんが Ruby を育てた島根・松江の夜の書斎（壁に光る Ruby の赤い宝石）
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -643,6 +643,61 @@ const PROPS = {
       pen.position.set(-1.4 + Math.cos(t * 0.4) * 0.1, 1.1 + Math.sin(t * 0.6) * 0.1, -0.9);
       pen.rotation.set(t * 0.7, 0, t * 0.5);
       glow.material.opacity = 0.7 + Math.sin(t * 1.6) * 0.3;
+    };
+    return g;
+  },
+
+  // 島根・松江の夜の書斎：木の壁と本棚、窓の外に松江城、壁で光る Ruby の赤い宝石
+  matsue() {
+    const g = new THREE.Group();
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: matsueWallTexture() }));
+    wall.position.set(0, 3, -2.5);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: floorTexture() }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, 1);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: rubyLogoTexture(false), transparent: true, depthWrite: false }));
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      new THREE.MeshBasicMaterial({ map: rubyLogoTexture(true), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    );
+    sign.position.set(1.0, 1.85, -2.47); // 吹き出しに隠れないよう、低め右寄りに
+    glow.position.set(1.0, 1.85, -2.48);
+    g.add(wall, floor, glow, sign);
+    // 机の上の電気スタンドの明かり（左）
+    const lamp = new THREE.PointLight(0xffd9a0, 2.5, 6);
+    lamp.position.set(-1.8, 2.2, -1);
+    g.add(lamp);
+    g.renderOrder = -1;
+    g.userData.animate = (p, t) => {
+      glow.material.opacity = 0.55 + Math.sin(t * 1.8) * 0.25;
+    };
+    return g;
+  },
+
+  // Ruby の赤い宝石：「プログラマーを幸せに」のときに手の横に浮かんで、きらきら回る
+  rubyGem() {
+    const g = new THREE.Group();
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.17, 0), new THREE.MeshStandardMaterial({ color: 0xd8202a, roughness: 0.15, metalness: 0.2, flatShading: true, emissive: 0x5a0508 }));
+    gem.scale.set(1, 0.8, 1);
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.24, 24, 12), new THREE.MeshBasicMaterial({ color: 0xff4050, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
+    g.add(gem, halo);
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x + 0.9, 1.25 + Math.sin(t * 2.2) * 0.05, 0.3);
+      gem.rotation.y = t * 1.2;
+    };
+    return g;
+  },
+
+  // Ruby のプログラムを映した小さな画面（「楽しんで」のときに浮かぶ）
+  rubyCode() {
+    const g = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.03), new THREE.MeshStandardMaterial({ color: 0x2a2b31, roughness: 0.5 }));
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.36), new THREE.MeshBasicMaterial({ map: rubyCodeTexture() }));
+    screen.position.z = 0.017;
+    g.add(frame, screen);
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x - 0.9, 1.3 + Math.sin(t * 2) * 0.04, 0.3); // 先に出た宝石と重ならないよう反対側に
+      p.rotation.y = 0.35 + Math.sin(t * 0.9) * 0.08;
     };
     return g;
   },
@@ -1717,5 +1772,149 @@ function moonTexture() {
     x.arc(cx, cy, r, 0, Math.PI * 2);
     x.fill();
   }
+  return canvasTexture(c);
+}
+
+// 松江の夜の書斎の壁：木の板、左に本棚、右上の窓の外に松江城の影と月
+function matsueWallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 878;
+  const x = c.getContext('2d');
+  const W = c.width;
+  const H = c.height;
+  const wall = x.createRadialGradient(W / 2, H * 0.35, 60, W / 2, H * 0.5, W * 0.55);
+  wall.addColorStop(0, '#5a4535');
+  wall.addColorStop(1, '#1e1610');
+  x.fillStyle = wall;
+  x.fillRect(0, 0, W, H);
+  // 縦の木の板
+  x.strokeStyle = 'rgba(0,0,0,0.18)';
+  x.lineWidth = 3;
+  for (let i = 1; i < 26; i++) {
+    x.beginPath();
+    x.moveTo(i * 80, 0);
+    x.lineTo(i * 80, H);
+    x.stroke();
+  }
+  // 本棚（左）
+  x.fillStyle = '#3a2a1e';
+  x.fillRect(260, 120, 420, 560);
+  const colors = ['#b3262e', '#2d5a8a', '#d9c08f', '#3f7a4a', '#7a3a6a', '#c9822c', '#e8e2d4'];
+  for (let r = 0; r < 4; r++) {
+    x.fillStyle = '#2a1d14';
+    x.fillRect(260, 120 + r * 140 + 126, 420, 14);
+    let bx = 280;
+    let k = r * 3;
+    while (bx < 650) {
+      const bw = 18 + ((k * 13) % 22);
+      const bh = 90 + ((k * 29) % 30);
+      x.fillStyle = colors[k % colors.length];
+      x.fillRect(bx, 120 + r * 140 + 126 - bh, bw, bh);
+      bx += bw + 3;
+      k++;
+    }
+  }
+  // 窓（右上）：夜空に月と松江城の影
+  const wx = 1420;
+  const wy = 140;
+  const ww = 380;
+  const wh = 280;
+  x.fillStyle = '#132242';
+  x.fillRect(wx, wy, ww, wh);
+  x.fillStyle = '#fff3c4';
+  x.beginPath();
+  x.arc(wx + 300, wy + 70, 28, 0, Math.PI * 2);
+  x.fill();
+  x.fillStyle = '#070d1c';
+  // 石垣・天守（屋根を重ねた形）
+  const cx = wx + 150;
+  const base = wy + wh;
+  x.fillRect(cx - 90, base - 40, 180, 40);
+  for (const [w, y0, h] of [[150, 40, 34], [120, 74, 30], [90, 104, 28], [60, 132, 26]]) {
+    x.fillRect(cx - w / 2 + 12, base - y0 - h + 8, w - 24, h);
+    x.beginPath();
+    x.moveTo(cx - w / 2 - 8, base - y0 + 2);
+    x.lineTo(cx + w / 2 + 8, base - y0 + 2);
+    x.lineTo(cx + w / 2 - 14, base - y0 - 12);
+    x.lineTo(cx - w / 2 + 14, base - y0 - 12);
+    x.closePath();
+    x.fill();
+  }
+  x.strokeStyle = '#2a1d14';
+  x.lineWidth = 14;
+  x.strokeRect(wx, wy, ww, wh);
+  x.beginPath();
+  x.moveTo(wx + ww / 2, wy);
+  x.lineTo(wx + ww / 2, wy + wh);
+  x.stroke();
+  x.fillStyle = 'rgba(8,10,20,0.22)';
+  x.fillRect(0, 0, W, H);
+  return canvasTexture(c);
+}
+// Ruby のマーク（赤い宝石。上が平らで、下がとがった形に面の線）。blur=true なら後光用のぼかし
+function rubyLogoTexture(blur) {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 512;
+  const x = c.getContext('2d');
+  if (blur) x.filter = 'blur(40px)';
+  const top = 150;
+  const mid = 230;
+  const bottom = 420;
+  const pts = [[150, top], [362, top], [430, mid], [256, bottom], [82, mid]];
+  const grad = x.createLinearGradient(0, top, 0, bottom);
+  grad.addColorStop(0, '#ff5a5f');
+  grad.addColorStop(1, '#a50d16');
+  x.fillStyle = blur ? '#ff3040' : grad;
+  x.shadowColor = 'rgba(255,60,70,0.9)';
+  x.shadowBlur = blur ? 0 : 24;
+  x.beginPath();
+  pts.forEach(([px, py], i) => (i ? x.lineTo(px, py) : x.moveTo(px, py)));
+  x.closePath();
+  x.fill();
+  if (!blur) {
+    // 面の線
+    x.shadowBlur = 0;
+    x.strokeStyle = 'rgba(255,220,220,0.75)';
+    x.lineWidth = 6;
+    x.lineJoin = 'round';
+    x.beginPath();
+    x.moveTo(82, mid);
+    x.lineTo(430, mid);
+    x.moveTo(150, top);
+    x.lineTo(200, mid);
+    x.lineTo(256, top);
+    x.lineTo(312, mid);
+    x.lineTo(362, top);
+    x.moveTo(200, mid);
+    x.lineTo(256, bottom);
+    x.lineTo(312, mid);
+    x.stroke();
+  }
+  return canvasTexture(c);
+}
+// Ruby のプログラムの画面（黒い画面に色付きの文字）
+function rubyCodeTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 330;
+  const x = c.getContext('2d');
+  x.fillStyle = '#1b1c22';
+  x.fillRect(0, 0, 512, 330);
+  x.font = 'bold 34px Menlo, Consolas, monospace';
+  const lines = [
+    [['5', '#f0b93a'], ['.times do', '#e8e8ee']],
+    [['  puts ', '#e8e8ee'], ['"Happy!"', '#7ec97a']],
+    [['end', '#ff6b70']],
+  ];
+  lines.forEach((parts, i) => {
+    let px = 36;
+    for (const [t, col] of parts) {
+      x.fillStyle = col;
+      x.fillText(t, px, 90 + i * 70);
+      px += x.measureText(t).width;
+    }
+  });
   return canvasTexture(c);
 }
