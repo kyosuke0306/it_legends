@@ -11,7 +11,7 @@ export const DAY = 24 * HOUR;
 //   teamSpeed / teamReward / teamSuccess / teamQuality / teamXp … その人が参加した仕事・開発だけに効く
 //   income / offers / nextTrend … 会社にいるだけで効く
 export const JOBS = {
-  se: { name: 'SE', full: 'システムエンジニア', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamReward: 0.1 }, perkText: '報酬 +10%', shirt: 0x4a78c2 },
+  se: { name: 'SE', full: 'システムエンジニア', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamSuccess: 0.15 }, perkText: '成功率 +15%', shirt: 0x4a78c2 },
   pg: { name: 'プログラマー', full: 'プログラマー', w: { idea: 1, tech: 3.5, plan: 1, talk: 0.5 }, perk: { teamSpeed: 0.15 }, perkText: '速さ +15%', shirt: 0x2f2f3a },
   infra: { name: 'インフラ', full: 'インフラエンジニア', w: { idea: 0.5, tech: 3, plan: 2, talk: 0.5 }, perk: { teamSuccess: 0.1 }, perkText: '成功率 +10%', shirt: 0x3f8f6b },
   designer: { name: 'デザイナー', full: 'デザイナー', w: { idea: 3.5, tech: 1, plan: 1, talk: 1.5 }, perk: { teamQuality: 0.2 }, perkText: '製品の出来 +20%', shirt: 0xe0607e },
