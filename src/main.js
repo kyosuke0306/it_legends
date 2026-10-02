@@ -944,11 +944,30 @@ function resultsHtml(ev, { head = true } = {}) {
     ),
     tasks.length > 5 ? `<div class="muted">+${tasks.length - 5}</div>` : '',
     ...prods.map((p) => `<div class="result ok">${icon('box')}<b>${esc(p.name)}</b><span class="vals">${rating(p.q)}</span></div>`),
-    levels.length ? `<div class="vals center">${levels.map((x) => val('level', `${esc(x.name)} Lv${x.level}`)).join('')}</div>` : '',
+    ...levelRows(levels),
   ];
   const list = `<div class="results">${rows.join('')}</div>`;
   // 見出しはいつも「完了」（成功・失敗は1行ずつの札で見せる。見出しまで「失敗」にすると二重になる）
   return head ? `${icon(tasks.some((t) => t.ok) || prods.length ? 'check' : 'task', 'big-ic done-ic')}<h2>完了</h2>${list}` : list;
+}
+
+// レベルが上がった人（同じ人が何度も上がったら1行にまとめて「Lv2 → Lv4」）
+function levelRows(levels) {
+  const byMember = new Map();
+  for (const x of levels) {
+    const k = x.id ?? x.name;
+    const o = byMember.get(k) ?? { ...x, from: x.level - 1 };
+    o.level = Math.max(o.level, x.level);
+    byMember.set(k, o);
+  }
+  return [...byMember.values()].map((x) => {
+    const m = S.members.find((y) => y.id === x.id);
+    const sub = m ? (m.kind === 'legend' ? 'レジェンド' : R.JOBS[m.job].name) : '';
+    return `<div class="rival lvup">${m ? avatar(m) : `<span class="av" style="--c:var(--accent)">${esc(x.name.slice(0, 1))}</span>`}
+      <span class="rival-what"><b>${esc(x.name)}</b><small>${sub}</small></span>
+      <span class="lv-to">${icon('up')}<span>Lv${x.from}</span><span class="arrow">→</span><b>Lv${x.level}</b></span>
+    </div>`;
+  });
 }
 
 // 冷やかしに来たレジェンドと、されたこと（お金を減らされた・社員を引き抜かれた）

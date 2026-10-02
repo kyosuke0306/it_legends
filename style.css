@@ -612,3 +612,10 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 /* 長押しやなぞったときに文字が選ばれないように（入力欄は別） */
 #game, dialog, .stage-wrap, canvas { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 input, textarea { -webkit-user-select: text; user-select: text; }
+/* レベルアップした人（完了・おかえりなさいの一覧） */
+.rival.lvup { background: color-mix(in srgb, var(--accent) 10%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.rival.lvup .av { width: 38px; height: 38px; }
+.lv-to { display: inline-flex; align-items: center; gap: 4px; flex: none; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lv-to .ic { color: var(--accent); }
+.lv-to b { font-size: 1rem; color: var(--accent); }
+.lv-to .arrow { opacity: 0.6; }

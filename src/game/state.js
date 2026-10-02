@@ -285,7 +285,7 @@ function giveXp(s, team, base, t, ev) {
       for (const k of R.STAT_KEYS) m.stats[k] += Math.round(w[k] * between(s, 0.8, 1.4));
       if (m.salary) m.salary = round(m.salary * 1.08, 500);
       addLog(s, t, `${displayName(m)}  Lv${m.level}`, 'good');
-      ev.push({ type: 'level', name: displayName(m), level: m.level });
+      ev.push({ type: 'level', id: m.id, name: displayName(m), level: m.level });
     }
   }
 }
