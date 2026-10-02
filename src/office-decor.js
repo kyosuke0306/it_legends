@@ -299,20 +299,6 @@ export function decorate(level, w, d, blink) {
     r.rotation.y = ry;
     add(r);
   };
-  // 壁のポスター（抽象的な絵）
-  const poster = (x, y, c1, c2, onLeft = false) => {
-    const p = new THREE.Group();
-    p.add(box(0.36, 0.5, 0.01, mat(c1)));
-    const circ = new THREE.Mesh(new THREE.CircleGeometry(0.11, 20), glow(c2));
-    circ.position.set(0, 0.06, 0.008);
-    const bar = box(0.26, 0.04, 0.005, glow(0xffffff), 0, -0.16, 0.008);
-    p.add(circ, bar);
-    if (onLeft) {
-      p.rotation.y = Math.PI / 2;
-      p.position.set(left + 0.01, y, x);
-    } else p.position.set(x, y, back + 0.01);
-    add(p);
-  };
   // 光る看板（{ } の形）
   const neonBraces = (x, y, color) => {
     const m = glow(color);
@@ -407,11 +393,151 @@ export function decorate(level, w, d, blink) {
     add(p);
   };
 
+  // 床に散らかったごみ（缶・ペットボトル・丸めた紙・お菓子の袋）。n 個を決まった並びで散らす
+  const trash = (n, seed, area = {}) => {
+    const r = seeded(seed);
+    const { x0 = -w / 2 + 0.25, x1 = w / 2 - 0.25, z0 = -d / 2 + 0.25, z1 = d / 2 - 0.2, cx, cz, rad } = area;
+    for (let k = 0; k < n; k++) {
+      // cx, cz, rad があれば、そのまわりに山にする
+      const a = r() * Math.PI * 2;
+      const rr = Math.sqrt(r()) * (rad ?? 0);
+      const x = cx !== undefined ? cx + Math.cos(a) * rr : x0 + r() * (x1 - x0);
+      const z = cz !== undefined ? cz + Math.sin(a) * rr : z0 + r() * (z1 - z0);
+      const kind = Math.floor(r() * 5);
+      const lie = r() < 0.6;
+      let m;
+      if (kind <= 1) {
+        // 缶（銀、黒と緑のエナジードリンク、青）
+        m = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.07, 10), mat([0xb8bcc4, 0x1d1d1d, 0x2fd36b, 0x3a6fd8][Math.floor(r() * 4)]));
+        m.position.set(x, lie ? 0.022 : 0.035, z);
+      } else if (kind === 2) {
+        // ペットボトル（うす青のボトルと色のふた）
+        m = new THREE.Group();
+        m.add(new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.11, 10), mat(0x9fd4e8, { transparent: true, opacity: 0.75 })));
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.025, 8), mat([0xff9a2e, 0x2e7dff, 0x2fbf5f][Math.floor(r() * 3)]));
+        cap.position.y = 0.065;
+        m.add(cap);
+        m.position.set(x, lie ? 0.025 : 0.055, z);
+      } else if (kind === 3) {
+        // 丸めた紙
+        m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.03, 0), mat(0xc9c6bd));
+        m.position.set(x, 0.025, z);
+      } else {
+        // お菓子の袋
+        m = box(0.12, 0.015, 0.16, mat([0xf2b53a, 0x3a8fd8, 0x55b04a, 0x9a5bd0][Math.floor(r() * 4)]), x, 0.01, z);
+      }
+      m.rotation.y = r() * Math.PI * 2;
+      if (lie && kind <= 2) m.rotation.z = Math.PI / 2;
+      m.scale.setScalar(1.7); // 遠くからでもごみだとわかる大きさ
+      m.position.y *= 1.7;
+      if (cx !== undefined) m.position.y += r() * 0.05; // 山は少し積み重なる
+      add(m);
+    }
+  };
+  // 空き缶を積み上げたタワー
+  const canTower = (x, z, rows = 4) => {
+    for (let row = 0; row < rows; row++) {
+      for (let k = 0; k < rows - row; k++) {
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.07, 10), mat([0x1d1d1d, 0x2fd36b, 0xb8bcc4][(row + k) % 3]));
+        c.position.set(x + (k - (rows - row - 1) / 2) * 0.05, 0.035 + row * 0.072, z);
+        add(c);
+      }
+    }
+  };
+  // 黒いごみ袋
+  const trashBag = (x, z, s = 1) => {
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.18 * s, 10, 8), mat(0x24272b));
+    b.scale.set(1, 1.15, 1);
+    b.position.set(x, 0.18 * s, z);
+    const knot = new THREE.Mesh(new THREE.ConeGeometry(0.05 * s, 0.1 * s, 8), mat(0x24272b));
+    knot.position.set(x, 0.4 * s, z);
+    add(b, knot);
+  };
+  // 床で寝る用の寝袋と枕（生活が夜型）
+  const sleepingBag = (x, z, ry = 0) => {
+    const sb = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.55, 4, 10), mat(0x3d5a80));
+    body.rotation.z = Math.PI / 2;
+    body.scale.set(1, 1, 0.6);
+    body.position.y = 0.08;
+    const pillow = box(0.22, 0.06, 0.16, mat(0xb9b3a6), -0.42, 0.05, 0);
+    sb.add(body, pillow);
+    sb.position.set(x, 0, z);
+    sb.rotation.y = ry;
+    add(sb);
+  };
+  // 光る目覚まし時計（夜中の4時）
+  const alarmClock = (x, z) => {
+    add(box(0.14, 0.08, 0.06, mat(0x1a1a1f), x, 0.04, z));
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.055), glow(0xffffff, { map: canvasTex('clock', 64, 30, (c, W, H) => {
+      c.fillStyle = '#05140c';
+      c.fillRect(0, 0, W, H);
+      c.fillStyle = '#3dff7a';
+      c.font = 'bold 24px monospace';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText('4:27', W / 2, H / 2 + 1);
+    }) }));
+    face.position.set(x, 0.045, z + 0.031);
+    add(face);
+  };
+  // ヨギボーのような大きなクッション（寝そべったり、もたれて仕事したり）
+  const yogibo = (x, z, color, ry = 0, laptop = true, up = false) => {
+    const y = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.45, 6, 14), mat(color));
+    if (up) {
+      body.position.y = 0.42;
+      body.rotation.x = -0.25;
+    } else {
+      body.rotation.z = Math.PI / 2;
+      body.scale.set(0.75, 1, 1);
+      body.position.y = 0.15;
+      body.rotation.y = 0.15;
+    }
+    y.add(body);
+    if (laptop) {
+      const lap = new THREE.Group();
+      lap.add(box(0.16, 0.008, 0.11, mat(0xc9ccd2)));
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.09), glow(0xffffff, { map: uiTex(1) }));
+      scr.position.set(0, 0.05, -0.05);
+      scr.rotation.x = -0.25;
+      lap.add(scr);
+      lap.position.set(up ? 0 : 0.1, up ? 0.04 : 0.3, up ? 0.3 : 0.02);
+      y.add(lap);
+    }
+    y.position.set(x, 0, z);
+    y.rotation.y = ry;
+    add(y);
+  };
+  // くつろぎながら働く場所：丸いラグ、ヨギボー、低いテーブル
+  const lounge = (x, z, colors, rug = 0xe9e3d6) => {
+    const rugM = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.01, 40), mat(rug));
+    rugM.position.set(x, 0.005, z);
+    add(rugM);
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.18, 24), mat(0xd9b98a)).translateX(x).translateY(0.09).translateZ(z));
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, 0.06, 10), mat(0xf4f4f2));
+    cup.position.set(x + 0.05, 0.21, z);
+    add(cup);
+    colors.forEach((c, k) => {
+      const a = (k / colors.length) * Math.PI * 2 + 0.4;
+      yogibo(x + Math.cos(a) * 0.55, z + Math.sin(a) * 0.55, c, -a + Math.PI / 2, k % 2 === 0, k === 1);
+    });
+  };
+  // 下りの階段席（座れる大きな段、クッションつき）
+  const steps = (x, z, wd) => {
+    for (let k = 0; k < 3; k++) add(box(wd, 0.14 * (3 - k), 0.35, mat(0xd8b88a), x, 0.07 * (3 - k), z - 0.35 * (2 - k)));
+    for (let k = 0; k < 5; k++) add(box(0.28, 0.06, 0.25, mat([0x6f8a6a, 0xd4a24c, 0x4a5f80][k % 3]), x - wd / 2 + 0.3 + k * (wd - 0.6) / 4, 0.14 * ((k % 3) + 1) + 0.03, z - 0.35 * (2 - (k % 3))));
+  };
+
   if (level === 0) {
-    // 自宅：壁のポスター、床のエナジードリンクの缶、机の横のサーバー代わりの古いPC
-    poster(-0.15, 1.1, 0x1b1f3a, 0xff4fd8);
-    poster(w * 0.42 - 0.5, 1.15, 0x2a1b3a, 0x36e0ff);
-    cans(0.75, 0.55, 7);
+    // 自宅：床じゅうの缶とペットボトル、空き缶のタワー、夜中4時の目覚まし（壁には何も飾らない）
+    trash(30, 5);
+    trash(22, 6, { cx: 1.0, cz: 0.45, rad: 0.35 }); // 机の手前のごみの山
+    trash(16, 7, { cx: -0.9, cz: 0.75, rad: 0.3 }); // 布団の足もとの山
+    canTower(0.2, d / 2 - 0.3, 5);
+    trashBag(w / 2 - 0.3, d / 2 - 0.35, 0.9);
+    trashBag(w / 2 - 0.65, d / 2 - 0.25, 0.75);
+    alarmClock(-w / 2 + 1.0, -d / 2 + 0.3);
     rack(-w / 2 + 0.35, 0.9, 0.5);
     ledStrip(0xb04fff);
   }
@@ -427,6 +553,13 @@ export function decorate(level, w, d, blink) {
     add(box(0.6, 0.12, 0.3, mat(0x7a8fa8), w / 2 - 0.7, 0.28, d / 2 - 0.45)); // 寝袋
     pizzas(0.3, d / 2 - 0.5, 4);
     cans(-0.6, d / 2 - 0.6, 8);
+    trash(45, 9);
+    trash(25, 10, { cx: w * 0.3, cz: 0.6, rad: 0.45 });
+    trash(20, 11, { cx: -w * 0.25, cz: d / 2 - 0.6, rad: 0.4 });
+    canTower(w * 0.05, d / 2 - 0.3, 6);
+    trashBag(-w / 2 + 0.3, d / 2 - 0.35);
+    trashBag(-w / 2 + 0.6, d / 2 - 0.3, 0.8);
+    sleepingBag(-0.1, 0.25, 0.3);
     cable(0.6, 0.0, 0.3, 0);
     cable(-1.2, 0.4, 0.22, 1.2);
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), glow(0xffe7a3));
@@ -435,7 +568,7 @@ export function decorate(level, w, d, blink) {
     ledStrip(0x36e0ff);
   }
   if (level === 2) {
-    // 小さな事務所：まだ散らかっている。フィギュアの棚、サーバー2台、付箋の壁、ビーズクッション、ポスター
+    // 小さな事務所：まだ散らかっている。フィギュアの棚、サーバー2台、付箋の壁、ビーズクッション、床じゅうのごみと寝袋
     rack(-w / 2 + 0.3, -d / 2 + 0.3, 1.2);
     rack(-w / 2 + 0.7, -d / 2 + 0.3, 1.2);
     const shelf = new THREE.Group();
@@ -448,7 +581,6 @@ export function decorate(level, w, d, blink) {
     shelf.position.set(w / 2 - 0.6, 0, back + 0.12);
     add(shelf);
     for (let k = 0; k < 16; k++) add(box(0.07, 0.07, 0.005, glow([0xffe066, 0xff9ecb, 0x9fe3ff][k % 3]), -w * 0.05 + (k % 8) * 0.09, 1.15 + Math.floor(k / 8) * 0.09 + (k % 3) * 0.01, back + 0.01));
-    poster(-w * 0.28, 1.15, 0x1b1f3a, 0xff4fd8);
     neonBraces(w * 0.28, 1.3, 0xff4fd8);
     whiteboard(-w / 2 + 0.08, 0.6, true);
     const bean = new THREE.Mesh(new THREE.SphereGeometry(0.28, 14, 10), mat(0x3d2f6e));
@@ -457,6 +589,15 @@ export function decorate(level, w, d, blink) {
     add(bean);
     pizzas(w / 2 - 1.3, d / 2 - 0.5, 3);
     cans(-0.4, d / 2 - 0.5, 9);
+    trash(60, 13);
+    trash(25, 14, { cx: w * 0.3, cz: 0.9, rad: 0.5 });
+    trash(25, 15, { cx: -w * 0.1, cz: d / 2 - 0.6, rad: 0.5 });
+    canTower(-w * 0.32, d / 2 - 0.35, 6);
+    trashBag(-w / 2 + 0.3, d / 2 - 0.35);
+    trashBag(-w / 2 + 0.65, d / 2 - 0.3, 0.85);
+    trashBag(w / 2 - 1.9, d / 2 - 0.3, 0.9);
+    sleepingBag(w * 0.15, 0.35, -0.2);
+    sleepingBag(-w * 0.2, 0.55, 0.4);
     cable(0.3, 0.2, 0.35, 0.5);
     ledStrip(0xb04fff);
   }
@@ -495,12 +636,21 @@ export function decorate(level, w, d, blink) {
     plant(w / 2 - 0.4, d / 2 - 0.4, 1.2);
     plant(left + 0.35, d / 2 - 0.4, 1.2);
     sofa(left + 0.8, 0.2, 0xf2f0ea, Math.PI / 2);
+    lounge(w * 0.22, d / 2 - 1.2, [0x8a8f96, 0x2f3e5c, 0xd4a24c, 0xb76e4b]);
+    lounge(-w * 0.18, d / 2 - 1.2, [0x6f8a6a, 0xe0ddd4, 0x2f3e5c]);
   }
   if (level === 6) {
     // キャンパス：部屋の中の木、木のベンチ、外の緑
     for (const x of [left + 0.45, w / 2 - 0.45]) bigTree(x, d / 2 - 0.5);
     bigTree(left + 0.45, -0.2);
-    for (let k = 0; k < 4; k++) add(box(0.7, 0.2, 0.3, mat(0xc99a62), -w * 0.3 + k * w * 0.2, 0.1, d / 2 - 0.35));
+    lounge(w * 0.2, d / 2 - 1.2, [0x6f8a6a, 0xd4a24c, 0xe0ddd4, 0x8a8f96], 0xcfe0c4);
+    lounge(-w * 0.12, d / 2 - 1.2, [0xb76e4b, 0x2f3e5c, 0x6f8a6a]);
+    // 卓球台
+    const tt = new THREE.Group();
+    tt.add(box(0.9, 0.03, 0.5, mat(0x2f5f8a), 0, 0.4, 0), box(0.9, 0.008, 0.01, mat(0xffffff), 0, 0.416, 0), box(0.02, 0.07, 0.5, mat(0x222222), 0, 0.45, 0));
+    for (const [lx, lz] of [[-0.4, -0.2], [0.4, -0.2], [-0.4, 0.2], [0.4, 0.2]]) tt.add(box(0.03, 0.4, 0.03, mat(0x333333), lx, 0.2, lz));
+    tt.position.set(w / 2 - 1.3, 0, d / 2 - 2.6);
+    add(tt);
   }
   if (level === 7) {
     // 世界本社：奥の光る大きな画面（世界とつながる線）、光る地球儀
@@ -531,6 +681,9 @@ export function decorate(level, w, d, blink) {
     add(globe, new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.1, 24), glow(0x9fe3ff)).translateX(left + 0.6).translateY(0.05).translateZ(d / 2 - 0.7));
     plant(w / 2 - 0.4, d / 2 - 0.4, 1.2);
     for (let k = 0; k < 3; k++) plant(left + 0.3, -d / 2 + 0.4 + k * 1.0, 0.9);
+    steps(w * 0.2, d / 2 - 0.7, 2.4);
+    lounge(-w * 0.15, d / 2 - 1.2, [0x2f3e5c, 0xd4a24c, 0xe0ddd4, 0xb76e4b]);
+    lounge(w * 0.38, d / 2 - 1.5, [0x6f8a6a, 0x8a8f96, 0x2f3e5c]);
   }
   if (level === 8) {
     // スマートシティ：床と天井の光る線、浮かぶ光の画面、夜のネオン街
@@ -544,6 +697,8 @@ export function decorate(level, w, d, blink) {
     };
     holo(left + 0.5, 0.9, -0.4, 1.4);
     holo(left + 0.5, 0.9, d / 2 - 0.8, 1.1);
+    lounge(w * 0.2, d / 2 - 1.1, [0x5a3e9e, 0x2a6a8a, 0x8a3e7a, 0x3a4a8a], 0x1d2a44);
+    lounge(-w * 0.15, d / 2 - 1.1, [0x2a6a8a, 0x5a3e9e, 0x3a4a8a], 0x1d2a44);
   }
   if (level === 9) {
     // 宇宙ステーション：白い壁のパネル、青い光の線
@@ -554,6 +709,8 @@ export function decorate(level, w, d, blink) {
     ring.position.set(left + 0.05, 0.9, 0.3);
     add(ring);
     plant(w / 2 - 0.4, d / 2 - 0.4, 1.0);
+    lounge(w * 0.2, d / 2 - 1.1, [0xe0ddd4, 0x4a6fa8, 0x8a8f96, 0xd4a24c], 0xdfe6ee);
+    lounge(-w * 0.15, d / 2 - 1.1, [0x4a6fa8, 0xe0ddd4, 0x8a8f96], 0xdfe6ee);
   }
   return g;
 }

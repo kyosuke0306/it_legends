@@ -477,7 +477,7 @@ export class Office {
   }
 }
 
-// 自宅の部屋の散らかりよう：しみ、はがれた壁紙、敷きっぱなしの布団、脱いだ服の山、段ボール、ピザの箱、カップ麺、ゴミ袋、裸電球
+// 自宅の部屋の散らかりよう：床のしみ、敷きっぱなしの布団、脱いだ服の山、段ボール、ゴミ袋、配線、裸電球（缶やペットボトルは office-decor.js）
 function messyRoom(w, d) {
   const g = new THREE.Group();
   const flat = (geo, color, x, z, ry = 0) => {
@@ -488,17 +488,6 @@ function messyRoom(w, d) {
   };
   // 床のしみ
   for (const [x, z, r] of [[-0.6, 0.3, 0.22], [0.9, 0.6, 0.16], [0.2, -0.2, 0.12], [-1.2, 0.9, 0.18]]) g.add(flat(new THREE.CircleGeometry(r, 16), 0x5a4630, x * (w / 3.6), z));
-  // 壁のしみとはがれた壁紙
-  const wallAt = (geo, color, x, y) => {
-    const m = new THREE.Mesh(geo, mat(color));
-    m.position.set(x, y, -d / 2 + 0.056);
-    return m;
-  };
-  g.add(wallAt(new THREE.CircleGeometry(0.18, 14), 0xb3a27e, -w * 0.3, 1.2), wallAt(new THREE.PlaneGeometry(0.22, 0.3), 0xc7b998, w * 0.38, 0.55));
-  const peel = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.26), mat(0xeae0c8, { side: THREE.DoubleSide }));
-  peel.position.set(w * 0.38 + 0.06, 0.62, -d / 2 + 0.12);
-  peel.rotation.set(0, -0.6, 0.15);
-  g.add(peel);
   // 敷きっぱなしの布団（左奥）と、くしゃくしゃの掛け布団
   const futon = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.08, 1.0), mat(0xd8d2c4));
   futon.position.set(-w / 2 + 0.48, 0.04, -d / 2 + 0.6);
@@ -510,7 +499,7 @@ function messyRoom(w, d) {
   pillow.rotation.y = 0.25;
   g.add(futon, blanket, pillow);
   // 脱いだ服の山
-  for (const [c, dx, dz, s] of [[0x3d4f6b, 0, 0, 1], [0xa33b3b, 0.1, 0.06, 0.8], [0x55605a, -0.08, 0.08, 0.7], [0xe2dccb, 0.02, -0.05, 0.6]]) {
+  for (const [c, dx, dz, s] of [[0x3d4f6b, 0, 0, 1], [0x6b5a8a, 0.1, 0.06, 0.8], [0x55605a, -0.08, 0.08, 0.7], [0xe2dccb, 0.02, -0.05, 0.6]]) {
     const cloth = new THREE.Mesh(new THREE.SphereGeometry(0.16 * s, 8, 6), mat(c));
     cloth.scale.set(1.3, 0.45, 1);
     cloth.position.set(w / 2 - 0.55 + dx, 0.05 + s * 0.03, d / 2 - 0.5 + dz);
@@ -526,23 +515,6 @@ function messyRoom(w, d) {
     tape.position.set(x, y + s / 2, z);
     tape.rotation.y = ry;
     g.add(box, tape);
-  }
-  // 床に置いたピザの箱とカップ麺
-  const pizza = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.035, 0.34), mat(0xe9e1cf));
-  pizza.position.set(0.15, 0.02, d / 2 - 0.45);
-  pizza.rotation.y = 0.5;
-  const lid = new THREE.Mesh(new THREE.CircleGeometry(0.1, 14), mat(0xc23b2b));
-  lid.rotation.set(-Math.PI / 2, 0, 0);
-  lid.position.set(0.15, 0.04, d / 2 - 0.45);
-  g.add(pizza, lid);
-  for (const [x, z, tip] of [[-0.3, d / 2 - 0.35, 0], [-0.15, d / 2 - 0.25, 1.4], [w / 2 - 0.9, 0.1, 0]]) {
-    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.045, 0.1, 12), mat(0xf4f0e6));
-    cup.position.set(x, tip ? 0.05 : 0.05, z);
-    cup.rotation.z = tip;
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.061, 0.055, 0.03, 12), mat(0xd23b3b));
-    band.position.copy(cup.position);
-    band.rotation.z = tip;
-    g.add(cup, band);
   }
   // ゴミ袋（左手前）
   const bag = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), mat(0x2b2f33));
