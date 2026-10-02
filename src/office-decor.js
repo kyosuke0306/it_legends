@@ -214,7 +214,8 @@ export const artBlankTex = () =>
 // span は机と机の間（長い机をつなげて見せるのに使う）。blink は光らせる LED を入れる箱
 const shared = {};
 const once = (k, f) => (shared[k] ??= f());
-export function makeDesk(style, i, { span = 1, home = false } = {}) {
+// big: 大きな画面を持てる会社（本社ビルから）。一部の机が大きな画面になる
+export function makeDesk(style, i, { span = 1, home = false, big = false } = {}) {
   const g = new THREE.Group();
   const screen = (wd, ht, tex, x, y, z, ry = 0, frame = 0x1a1a22) => {
     const s = new THREE.Group();
@@ -258,8 +259,15 @@ export function makeDesk(style, i, { span = 1, home = false } = {}) {
     g.add(box(0.74, 0.04, 0.42, once(`ot${clean}`, () => mat(clean ? 0xf4f4f2 : 0xd8d2c4)), 0, 0.4, 0));
     g.add(box(0.7, 0.36, 0.03, once('ol', () => mat(0xa8adb5)), 0, 0.2, -0.17));
     if (!clean) g.add(box(0.76, 0.42, 0.03, once('part', () => mat(0x6f8aa8)), 0, 0.62, -0.23)); // 仕切り
-    g.add(screen(0.3, 0.18, uiTex(i % 2), clean ? -0.1 : 0, 0.6, -0.1, clean ? 0.12 : 0, 0x2a2a30));
-    if (clean) g.add(screen(0.3, 0.18, codeTex(i), 0.2, 0.6, -0.1, -0.12, 0x2a2a30));
+    if (big && i % 3 === 0) {
+      // 横に長い曲がった大きな画面（3枚をつないで曲げて見せる）
+      g.add(box(0.06, 0.1, 0.06, once('ust', () => mat(0x2a2a30)), 0, 0.47, -0.12));
+      g.add(screen(0.34, 0.2, uiTex(i % 2), 0, 0.64, -0.13, 0, 0x1a1a1f));
+      g.add(screen(0.17, 0.2, codeTex(i), -0.25, 0.64, -0.1, 0.38, 0x1a1a1f), screen(0.17, 0.2, codeTex(i + 3), 0.25, 0.64, -0.1, -0.38, 0x1a1a1f));
+    } else {
+      g.add(screen(0.3, 0.18, uiTex(i % 2), clean ? -0.1 : 0, 0.6, -0.1, clean ? 0.12 : 0, 0x2a2a30));
+      if (clean) g.add(screen(0.3, 0.18, codeTex(i), 0.2, 0.6, -0.1, -0.12, 0x2a2a30));
+    }
     g.add(box(0.24, 0.012, 0.08, once('okb', () => mat(0xe6e6e6)), 0, 0.43, 0.08));
     const mug = new THREE.Mesh(once('mug', () => new THREE.CylinderGeometry(0.03, 0.03, 0.06, 10)), once('mugm', () => mat(0xffffff)));
     mug.position.set(0.28, 0.45, 0.08);
@@ -277,11 +285,25 @@ export function makeDesk(style, i, { span = 1, home = false } = {}) {
     const inner = new THREE.Mesh(once('holog2', () => new THREE.PlaneGeometry(0.38, 0.2)), glow(0xffffff, { map: uiTex(2), transparent: true, opacity: 0.85, depthWrite: false }));
     inner.position.set(0, 0.68, -0.075);
     const base = box(0.16, 0.012, 0.06, once('hb', () => glow(0x7fe8ff)), 0, 0.43, -0.08);
+    if (big && i % 2 === 0) {
+      // 大きな光の画面
+      for (const m of [h, inner]) {
+        m.scale.setScalar(1.6);
+        m.position.y = 0.8;
+      }
+    }
     g.add(h, inner, base);
   } else {
-    // 一体型の薄い画面（銀の足）
-    const stand = box(0.03, 0.12, 0.02, once('st', () => mat(0xd6d8dc)), 0, 0.48, -0.12);
-    g.add(stand, screen(0.36, 0.21, uiTex(i % 2), 0, 0.64, -0.12, 0, 0xe9eaec));
+    if (big && i % 2 === 0) {
+      // 大きな画面（黒い細いふちと銀の足）。横にもう1枚、縦に置いた画面
+      g.add(box(0.12, 0.012, 0.1, once('bst0', () => mat(0xd6d8dc)), 0, 0.43, -0.13), box(0.03, 0.2, 0.02, once('bst', () => mat(0xd6d8dc)), 0, 0.53, -0.15));
+      g.add(screen(0.62, 0.35, uiTex(i % 2), 0, 0.8, -0.13, 0, 0x16161a));
+      g.add(screen(0.2, 0.34, codeTex(i), 0.48, 0.66, -0.08, -0.45, 0x16161a));
+    } else {
+      // 一体型の薄い画面（銀の足）
+      const stand = box(0.03, 0.12, 0.02, once('st', () => mat(0xd6d8dc)), 0, 0.48, -0.12);
+      g.add(stand, screen(0.36, 0.21, uiTex(i % 2), 0, 0.64, -0.12, 0, 0xe9eaec));
+    }
     const lap = box(0.18, 0.008, 0.12, once('alap', () => mat(0xc9ccd2)), 0.27, 0.43, 0.06);
     g.add(lap);
   }

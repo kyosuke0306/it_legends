@@ -227,7 +227,7 @@ export class Office {
       const r = Math.floor(i / cols);
       const x = (c - (cols - 1) / 2) * span;
       const z = -d / 2 + 0.7 + r * 1.1;
-      const desk = makeDesk(o.desk, i, { span, home });
+      const desk = makeDesk(o.desk, i, { span, home, big: level >= 4 }); // 本社ビルからは大きな画面の机もある
       desk.position.set(x, 0, z);
       room.add(desk);
       this.desks.push(new THREE.Vector3(x, 0, z + 0.4));
