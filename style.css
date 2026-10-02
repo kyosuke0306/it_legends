@@ -422,6 +422,11 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .result { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--text) 5%, transparent); }
 .result > .ic { color: var(--ok); }
 .result.bad > .ic { color: var(--bad); }
+.result.bad { background: color-mix(in srgb, var(--bad) 12%, transparent); box-shadow: inset 3px 0 0 var(--bad); }
+.result .res-tag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; vertical-align: 1px; color: #fff; background: var(--ok); }
+.result.bad .res-tag { background: var(--bad); }
+.fail-ic { color: var(--bad); }
+.fail-h { color: var(--bad); }
 .result b { font-size: 0.88rem; }
 .result .vals { grid-column: 2; }
 .nsep { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }

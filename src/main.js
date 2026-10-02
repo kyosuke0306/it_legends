@@ -790,25 +790,29 @@ function commit() {
   save();
   renderAll();
 }
+// 起きたことを1つのポップアップにまとめて出す
+function eventsNotice(ev) {
+  const parts = [];
+  if (ev.some((e) => e.type === 'encounter')) parts.push(`${icon('spark', 'big-ic spin')}<h2>誰かが現れた</h2>`);
+  const w = ev.find((e) => e.type === 'walkin');
+  if (w) parts.push(`${icon('people', 'big-ic')}<h2>面接に来た</h2><p class="muted">${esc(w.name)}</p>`);
+  const l = ev.find((e) => e.type === 'luck');
+  if (l) parts.push(`${icon('coin', 'big-ic')}<h2>${esc(l.title)}</h2><div class="welcome">${val('coin', `+${yen(l.money)}`, 'ok')}</div>`);
+  const rivals = rivalsHtml(ev);
+  if (rivals) parts.push(rivals);
+  const quits = quitsHtml(ev);
+  if (quits) parts.push(quits);
+  const done = resultsHtml(ev);
+  if (done) parts.push(done);
+  if (parts.length) notice(parts.join('<hr class="nsep">'));
+}
+
 function tick() {
   if (!S) return;
   const rival = S.rival;
   const ev = G.advance(S, Date.now());
   if (ev.length || S.rival !== rival) {
-    // 起きたことを1つのポップアップにまとめて出す
-    const parts = [];
-    if (ev.some((e) => e.type === 'encounter')) parts.push(`${icon('spark', 'big-ic spin')}<h2>誰かが現れた</h2>`);
-    const w = ev.find((e) => e.type === 'walkin');
-    if (w) parts.push(`${icon('people', 'big-ic')}<h2>面接に来た</h2><p class="muted">${esc(w.name)}</p>`);
-    const l = ev.find((e) => e.type === 'luck');
-    if (l) parts.push(`${icon('coin', 'big-ic')}<h2>${esc(l.title)}</h2><div class="welcome">${val('coin', `+${yen(l.money)}`, 'ok')}</div>`);
-    const rivals = rivalsHtml(ev);
-    if (rivals) parts.push(rivals);
-    const quits = quitsHtml(ev);
-    if (quits) parts.push(quits);
-    const done = resultsHtml(ev);
-    if (done) parts.push(done);
-    if (parts.length) notice(parts.join('<hr class="nsep">'));
+    eventsNotice(ev);
     commit();
   } else {
     renderHeader();
@@ -824,7 +828,7 @@ function resultsHtml(ev, { head = true } = {}) {
   if (!tasks.length && !prods.length && !levels.length) return '';
   const rows = [
     ...tasks.slice(0, 5).map(
-      (t) => `<div class="result ${t.ok ? 'ok' : 'bad'}">${icon(t.ok ? 'check' : 'error')}<b>${esc(t.title)}</b>
+      (t) => `<div class="result ${t.ok ? 'ok' : 'bad'}">${icon(t.ok ? 'check' : 'error')}<b>${esc(t.title)}<span class="res-tag">${t.ok ? '成功' : '失敗'}</span></b>
         <span class="vals">${t.great ? icon('bolt', 'res-great') : ''}${t.early ? icon('clock', 'res-early') : ''}${val('coin', `+${yen(t.money)}`, t.ok ? 'ok' : '')}${t.rep ? val('star', `${t.rep > 0 ? '+' : ''}${t.rep}`, t.rep < 0 ? 'bad' : '') : ''}</span></div>`,
     ),
     tasks.length > 5 ? `<div class="muted">+${tasks.length - 5}</div>` : '',
@@ -832,7 +836,10 @@ function resultsHtml(ev, { head = true } = {}) {
     levels.length ? `<div class="vals center">${levels.map((x) => val('level', `${esc(x.name)} Lv${x.level}`)).join('')}</div>` : '',
   ];
   const list = `<div class="results">${rows.join('')}</div>`;
-  return head ? `${icon(tasks.some((t) => t.ok) || prods.length ? 'check' : 'task', 'big-ic done-ic')}<h2>完了</h2>${list}` : list;
+  // 仕事が全部失敗したときは、見出しも赤い「失敗」にする（失敗でも報酬の2割は入るので、成功と見分けやすく）
+  const allFail = tasks.length && !tasks.some((t) => t.ok) && !prods.length;
+  if (!head) return list;
+  return allFail ? `${icon('error', 'big-ic fail-ic')}<h2 class="fail-h">失敗</h2>${list}` : `${icon('check', 'big-ic done-ic')}<h2>完了</h2>${list}`;
 }
 
 // 冷やかしに来たレジェンドと、されたこと（お金を減らされた・社員を引き抜かれた）
@@ -865,7 +872,8 @@ function quitsHtml(ev, { head = true } = {}) {
 
 // 留守の間に起きたこと
 function welcomeBack(ev, away) {
-  if (away < 10 * 60000) return;
+  // 少しだけ留守にしていた間に終わった仕事などは、ふだんと同じポップアップで出す
+  if (away < 10 * 60000) return eventsNotice(ev);
   const rows = [];
   // お金の増減の合計（製品の収入・給料・臨時収入・仕事の報酬）
   const gained = ev.filter((e) => e.type === 'luck' || e.type === 'task').reduce((a, e) => a + e.money, 0) - ev.filter((e) => e.type === 'rival').reduce((a, e) => a + (e.money ?? 0), 0);
