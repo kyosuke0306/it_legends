@@ -135,8 +135,9 @@ export const PRODUCT_HALF_LIFE = 7 * DAY; // 収入が半分になるまでの�
 export const TREND_PERIOD = 2 * DAY; // 流行が変わる間隔
 
 export const START_MONEY = 100_000;
-export const OFFER_EVERY = 2 * HOUR; // 新しい依頼が届く間隔
-export const OFFER_LIFE = 18 * HOUR; // 依頼の受付期限
+export const OFFER_PER_HOUR = 1 / 2; // 1時間ごとに、この確率で新しい依頼が届く（平均2時間に1件。並んでいる数が上限より少ないときだけ）
+export const OFFER_LIFE = 18 * HOUR; // 依頼の受付期限（過ぎると消える）
+export const OFFER_SOON = 3 * HOUR; // 期限がこれより近い依頼は赤く出す
 export const BASE_OFFERS = 4;
 // 要員派遣: お金を払うと、席の数を超えて仕事の間だけ人を借りられる（仕事が終わると帰る。成長はしない）
 // 1人ぶんの料金は仕事の報酬の TEMP_FEE 倍。来る人は今の会社で雇える人くらいの腕で、その仕事に向いた職種

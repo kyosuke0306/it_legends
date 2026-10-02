@@ -45,7 +45,6 @@ export function newGame({ job, name, company }, now = Date.now()) {
     devs: [],
     products: [],
     candidates: [],
-    offerAt: now,
     candAt: now,
     encounter: null,
     activity: R.DEFAULT_ACTIVITY,
@@ -509,6 +508,11 @@ function activityRoll(s, event) {
   return a?.event === event && !ceoBusyUntil(s) && rand(s) < a.perHour;
 }
 
+// 新しい依頼が届くか（1時間ごとに確率で。並んでいる数が上限より少ないときだけ）
+function rollOffer(s, t) {
+  if (rand(s) < R.OFFER_PER_HOUR && s.offers.length < maxOffers(s)) addOffer(s, t);
+}
+
 // 散歩：仕事の相談を受ける（依頼の上限を少しこえても届く）
 function rollWalkOffer(s, t) {
   const a = R.ACTIVITIES[s.activity];
@@ -618,11 +622,11 @@ export function advance(s, now, ev = []) {
     ev.income = (ev.income ?? 0) + income;
     ev.salary = (ev.salary ?? 0) + salary;
     // 依頼が届く・期限切れ
-    while (s.offerAt + R.OFFER_EVERY <= next) {
-      s.offerAt += R.OFFER_EVERY;
-      s.offers = s.offers.filter((o) => o.expiresAt > s.offerAt);
-      if (s.offers.length < maxOffers(s)) addOffer(s, s.offerAt);
+    for (const o of s.offers.filter((o) => o.expiresAt <= next)) {
+      addLog(s, o.expiresAt, `${o.title}  期限切れ`);
+      ev.push({ type: 'expired', title: o.title, cat: o.cat });
     }
+    s.offers = s.offers.filter((o) => o.expiresAt > next);
     // 採用候補の入れ替え
     while (s.candAt + R.CANDIDATE_EVERY <= next) {
       s.candAt += R.CANDIDATE_EVERY;
@@ -641,6 +645,7 @@ export function advance(s, now, ev = []) {
     if (next === boundary) {
       rollEncounter(s, next, ev);
       rollLuck(s, next, ev);
+      rollOffer(s, next);
       rollWalkOffer(s, next);
       rollRival(s, next, ev);
       rollQuit(s, next, ev);

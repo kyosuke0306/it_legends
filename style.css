@@ -307,6 +307,13 @@ button.panel:disabled { opacity: 0.45; }
 /* ---------- 仕事 ---------- */
 .offer { border-left: 4px solid var(--c, var(--accent)); }
 .offer b { display: block; margin-bottom: 6px; }
+.offer-top { display: flex; align-items: flex-start; gap: 8px; }
+.offer-top b { flex: 1; min-width: 0; }
+/* 受付期限：ふだんは薄く、近づくと赤く点滅する */
+.expire { display: inline-flex; align-items: center; gap: 3px; flex: none; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.expire .ic { width: 13px; height: 13px; }
+.expire.soon { color: var(--bad); font-weight: 700; animation: expire-blink 1.4s ease-in-out infinite; }
+@keyframes expire-blink { 50% { opacity: 0.45; } }
 .cat-web { --c: #4a90e2; }
 .cat-app { --c: #e0607e; }
 .cat-infra { --c: #3f9f72; }
@@ -426,6 +433,10 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .result.bad { background: color-mix(in srgb, var(--bad) 12%, transparent); box-shadow: inset 3px 0 0 var(--bad); }
 .result .res-tag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; vertical-align: 1px; color: #fff; background: var(--ok); }
 .result.bad .res-tag { background: var(--bad); }
+.result.gone { opacity: 0.75; }
+.result.gone > .ic { color: var(--muted); }
+.result.gone .res-tag { background: var(--muted); }
+.gone-ic { color: var(--muted); }
 .result b { font-size: 0.88rem; }
 .result .vals { grid-column: 2; }
 .nsep { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
