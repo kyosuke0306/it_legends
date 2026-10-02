@@ -1,2 +1,2 @@
 // タイトルと画面の右下に出すバージョン。scripts/bump-version.mjs が公開のたびに書き換える
-export const VERSION = 'ver1.1.6';
+export const VERSION = 'ver1.1.7';
