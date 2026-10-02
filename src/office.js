@@ -41,7 +41,10 @@ export class Office {
     this.blink = []; // 点滅するサーバーの LED
     this.camera = new THREE.PerspectiveCamera(35, 1, 0.1, 200);
     this.controls = new OrbitControls(this.camera, canvas);
-    this.controls.enablePan = false;
+    // 2本指（マウスは右ボタン）で動かせる。部屋から離れすぎないよう、見る先を部屋の中に留める
+    this.controls.enablePan = true;
+    this.controls.screenSpacePanning = false; // 床に沿って動かす
+    this.controls.addEventListener('change', () => this.keepInRoom());
     this.controls.maxPolarAngle = Math.PI * 0.45;
     this.room = null;
     this.level = -1;
@@ -327,6 +330,25 @@ export class Office {
     this.controls.minDistance = cw * 0.6;
     this.controls.maxDistance = cw * 3 * k;
     this.controls.update();
+  }
+
+  // 見る先が部屋（と前の道）から出ないようにする。はみ出した分だけカメラも一緒に戻す
+  keepInRoom() {
+    if (!this.size || this.clamping) return;
+    const t = this.controls.target;
+    const { w, d } = this.size;
+    const x = Math.min(Math.max(t.x, -w / 2), w / 2);
+    const z = Math.min(Math.max(t.z, -d / 2), d / 2 + 1.5);
+    const y = Math.min(Math.max(t.y, 0), 1.5);
+    if (x === t.x && y === t.y && z === t.z) return;
+    const dx = x - t.x, dy = y - t.y, dz = z - t.z;
+    t.set(x, y, z);
+    this.camera.position.x += dx;
+    this.camera.position.y += dy;
+    this.camera.position.z += dz;
+    this.clamping = true;
+    this.controls.update();
+    this.clamping = false;
   }
 
   // 自分で描いた壁の絵を貼る（null なら点線の枠に戻す）

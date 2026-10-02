@@ -193,7 +193,7 @@ export const windowMaterial = (kind) => glow(0xffffff, { map: skyTex(kind) });
 
 // 自分で描く壁の、まだ何も描いていないときの絵（点線の枠と、真ん中にペン）
 export const artBlankTex = () =>
-  canvasTex('art-blank', 400, 200, (c, W, H) => {
+  canvasTex('art-blank', 400, 300, (c, W, H) => {
     c.strokeStyle = 'rgba(255,255,255,0.45)';
     c.lineWidth = 4;
     c.setLineDash([16, 12]);
@@ -586,8 +586,8 @@ export function decorate(level, w, d, blink, seats = [], extra = {}) {
   if (level === 0) {
     // 自宅：壁はペンの落書きだらけ。床じゅうの缶とペットボトル、空き缶のタワー、夜中4時の目覚まし
     // いちばん目立つところは空けておき、自分で落書きできる（タップで描く。空のときは点線の枠とペン）
-    const art = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55), glow(0xffffff, { map: artBlankTex(), transparent: true, depthWrite: false }));
-    art.position.set(-0.95, 1.2, back + 0.007);
+    const art = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.75), glow(0xffffff, { map: artBlankTex(), transparent: true, depthWrite: false }));
+    art.position.set(-0.95, 1.17, back + 0.007);
     art.userData.blank = art.material.map;
     add(art);
     extra.artPlane = art;

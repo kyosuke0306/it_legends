@@ -789,7 +789,7 @@ function notice(html) {
 }
 
 // ---------- 壁の落書き（自分で描く） ----------
-// 描いた絵は透明な背景の PNG にして S.wallArt に入れる（記録・クラウドに一緒に保存される）
+// 描いた絵は透明な背景の PNG（600×450）にして S.wallArt に入れる（記録・クラウドに一緒に保存される）
 const ART_COLORS = ['#f2f2f2', '#7cff6b', '#ff5bd8', '#5fe6ff', '#ffd84a', '#ff9a2e'];
 const ART_WALL = '#4e4a52'; // 描くときの下地（部屋の壁の色に近く）
 const art = { color: ART_COLORS[0], size: 10, strokes: [], base: null, cur: null };
@@ -843,6 +843,7 @@ function openArtPad() {
     return [((e.clientX - r.left) / r.width) * cv.width, ((e.clientY - r.top) / r.height) * cv.height];
   };
   cv.onpointerdown = (e) => {
+    e.preventDefault(); // 長押しで文字の選択が出ないように
     cv.setPointerCapture(e.pointerId);
     art.cur = { color: art.color, size: art.size, pts: [at(e)] };
     art.strokes.push(art.cur);
@@ -864,7 +865,13 @@ function drawArt(c, wall) {
     c.fillStyle = ART_WALL;
     c.fillRect(0, 0, W, H);
   }
-  if (art.base) c.drawImage(art.base, 0, 0, W, H);
+  if (art.base) {
+    // 前の横長（2:1）の絵は、形を変えずに真ん中に置く
+    const k = Math.min(W / art.base.width, H / art.base.height);
+    const bw = art.base.width * k;
+    const bh = art.base.height * k;
+    c.drawImage(art.base, (W - bw) / 2, (H - bh) / 2, bw, bh);
+  }
   c.lineCap = 'round';
   c.lineJoin = 'round';
   for (const st of art.strokes) {
