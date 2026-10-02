@@ -3,7 +3,8 @@
 import { LEGENDS, byId } from './data.js';
 const LEGEND_COLOR = 0xf0b93a; // レジェンドはランクを付けず、みんな同じ金色（ユーザー指示 2026-10-01）
 import { createCharacter, preloadCharacters, thumbnailUrl } from './character.js';
-import { Stage, renderThumbnail } from './stage.js';
+import { Stage, renderThumbnail, renderFace } from './stage.js';
+import { buildPerson } from './outfits.js';
 import { Office } from './office.js';
 import { VERSION } from './version.js';
 import { icon } from './icons.js';
@@ -79,7 +80,42 @@ const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
 function avatar(m) {
   if (m.kind === 'legend') return `<span class="av legend" style="--c:var(--gold)"><img data-thumb="${m.legend}" alt=""></span>`;
   const c = m.kind === 'hero' ? 'var(--accent)' : hex(R.JOBS[m.job].shirt);
-  return `<span class="av ${m.kind === 'temp' ? 'temp' : ''}" style="--c:${c}">${esc(m.name.replace(/\s.*/, '').slice(0, 1))}</span>`;
+  // 3D の姿から作った顔の絵。できるまでは名前の1文字を出し、できたら差し替える（faceFor）
+  const k = faceKey(m);
+  const src = faceFor(m);
+  const inner = src ? `<img src="${src}" alt="">` : esc(m.name.replace(/\s.*/, '').slice(0, 1));
+  return `<span class="av face ${m.kind === 'temp' ? 'temp' : ''}" style="--c:${c}" data-face="${esc(k)}">${inner}</span>`;
+}
+// 顔の絵は見た目（髪・肌・メガネ・職種の小物・CEO か）ごとに1回だけ作って覚えておく
+const faces = new Map();
+const faceQueue = [];
+const faceKey = (m) => `${m.kind === 'hero' ? 'ceo:' : ''}${m.job}:${JSON.stringify(m.look)}`;
+function faceFor(m) {
+  const k = faceKey(m);
+  const v = faces.get(k);
+  if (typeof v === 'string') return v;
+  if (!v) {
+    faces.set(k, true);
+    faceQueue.push([k, m]);
+    if (faceQueue.length === 1) setTimeout(drawFaces);
+  }
+  return null;
+}
+// 画面を止めないよう、1つずつ間をあけて作る
+function drawFaces() {
+  const next = faceQueue[0];
+  if (!next) return;
+  const [k, m] = next;
+  try {
+    faces.set(k, renderFace(buildPerson(m.look, m.job, { ceo: m.kind === 'hero' })));
+    document.querySelectorAll('.av.face').forEach((el) => {
+      if (el.dataset.face === k) el.innerHTML = `<img src="${faces.get(k)}" alt="">`;
+    });
+  } catch (e) {
+    console.warn('顔の絵を作れませんでした', e);
+  }
+  faceQueue.shift();
+  if (faceQueue.length) (window.requestIdleCallback ?? setTimeout)(drawFaces);
 }
 // 4つの能力を小さな棒で（ラベルは1文字）
 function statBars(st) {

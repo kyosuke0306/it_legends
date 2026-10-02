@@ -619,3 +619,5 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .lv-to .ic { color: var(--accent); }
 .lv-to b { font-size: 1rem; color: var(--accent); }
 .lv-to .arrow { opacity: 0.6; }
+/* 社員・CEO の顔のアイコン（職種の色の丸の上に顔） */
+.av.face img { width: 100%; height: 100%; object-fit: cover; }

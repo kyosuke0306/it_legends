@@ -155,6 +155,31 @@ export class Stage {
 
 // 図鑑の一覧用に静止画サムネイルを作る（WebGLコンテキストは1つだけ使い回す）
 let thumb;
+// 仲間の一覧などの丸いアイコン用に、頭のあたりだけを写す（背景は透明）
+let face;
+export function renderFace(obj, size = 128) {
+  if (!face) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    renderer.setSize(size, size);
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8899bb, 1.7));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(1.5, 3, 4);
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
+    camera.position.set(0, 1.3, 3.3);
+    camera.lookAt(0, 1.22, 0);
+    face = { renderer, scene, camera };
+  }
+  const mark = obj.userData.ceoMark; // 頭の上の印は写さない
+  if (mark) mark.visible = false;
+  face.scene.add(obj);
+  face.renderer.render(face.scene, face.camera);
+  face.scene.remove(obj);
+  if (mark) mark.visible = true;
+  return face.renderer.domElement.toDataURL('image/png');
+}
+
 export function renderThumbnail(obj, size = 256) {
   if (!thumb) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });

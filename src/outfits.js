@@ -1,6 +1,7 @@
 // 社員の見た目を職種ごとに変える小物（職種の絵 assets/jobs/ に合わせる）。CEO には金のネクタイと頭の上の印
 // buildChibi で作った体（頭は y=1.25・半径0.55、胴体は y=0.52・半径0.24）に付け足す
 import * as THREE from 'three';
+import { buildChibi } from './character.js';
 
 const mat = (color) => new THREE.MeshToonMaterial({ color });
 const mesh = (geo, color, [x, y, z] = [0, 0, 0]) => {
@@ -100,4 +101,9 @@ export function dress(root, job, { ceo = false } = {}) {
     root.userData.ceoMark = mark;
   }
   return root;
+}
+
+// 社員・CEO・面接に来た人・派遣の人の体（職種の小物つき。データ分析とコンサルはメガネ）
+export function buildPerson(look, job, { ceo = false } = {}) {
+  return dress(buildChibi({ hairStyle: 'short', ...look, glasses: look.glasses || ['data', 'consul'].includes(job) }), job, { ceo });
 }
