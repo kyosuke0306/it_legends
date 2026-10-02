@@ -23,6 +23,7 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, button { touch-action: manipulation; } /* 2回たたいても画面が拡大されないように */
 body {
   margin: 0;
   background: var(--bg);
@@ -591,12 +592,12 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 /* 壁の落書きを描く */
 .art-wrap { border-radius: 14px; overflow: hidden; background: #4e4a52; }
 #art-canvas { display: block; width: 100%; aspect-ratio: 4 / 3; touch-action: none; }
-#artpad { padding: 10px 10px calc(12px + env(safe-area-inset-bottom)); max-height: 96vh; }
-.art-tools { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
-.art-colors { display: flex; gap: 8px; flex: 1; }
-.art-color { width: 30px; height: 30px; border-radius: 50%; border: 0; padding: 0; background: var(--c); box-shadow: 0 0 0 2px var(--panel), 0 0 0 2px transparent; }
+#artpad { overflow-x: hidden; padding: 10px 10px calc(12px + env(safe-area-inset-bottom)); max-height: 96vh; }
+.art-tools { display: flex; align-items: center; gap: 6px; margin-top: 12px; min-width: 0; }
+.art-colors { display: flex; gap: 6px; flex: 1; min-width: 0; }
+.art-color { flex: 0 1 30px; min-width: 18px; aspect-ratio: 1; height: auto; border-radius: 50%; border: 0; padding: 0; background: var(--c); box-shadow: 0 0 0 2px var(--panel), 0 0 0 2px transparent; }
 .art-color.on { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent, #6b5cff); }
-.art-btn { width: 38px; height: 38px; border-radius: 12px; border: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+.art-btn { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; border: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
 .art-btn .ic { width: 20px; height: 20px; }
 .art-btn i { display: block; border-radius: 50%; background: var(--text); }
 #art-save .ic { width: 22px; height: 22px; }

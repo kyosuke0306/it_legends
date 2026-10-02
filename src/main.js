@@ -18,6 +18,9 @@ document.getElementById('title-ver').textContent = VERSION;
 $('#open-settings').innerHTML = icon('gear');
 document.querySelectorAll('.tab').forEach((t) => t.insertAdjacentHTML('afterbegin', icon(t.dataset.icon)));
 
+// iPhone の Safari は2本指で画面ごと拡大できてしまう（描く画面がはみ出す）ので止める。3Dの部屋の2本指は別に動く
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+
 const SAVE_KEY = 'it_legends.save.v1';
 let S = null; // ゲームの状態
 let view = 'office';
