@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中（壁に ZOZO の文字）
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -623,7 +623,15 @@ const PROPS = {
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: issFloorTexture() }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(0, 0, 1);
-    g.add(wall, floor);
+    // 壁の ZOZO の文字（後ろがほんのり白く光る。吹き出しに隠れないよう、少し低く右寄り）
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.6), new THREE.MeshBasicMaterial({ map: zozoTexture(false), transparent: true, depthWrite: false }));
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.6, 1.2),
+      new THREE.MeshBasicMaterial({ map: zozoTexture(true), transparent: true, depthWrite: false }),
+    );
+    sign.position.set(0.9, 2.15, -2.47);
+    glow.position.set(0.9, 2.15, -2.48);
+    g.add(wall, floor, glow, sign);
     // 無重力で浮かぶ水の玉とペン（左奥）
     const water = new THREE.Mesh(new THREE.SphereGeometry(0.07, 20, 14), new THREE.MeshStandardMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.7, roughness: 0.1 }));
     const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.18, 8), new THREE.MeshStandardMaterial({ color: 0xe0563a }));
@@ -634,6 +642,7 @@ const PROPS = {
       water.scale.set(1 + Math.sin(t * 3) * 0.08, 1 - Math.sin(t * 3) * 0.08, 1);
       pen.position.set(-1.4 + Math.cos(t * 0.4) * 0.1, 1.1 + Math.sin(t * 0.6) * 0.1, -0.9);
       pen.rotation.set(t * 0.7, 0, t * 0.5);
+      glow.material.opacity = 0.7 + Math.sin(t * 1.6) * 0.3;
     };
     return g;
   },
@@ -1540,6 +1549,46 @@ function soundLogoTexture(blur) {
       x.quadraticCurveTo(256, y - 512 * k * 0.13, 256 + 512 * k * 0.42, y + 512 * k * 0.08);
       x.stroke();
     });
+  }
+  return canvasTexture(c);
+}
+
+// ZOZO の文字（太い黒の文字。どの端末でも同じ形になるよう、Z と O を線で描く）。blur=true なら後ろの淡い光
+function zozoTexture(blur) {
+  const c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 384;
+  const x = c.getContext('2d');
+  if (blur) x.filter = 'blur(30px)';
+  const col = blur ? '#ffffff' : '#111114';
+  x.strokeStyle = col;
+  x.fillStyle = col;
+  const T = 52; // 線の太さ
+  const top = 72;
+  const h = 240;
+  const w = 190;
+  const gap = 34;
+  const left = (1024 - (w * 4 + gap * 3)) / 2;
+  for (let i = 0; i < 4; i++) {
+    const x0 = left + i * (w + gap);
+    if (i % 2 === 0) {
+      // Z：上の横線・斜めの線・下の横線
+      x.fillRect(x0, top, w, T);
+      x.fillRect(x0, top + h - T, w, T);
+      x.beginPath();
+      x.moveTo(x0 + w - T * 1.15, top + T);
+      x.lineTo(x0 + w, top + T);
+      x.lineTo(x0 + T * 1.15, top + h - T);
+      x.lineTo(x0, top + h - T);
+      x.closePath();
+      x.fill();
+    } else {
+      // O：太い輪
+      x.lineWidth = T;
+      x.beginPath();
+      x.ellipse(x0 + w / 2, top + h / 2, w / 2 - T / 2, h / 2 - T / 2, 0, 0, Math.PI * 2);
+      x.stroke();
+    }
   }
   return canvasTexture(c);
 }
