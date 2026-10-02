@@ -89,10 +89,11 @@ function perksOf(m) {
 
 // 会社にいるだけで効くもの
 export function companyEffects(s) {
-  const e = { income: 0, offers: 0, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, luck: 0, statAll: {}, incomeGenre: {} };
+  const e = { income: 0, offers: 1, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, luck: 0, statAll: {}, incomeGenre: {} };
   for (const m of s.members) {
     const p = perksOf(m);
-    for (const k of ['income', 'offers', 'nextTrend', 'hireCost', 'xpAll', 'decaySlow', 'luck']) e[k] += p[k] ?? 0;
+    e.offers *= 1 + (p.offers ?? 0); // 依頼の届きやすさは掛け算で重ねる
+    for (const k of ['income', 'nextTrend', 'hireCost', 'xpAll', 'decaySlow', 'luck']) e[k] += p[k] ?? 0;
     for (const [k, v] of Object.entries(p.statAll ?? {})) e.statAll[k] = (e.statAll[k] ?? 0) + v;
     for (const [k, v] of Object.entries(p.incomeGenre ?? {})) e.incomeGenre[k] = (e.incomeGenre[k] ?? 0) + v;
   }
@@ -165,7 +166,6 @@ function addOffer(s, now, forceTier, easy = false) {
     expiresAt: now + R.OFFER_LIFE,
   });
 }
-const maxOffers = (s) => R.BASE_OFFERS + companyEffects(s).offers;
 
 // ---------- 要員派遣（仕事の間だけ借りる人） ----------
 // その仕事に一番向いた職種
@@ -508,17 +508,17 @@ function activityRoll(s, event) {
   return a?.event === event && !ceoBusyUntil(s) && rand(s) < a.perHour;
 }
 
-// 新しい依頼が届くか（1時間ごとに、評判で決まる確率で。並んでいる数が上限より少ないときだけ）
-export const offerChance = (s) => Math.min(R.OFFER_MAX, R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1));
+// 新しい依頼が届くか（1時間ごとに、評判と営業・レジェンドの倍率で決まる確率で。並べる数に上限はない）
+export const offerChance = (s) => Math.min(1, (R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1)) * companyEffects(s).offers);
 function rollOffer(s, t) {
-  if (rand(s) < offerChance(s) && s.offers.length < maxOffers(s)) addOffer(s, t);
+  if (rand(s) < offerChance(s)) addOffer(s, t);
 }
 
-// 散歩：仕事の相談を受ける（依頼の上限を少しこえても届く）
+// 散歩：仕事の相談を受ける（ふつうの依頼とは別に届く）
 function rollWalkOffer(s, t) {
   const a = R.ACTIVITIES[s.activity];
   if (!a?.offerPerHour || ceoBusyUntil(s) || rand(s) >= a.offerPerHour) return;
-  if (s.offers.length < maxOffers(s) + R.WALK_OFFER_EXTRA) addOffer(s, t);
+  addOffer(s, t);
 }
 
 function rollLuck(s, t, ev) {

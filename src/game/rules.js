@@ -19,7 +19,7 @@ export const JOBS = {
   pm: { name: 'PM', full: 'プロジェクトマネージャー', w: { idea: 1, tech: 1, plan: 2.5, talk: 2.5 }, perk: { teamSpeed: 0.1, teamSuccess: 0.05 }, perkText: '速さ +10%  成功率 +5%', shirt: 0x2d6ea8 },
   gm: { name: 'GM', full: 'ゼネラルマネージャー', w: { idea: 2, tech: 1, plan: 2, talk: 2 }, perk: { teamXp: 0.5 }, perkText: 'チームの成長 +50%', shirt: 0x50505a },
   consul: { name: 'コンサル', full: 'ITコンサルタント', w: { idea: 2, tech: 1, plan: 2, talk: 3 }, perk: { teamReward: 0.2 }, perkText: '報酬 +20%', shirt: 0x24324a },
-  sales: { name: '営業', full: 'IT営業', w: { idea: 1, tech: 0.5, plan: 1, talk: 4 }, perk: { offers: 1 }, perkText: '依頼 +1件', shirt: 0xc9822c },
+  sales: { name: '営業', full: 'IT営業', w: { idea: 1, tech: 0.5, plan: 1, talk: 4 }, perk: { offers: 0.25 }, perkText: '依頼 ×1.25', shirt: 0xc9822c },
 };
 
 // 会社の広さ。cap は入れる人数（自分も含む）、tier は受けられる仕事の大きさ
@@ -136,14 +136,13 @@ export const TREND_PERIOD = 2 * DAY; // 流行が変わる間隔
 
 export const START_MONEY = 100_000;
 // 1時間ごとに新しい依頼が届く確率は、会社の評判で決まる（並んでいる数が上限より少ないときだけ）
-// 確率 = OFFER_BASE + OFFER_PER_DIGIT × log10(評判+1)、最大 OFFER_MAX
+// 確率 = (OFFER_BASE + OFFER_PER_DIGIT × log10(評判+1)) × 営業・レジェンドの倍率（offers: 0.25 なら ×1.25。重ねると掛け算）、最大100%
+// 並べておける数に上限はない（18時間で期限切れになるので、溜まるのは平均「確率×18件」くらい）
 // 評判 0 で 20%（平均5時間に1件）、30 で 35%、600 で 48%、6000 で 58%、25万で 74%
 export const OFFER_BASE = 0.2;
 export const OFFER_PER_DIGIT = 0.1;
-export const OFFER_MAX = 0.8;
 export const OFFER_LIFE = 18 * HOUR; // 依頼の受付期限（過ぎると消える）
 export const OFFER_SOON = 3 * HOUR; // 期限がこれより近い依頼は赤く出す
-export const BASE_OFFERS = 4;
 // 要員派遣: お金を払うと、席の数を超えて仕事の間だけ人を借りられる（仕事が終わると帰る。成長はしない）
 // 1人ぶんの料金は仕事の報酬の TEMP_FEE 倍。来る人は今の会社で雇える人くらいの腕で、その仕事に向いた職種
 export const TEMP_FEE = 0.3;
@@ -166,13 +165,12 @@ export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会える�
 // CEO の過ごし方（無料。いつもどれか1つを選んでいる）。選んだものに合った出来事がまれに起きる（1時間ごとに判定）
 //   event: legend 偉人と偶然出会う（条件を満たしていなくても） / luck 臨時収入 / walkin 入社したい人が面接に来る
 export const ACTIVITIES = {
-  // 散歩はご近所で仕事の相談も受ける（平均4時間に1件、依頼の上限を WALK_OFFER_EXTRA 件こえて届く）
+  // 散歩はご近所で仕事の相談も受ける（平均4時間に1件。ふつうの依頼とは別に届く）
   walk: { name: '散歩', icon: 'walk', event: 'legend', perHour: 1 / 400, offerPerHour: 1 / 4 }, // 平均17日に1回くらい
   net: { name: 'ネット', icon: 'globe', event: 'luck', perHour: 1 / 36 }, // 平均1日半に1回くらい
   meetup: { name: '勉強会', icon: 'seminar', event: 'walkin', perHour: 1 / 48 }, // 平均2日に1回くらい
 };
 export const DEFAULT_ACTIVITY = 'net';
-export const WALK_OFFER_EXTRA = 2;
 export const WALKIN_LIFE = DAY; // 訪ねてきた人が待ってくれる時間
 // 臨時収入（ネットで見つかる）。amount は今の会社の仕事1時間ぶんの報酬の何倍か
 export const LUCKS = [
@@ -263,8 +261,8 @@ export const LEGEND_RULES = {
     meet: { cat: { web: 30 }, rep: 1500 },
     hint: 'Web の仕事を 30 回こなし、評判が 1500 を超えると…',
     join: 0.3,
-    ability: { offers: 2, incomeGenre: { web: 0.3 } },
-    abilityText: '依頼 +2件  Web の収入 +30%',
+    ability: { offers: 0.5, incomeGenre: { web: 0.3 } },
+    abilityText: '依頼 ×1.5  Web の収入 +30%',
     scene: '「情報をつなぐ仕組み」の図を描いている紳士がいる…',
   },
   hopper: {
@@ -328,8 +326,8 @@ export const LEGEND_RULES = {
     meet: { office: 2, cat: { web: 15 } },
     hint: '小さな事務所を構え、Web の仕事を 15 回こなすと…',
     join: 0.3,
-    ability: { income: 0.2, offers: 1 },
-    abilityText: '全製品の収入 +20%  依頼 +1件',
+    ability: { income: 0.2, offers: 0.25 },
+    abilityText: '全製品の収入 +20%  依頼 ×1.25',
     quit: 35,
     quitText: '「宇宙ロケットの会社に専念する」と去った',
     scene: '段ボール箱の山の前で、大きな声で笑う男がいる…',
