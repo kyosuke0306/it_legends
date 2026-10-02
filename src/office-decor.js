@@ -669,6 +669,8 @@ export function decorate(level, w, d, blink, seats = [], extra = {}) {
       c.stroke();
     }, { x: -0.45, y: 0.55, rot: -0.1 });
     // 左の壁：HELLO, WORLD・バグも仕様・おばけ・矢印
+    // 左の壁の奥（布団の上）に STAY HUNGRY. STAY FOOLISH.（奥の壁の目立つところは自分で描く場所にしたので、ここへ移した）
+    scribble('hungry', 512, 150, 0.68, words(['STAY HUNGRY.', 'STAY FOOLISH.'], '#f2f2f2', 58), { onLeft: true, z: -1.0, y: 1.0, rot: 0.04 });
     scribble('hello', 460, 150, 0.95, words(['HELLO,', 'WORLD!!'], '#ff5bd8', 62), { onLeft: true, z: -0.15, y: 1.2, rot: 0.05 });
     scribble('bug', 460, 90, 0.8, words(['BUG = FEATURE'], '#ffd84a', 54), { onLeft: true, z: 0.75, y: 1.32, rot: -0.04 });
     scribble('ghost', 200, 220, 0.3, (c) => {
