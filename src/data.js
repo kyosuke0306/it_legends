@@ -336,7 +336,7 @@ export const LEGENDS = [
       stage: 'matsue',
       props: ['matsue'],
       lines: [
-        { text: 'プログラマーを、幸せに。', sub: 'Make programmers happy.', prop: 'rubyGem', anim: 'agree' },
+        { text: 'プログラマーを、幸せに。', sub: 'Make programmers happy.', anim: 'agree' },
         { text: '機械ではなく、人間に目を向けよう。', sub: 'We need to focus on humans, not machines.', anim: 'fold_arms', animFrom: 1.5 },
         { text: '楽しんでプログラミングしよう。', sub: 'Enjoy programming!', prop: 'rubyCode', anim: 'greet_01' },
       ],

@@ -674,20 +674,6 @@ const PROPS = {
     return g;
   },
 
-  // Ruby のロゴ：「プログラマーを幸せに」のときに手の横に浮かんで、ゆっくり揺れる
-  rubyGem() {
-    const g = new THREE.Group();
-    const logo = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.42), new THREE.MeshBasicMaterial({ map: rubyLogoTexture(false), transparent: true, depthWrite: false, side: THREE.DoubleSide }));
-    const halo = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.8), new THREE.MeshBasicMaterial({ map: rubyLogoTexture(true), transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending }));
-    halo.position.z = -0.01;
-    g.add(halo, logo);
-    g.userData.animate = (p, t, o) => {
-      p.position.set(o.position.x + 0.9, 1.25 + Math.sin(t * 2.2) * 0.05, 0.3);
-      p.rotation.y = Math.sin(t * 1.4) * 0.5;
-    };
-    return g;
-  },
-
   // Ruby のプログラムを映した小さな画面（「楽しんで」のときに浮かぶ）
   rubyCode() {
     const g = new THREE.Group();
@@ -696,7 +682,7 @@ const PROPS = {
     screen.position.z = 0.017;
     g.add(frame, screen);
     g.userData.animate = (p, t, o) => {
-      p.position.set(o.position.x - 0.9, 1.3 + Math.sin(t * 2) * 0.04, 0.3); // 先に出た宝石と重ならないよう反対側に
+      p.position.set(o.position.x - 0.9, 1.3 + Math.sin(t * 2) * 0.04, 0.3); // 壁の Ruby のロゴと重ならないよう左側に
       p.rotation.y = 0.35 + Math.sin(t * 0.9) * 0.08;
     };
     return g;
