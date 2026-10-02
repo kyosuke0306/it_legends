@@ -622,10 +622,7 @@ export function advance(s, now, ev = []) {
     ev.income = (ev.income ?? 0) + income;
     ev.salary = (ev.salary ?? 0) + salary;
     // 依頼が届く・期限切れ
-    for (const o of s.offers.filter((o) => o.expiresAt <= next)) {
-      addLog(s, o.expiresAt, `${o.title}  期限切れ`);
-      ev.push({ type: 'expired', title: o.title, cat: o.cat });
-    }
+    for (const o of s.offers.filter((o) => o.expiresAt <= next)) addLog(s, o.expiresAt, `${o.title}  期限切れ`);
     s.offers = s.offers.filter((o) => o.expiresAt > next);
     // 採用候補の入れ替え
     while (s.candAt + R.CANDIDATE_EVERY <= next) {

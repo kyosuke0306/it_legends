@@ -363,7 +363,7 @@ function renderWork() {
   const offers = S.offers
     .map(
       (o) => `<button class="panel offer cat-${o.cat}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
-        <span class="offer-top"><b>${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}<span data-left="${o.expiresAt}"></span></span></span>
+        <span class="offer-top"><b>${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}"></span></span></span>
         <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
       </button>`,
     )
@@ -915,8 +915,6 @@ function eventsNotice(ev) {
   if (quits) parts.push(quits);
   const done = resultsHtml(ev);
   if (done) parts.push(done);
-  const gone = expiredHtml(ev);
-  if (gone) parts.push(gone);
   if (parts.length) notice(parts.join('<hr class="nsep">'));
 }
 
@@ -951,15 +949,6 @@ function resultsHtml(ev, { head = true } = {}) {
   const list = `<div class="results">${rows.join('')}</div>`;
   // 見出しはいつも「完了」（成功・失敗は1行ずつの札で見せる。見出しまで「失敗」にすると二重になる）
   return head ? `${icon(tasks.some((t) => t.ok) || prods.length ? 'check' : 'task', 'big-ic done-ic')}<h2>完了</h2>${list}` : list;
-}
-
-// 受けないまま期限が過ぎて消えた依頼
-function expiredHtml(ev, { head = true } = {}) {
-  const xs = ev.filter((e) => e.type === 'expired');
-  if (!xs.length) return '';
-  const rows = xs.slice(0, 5).map((x) => `<div class="result gone">${icon('hourglass')}<b>${catTag(x.cat)}${esc(x.title)}<span class="res-tag">期限切れ</span></b></div>`);
-  if (xs.length > 5) rows.push(`<div class="muted">+${xs.length - 5}</div>`);
-  return `${head ? `${icon('hourglass', 'big-ic gone-ic')}<h2>期限切れ</h2>` : ''}<div class="results">${rows.join('')}</div>`;
 }
 
 // 冷やかしに来たレジェンドと、されたこと（お金を減らされた・社員を引き抜かれた）
@@ -1018,9 +1007,8 @@ function welcomeBack(ev, away) {
   // 終わった仕事は1つずつ（resultsHtml の一覧だけを使う）
   const done = resultsHtml(ev, { head: false });
   const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false });
-  const gone = expiredHtml(ev, { head: false });
-  if (!rows.length && !done && !rivals && !gone) return;
-  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${breakdown}${rivals}${done}${gone}`);
+  if (!rows.length && !done && !rivals) return;
+  notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${breakdown}${rivals}${done}`);
 }
 
 // ---------- ログイン（Google で保存・同期。src/cloud.js） ----------
