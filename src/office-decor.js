@@ -272,7 +272,8 @@ export function makeDesk(style, i, { span = 1, home = false } = {}) {
 
 // ---------- 部屋の飾り ----------
 // blink: 点滅させる LED を入れる配列（office.js が光らせる）
-export function decorate(level, w, d, blink) {
+// seats: クッションに座る場所 { pos, ry } を入れる配列（手の空いた社員が座ってノートPCで働く）
+export function decorate(level, w, d, blink, seats = []) {
   const g = new THREE.Group();
   const back = -d / 2 + 0.06;
   const left = -w / 2 + 0.06;
@@ -514,13 +515,15 @@ export function decorate(level, w, d, blink) {
     const rugM = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.01, 40), mat(rug));
     rugM.position.set(x, 0.005, z);
     add(rugM);
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.18, 24), mat(0xd9b98a)).translateX(x).translateY(0.09).translateZ(z));
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.14, 24), mat(0xd9b98a)).translateX(x).translateY(0.07).translateZ(z));
     const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, 0.06, 10), mat(0xf4f4f2));
-    cup.position.set(x + 0.05, 0.21, z);
+    cup.position.set(x + 0.04, 0.17, z);
     add(cup);
+    // クッションにもたれて、真ん中のテーブルのほうを向いて座る
     colors.forEach((c, k) => {
       const a = (k / colors.length) * Math.PI * 2 + 0.4;
-      yogibo(x + Math.cos(a) * 0.55, z + Math.sin(a) * 0.55, c, -a + Math.PI / 2, k % 2 === 0, k === 1);
+      yogibo(x + Math.cos(a) * 0.66, z + Math.sin(a) * 0.66, c, -a + Math.PI / 2, false, k === 1);
+      seats.push({ pos: new THREE.Vector3(x + Math.cos(a) * 0.44, 0, z + Math.sin(a) * 0.44), ry: Math.atan2(-Math.cos(a), -Math.sin(a)) });
     });
   };
   // 下りの階段席（座れる大きな段、クッションつき）
@@ -529,8 +532,126 @@ export function decorate(level, w, d, blink) {
     for (let k = 0; k < 5; k++) add(box(0.28, 0.06, 0.25, mat([0x6f8a6a, 0xd4a24c, 0x4a5f80][k % 3]), x - wd / 2 + 0.3 + k * (wd - 0.6) / 4, 0.14 * ((k % 3) + 1) + 0.03, z - 0.35 * (2 - (k % 3))));
   };
 
+  // 壁のペンの落書き（英語のかっこいい言葉や変な絵）。暗い部屋でも見えるよう少し光るペン
+  const scribble = (key, cw, ch, worldW, draw, { x = 0, y = 1, z = 0, onLeft = false, rot = 0 } = {}) => {
+    const tex = canvasTex(`scr-${key}`, cw, ch, (c) => {
+      c.lineCap = 'round';
+      c.lineJoin = 'round';
+      draw(c);
+    });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(worldW, (worldW * ch) / cw), glow(0xffffff, { map: tex, transparent: true, opacity: 0.9, depthWrite: false }));
+    if (onLeft) {
+      m.rotation.set(0, Math.PI / 2, rot);
+      m.position.set(left + 0.006, y, z);
+    } else {
+      m.rotation.z = rot;
+      m.position.set(x, y, back + 0.006);
+    }
+    add(m);
+  };
+  const FONT = (px) => `bold ${px}px "Marker Felt", "Comic Sans MS", "Chalkboard SE", cursive, sans-serif`;
+  const words = (lines, color, px) => (c) => {
+    c.fillStyle = color;
+    c.font = FONT(px);
+    c.textBaseline = 'top';
+    lines.forEach((t, k) => c.fillText(t, 8 + k * 14, 6 + k * px * 1.1));
+  };
+  const pen = (c, color, wdt = 7) => {
+    c.strokeStyle = color;
+    c.fillStyle = color;
+    c.lineWidth = wdt;
+    c.beginPath();
+  };
+
   if (level === 0) {
-    // 自宅：床じゅうの缶とペットボトル、空き缶のタワー、夜中4時の目覚まし（壁には何も飾らない）
+    // 自宅：壁はペンの落書きだらけ。床じゅうの缶とペットボトル、空き缶のタワー、夜中4時の目覚まし
+    scribble('hungry', 512, 150, 1.05, words(['STAY HUNGRY.', 'STAY FOOLISH.'], '#f2f2f2', 58), { x: -0.95, y: 1.27, rot: 0.04 });
+    scribble('sleep', 420, 140, 0.7, words(['404:', 'SLEEP NOT FOUND'], '#7cff6b', 50), { x: -1.25, y: 0.62, rot: -0.06 });
+    scribble('loop', 380, 150, 0.62, words(['while (alive)', ' { code(); }'], '#5fe6ff', 46), { x: 1.38, y: 1.25, rot: 0.05 });
+    // 寝ていない日を数えた正の字のような線
+    scribble('tally', 300, 120, 0.42, (c) => {
+      pen(c, '#ffd84a', 7);
+      for (let g2 = 0; g2 < 3; g2++) {
+        for (let k = 0; k < 4; k++) {
+          c.moveTo(20 + g2 * 95 + k * 16, 20);
+          c.lineTo(22 + g2 * 95 + k * 16, 100);
+        }
+        c.moveTo(10 + g2 * 95, 90);
+        c.lineTo(85 + g2 * 95, 30);
+      }
+      c.stroke();
+    }, { x: 1.4, y: 0.88, rot: -0.04 });
+    // ロケット
+    scribble('rocket', 200, 260, 0.34, (c) => {
+      pen(c, '#ff7bd5', 7);
+      c.moveTo(100, 15);
+      c.quadraticCurveTo(160, 80, 140, 180);
+      c.lineTo(60, 180);
+      c.quadraticCurveTo(40, 80, 100, 15);
+      c.moveTo(60, 150);
+      c.lineTo(25, 200);
+      c.lineTo(62, 180);
+      c.moveTo(140, 150);
+      c.lineTo(175, 200);
+      c.lineTo(138, 180);
+      c.moveTo(80, 190);
+      c.lineTo(100, 245);
+      c.lineTo(120, 190);
+      c.stroke();
+      c.beginPath();
+      c.arc(100, 95, 18, 0, Math.PI * 2);
+      c.stroke();
+    }, { x: -0.25, y: 1.25, rot: 0.25 });
+    // 変な宇宙人の顔（目が3つ）
+    scribble('alien', 240, 220, 0.4, (c) => {
+      pen(c, '#b6ff5c', 7);
+      c.ellipse(120, 115, 90, 80, 0, 0, Math.PI * 2);
+      c.moveTo(60, 40);
+      c.lineTo(30, 5);
+      c.moveTo(180, 40);
+      c.lineTo(210, 5);
+      c.stroke();
+      for (const [ex, ey] of [[80, 100], [120, 80], [160, 100]]) {
+        c.beginPath();
+        c.arc(ex, ey, 12, 0, Math.PI * 2);
+        c.fill();
+      }
+      pen(c, '#b6ff5c', 7);
+      c.moveTo(80, 150);
+      c.quadraticCurveTo(120, 185, 160, 150);
+      c.stroke();
+    }, { x: -0.45, y: 0.55, rot: -0.1 });
+    // 左の壁：HELLO, WORLD・バグも仕様・おばけ・矢印
+    scribble('hello', 460, 150, 0.95, words(['HELLO,', 'WORLD!!'], '#ff5bd8', 62), { onLeft: true, z: -0.15, y: 1.2, rot: 0.05 });
+    scribble('bug', 460, 90, 0.8, words(['BUG = FEATURE'], '#ffd84a', 54), { onLeft: true, z: 0.75, y: 1.32, rot: -0.04 });
+    scribble('ghost', 200, 220, 0.3, (c) => {
+      pen(c, '#e8e8ff', 7);
+      c.moveTo(30, 200);
+      c.lineTo(30, 90);
+      c.arc(100, 90, 70, Math.PI, 0);
+      c.lineTo(170, 200);
+      for (let k = 0; k < 4; k++) c.lineTo(170 - (k + 0.5) * 35, k % 2 ? 200 : 175);
+      c.lineTo(30, 200);
+      c.stroke();
+      c.beginPath();
+      c.arc(75, 95, 9, 0, Math.PI * 2);
+      c.arc(125, 95, 9, 0, Math.PI * 2);
+      c.fill();
+    }, { onLeft: true, z: 0.45, y: 0.72, rot: 0.1 });
+    scribble('arrow', 300, 160, 0.5, (c) => {
+      pen(c, '#5fe6ff', 7);
+      c.moveTo(20, 120);
+      c.bezierCurveTo(90, 10, 180, 150, 260, 50);
+      c.moveTo(230, 40);
+      c.lineTo(262, 48);
+      c.lineTo(255, 82);
+      c.stroke();
+    }, { onLeft: true, z: 0.95, y: 0.95, rot: 0 });
+    // 窓のカーテン（閉めっぱなしで、少しだけ開いている）
+    const ww = w * 0.24;
+    const wx = Math.min(w * 0.15, w * (0.48 - 0.12));
+    for (const sgn of [-1, 1]) add(box(ww * 0.36, 0.62, 0.02, mat(0x2b3550), wx + sgn * ww * 0.36, 0.98, back + 0.02));
+    add(box(ww * 1.15, 0.04, 0.04, mat(0x1a1a1f), wx, 1.3, back + 0.03));
     trash(30, 5);
     trash(22, 6, { cx: 1.0, cz: 0.45, rad: 0.35 }); // 机の手前のごみの山
     trash(16, 7, { cx: -0.9, cz: 0.75, rad: 0.3 }); // 布団の足もとの山

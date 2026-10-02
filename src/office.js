@@ -108,6 +108,7 @@ export class Office {
       }
       p.busy = Boolean(m.busy);
       p.hero = m.kind === 'hero';
+      p.canSit = m.kind === 'staff'; // 社員は手が空くとクッションに座ってノートPCで働く（レジェンドは座る動きがないので立ったまま）
       p.label = { ...labelOf(m), work: workOf(state, m)?.title ?? '' }; // 仕事中なら仕事の名前も出す
       const desk = this.desks[i % this.desks.length];
       p.desk = i < this.desks.length ? desk : desk.clone().add(new THREE.Vector3(0.32 * Math.ceil(i / this.desks.length), 0, 0.15));
@@ -206,7 +207,10 @@ export class Office {
       }
     }
     if (home) room.add(messyRoom(w, d));
-    room.add(decorate(level, w, d, this.blink));
+    // 部屋を作り直したら、座っていた人は立ち上がる
+    for (const p of this.people.values()) this.standUp(p);
+    this.seats = [];
+    room.add(decorate(level, w, d, this.blink, this.seats));
     // 机（定員の数だけ、奥に並べる）
     this.desks = [];
     const cols = Math.ceil(Math.sqrt(cap * 1.5));
@@ -321,6 +325,40 @@ export class Office {
     this.controls.update();
   }
 
+  // クッションから立ち上がる（席を空ける）
+  standUp(p) {
+    if (p.seat) p.seat.taken = null;
+    p.seat = null;
+    p.sitting = false;
+    p.target = null;
+    if (p.laptop) p.laptop.visible = false;
+  }
+
+  // 空いているクッションの席（なければ null）
+  freeSeat() {
+    const free = (this.seats ?? []).filter((x) => !x.taken);
+    return free.length ? free[Math.floor(Math.random() * free.length)] : null;
+  }
+
+  // 座っている人のひざのノートPC
+  lapTop(p) {
+    if (!p.laptop) {
+      const g = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.01, 0.12), mat(0xc9ccd2));
+      const scr = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.11, 0.008), mat(0xc9ccd2));
+      scr.position.set(0, 0.055, 0.06);
+      scr.rotation.x = 0.3;
+      const glowScr = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.09), new THREE.MeshBasicMaterial({ color: 0x9fd3ff }));
+      glowScr.position.set(0, 0.055, 0.055);
+      glowScr.rotation.set(0.3, Math.PI, 0);
+      g.add(base, scr, glowScr);
+      g.position.set(0, 0.13, 0.2);
+      p.holder.add(g);
+      p.laptop = g;
+    }
+    p.laptop.visible = true;
+  }
+
   randomSpot() {
     const { w = 4, d = 3 } = this.size ?? {};
     return new THREE.Vector3((Math.random() - 0.5) * (w - 1.2), 0, (Math.random() - 0.1) * (d / 2 - 0.4));
@@ -432,6 +470,7 @@ export class Office {
       p.target = null;
     }
     const atDesk = p.busy || plan === 'net';
+    if (p.seat && (atDesk || plan)) this.standUp(p); // 仕事が入ったら立って机へ
     const goal = atDesk ? p.desk : plan === 'meetup' ? this.spots.board : p.target;
     let moving = false;
     if (goal) {
@@ -454,12 +493,24 @@ export class Office {
           p.away = 4 + Math.random() * 6;
         }
         p.target = null;
+      } else if (p.seat && goal === p.seat.pos) {
+        // クッションに着いたら座って、しばらくノートPCで働く
+        p.target = null;
+        p.sitting = true;
+        p.holder.rotation.y = p.seat.ry;
+        p.wait = 20 + Math.random() * 40;
       } else {
         p.target = null;
         p.wait = 1.5 + Math.random() * 4;
       }
     } else if ((p.wait -= dt) <= 0) {
-      p.target = plan === 'walk' ? null : this.randomSpot();
+      if (p.sitting) this.standUp(p);
+      const seat = p.canSit && !plan && Math.random() < 0.6 ? this.freeSeat() : null;
+      if (seat) {
+        seat.taken = p;
+        p.seat = seat;
+        p.target = seat.pos;
+      } else p.target = plan === 'walk' ? null : this.randomSpot();
     }
     // 骨組み入りのモデルは、歩くときと止まっているときで動きを切り替える
     const mixer = p.obj.userData.mixer;
@@ -474,6 +525,18 @@ export class Office {
     }
     animateCharacter(p.obj, t + p.holder.id, dt);
     if (!moving && !mixer) p.obj.userData.parts && (p.obj.position.y *= 0.3); // 止まっているときは跳ねを小さく
+    const parts = p.obj.userData.parts;
+    if (p.sitting && parts) {
+      // 床に座ってクッションにもたれ、足を前に出してひざのノートPCを打つ
+      p.obj.position.y = -0.14;
+      p.obj.rotation.x = -0.2;
+      parts.body.scale.set(1, 1, 1);
+      parts.legL.rotation.x = parts.legR.rotation.x = -1.45;
+      parts.armL.rotation.x = -0.9 + Math.sin(t * 9) * 0.08;
+      parts.armR.rotation.x = -0.9 - Math.sin(t * 9) * 0.08;
+      parts.head.rotation.x = 0.3;
+      this.lapTop(p);
+    } else if (parts) p.obj.rotation.x = 0;
   }
 }
 
