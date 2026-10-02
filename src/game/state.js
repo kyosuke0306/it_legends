@@ -508,9 +508,10 @@ function activityRoll(s, event) {
   return a?.event === event && !ceoBusyUntil(s) && rand(s) < a.perHour;
 }
 
-// 新しい依頼が届くか（1時間ごとに確率で。並んでいる数が上限より少ないときだけ）
+// 新しい依頼が届くか（1時間ごとに、評判で決まる確率で。並んでいる数が上限より少ないときだけ）
+export const offerChance = (s) => Math.min(R.OFFER_MAX, R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1));
 function rollOffer(s, t) {
-  if (rand(s) < R.OFFER_PER_HOUR && s.offers.length < maxOffers(s)) addOffer(s, t);
+  if (rand(s) < offerChance(s) && s.offers.length < maxOffers(s)) addOffer(s, t);
 }
 
 // 散歩：仕事の相談を受ける（依頼の上限を少しこえても届く）

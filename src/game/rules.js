@@ -135,7 +135,12 @@ export const PRODUCT_HALF_LIFE = 7 * DAY; // 収入が半分になるまでの�
 export const TREND_PERIOD = 2 * DAY; // 流行が変わる間隔
 
 export const START_MONEY = 100_000;
-export const OFFER_PER_HOUR = 1 / 2; // 1時間ごとに、この確率で新しい依頼が届く（平均2時間に1件。並んでいる数が上限より少ないときだけ）
+// 1時間ごとに新しい依頼が届く確率は、会社の評判で決まる（並んでいる数が上限より少ないときだけ）
+// 確率 = OFFER_BASE + OFFER_PER_DIGIT × log10(評判+1)、最大 OFFER_MAX
+// 評判 0 で 20%（平均5時間に1件）、30 で 35%、600 で 48%、6000 で 58%、25万で 74%
+export const OFFER_BASE = 0.2;
+export const OFFER_PER_DIGIT = 0.1;
+export const OFFER_MAX = 0.8;
 export const OFFER_LIFE = 18 * HOUR; // 依頼の受付期限（過ぎると消える）
 export const OFFER_SOON = 3 * HOUR; // 期限がこれより近い依頼は赤く出す
 export const BASE_OFFERS = 4;
