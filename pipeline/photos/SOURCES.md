@@ -4,4 +4,4 @@
 - gates: https://upload.wikimedia.org/wikipedia/commons/d/d9/Bill_Gates_at_the_European_Commission_-_P067383-987995_%28cropped%29_5.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Bill_Gates)
 - bezos: https://upload.wikimedia.org/wikipedia/commons/f/fc/260202-D-PM193-2205_SECWAR_Arsenal_of_Freedom_Tour_-_Florida_%283x4_cropped_on_Bezos_and_rotated%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Jeff_Bezos)
 - ek: https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Daniel_Ek_%28Interview%29_%28cropped%29.jpg/250px-Daniel_Ek_%28Interview%29_%28cropped%29.jpg (https://en.wikipedia.org/wiki/Daniel_Ek 以前の版の写真。メガネのない姿にするため)
-- matz: https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Yukihiro_Matsumoto_%282018%29.jpg/250px-Yukihiro_Matsumoto_%282018%29.jpg (https://en.wikipedia.org/wiki/Yukihiro_Matsumoto 白黒写真なので色は face/outfit で指定)
+- matz: ユーザーからもらった写真（ピンクの背景、グレーの上着）。白黒の Wikipedia 写真から差し替え

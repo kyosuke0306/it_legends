@@ -327,10 +327,10 @@ export const LEGENDS = [
       'Ruby on Railsの登場で、世界中のWeb開発に広まる（2004年〜）',
       '日本で生まれた言語として初めて国際規格（ISO）になる（2012年）',
     ],
-    look: { skin: 0xf0cfb4, hairStyle: 'short', hairColor: 0x1d1a1a, shirt: 0xb3262e },
-    // 写真が白黒なので、色はここで決める
-    face: 'an East Asian Japanese man in his fifties with thick, slightly messy black hair with a few gray strands, thin dark rectangular glasses, a short black beard and mustache with a little gray, and a big warm smile',
-    outfit: 'a dark gray casual jacket over a deep red T-shirt, dark blue jeans and dark sneakers',
+    look: { skin: 0xf0cfb4, hairStyle: 'short', hairColor: 0x1d1a1a, shirt: 0x5a5a60 },
+    // ユーザーからもらった写真が元。メガネは細い銀のふち（下半分にふちがない）、ひげは短い無精ひげ
+    face: 'an East Asian Japanese man in his fifties with thick black hair with some gray strands, short on the sides and swept up and slightly messy on top; thin silver half-rim glasses with narrow rectangular lenses and no frame on the bottom of the lenses; short light stubble around the mouth and on the chin, a thin mustache, not a full beard; a gentle, kind smile with slightly narrowed eyes',
+    outfit: 'a gray textured blazer over a black collared shirt with the top button open, dark gray trousers and black leather shoes',
   },
 ];
 
