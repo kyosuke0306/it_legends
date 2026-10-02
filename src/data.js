@@ -312,6 +312,26 @@ export const LEGENDS = [
       ],
     },
   },
+  {
+    id: 'matz',
+    name: 'まつもとゆきひろ',
+    nameEn: 'Yukihiro Matsumoto',
+    wiki: 'Yukihiro_Matsumoto',
+    years: '1965–',
+    rarity: 'R',
+    title: 'Rubyの父',
+    summary:
+      'プログラムを書く人が楽しく書けることを大切にした言語Rubyを作りました。日本生まれの言語として世界に広まり、Ruby on Railsとともに多くのWebサービスを支えています。',
+    achievements: [
+      'プログラミング言語Rubyを公開（1995年）',
+      'Ruby on Railsの登場で、世界中のWeb開発に広まる（2004年〜）',
+      '日本で生まれた言語として初めて国際規格（ISO）になる（2012年）',
+    ],
+    look: { skin: 0xf0cfb4, hairStyle: 'short', hairColor: 0x1d1a1a, shirt: 0xb3262e },
+    // 写真が白黒なので、色はここで決める
+    face: 'an East Asian Japanese man in his fifties with thick, slightly messy black hair with a few gray strands, thin dark rectangular glasses, a short black beard and mustache with a little gray, and a big warm smile',
+    outfit: 'a dark gray casual jacket over a deep red T-shirt, dark blue jeans and dark sneakers',
+  },
 ];
 
 // rarity はレジェンドの並び順だけに使う（画面にランクは出さない。ユーザー指示 2026-10-01）

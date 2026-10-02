@@ -340,5 +340,15 @@ export const LEGEND_RULES = {
     quitText: '「宇宙へ行く」と言って会社を去った',
     scene: '水玉もようの全身スーツを手に、にこにこしている男がいる…',
   },
+  matz: {
+    stats: { idea: 85, tech: 90, plan: 75, talk: 70 },
+    meet: { cat: { web: 15 }, staff: 3 },
+    hint: 'Web の仕事を 15 回こなし、社員を 3 人雇うと…',
+    join: 0.4,
+    // 「プログラマーを幸せにする」言語を作った人なので、みんなが早く育ち、仕事も速くなる
+    ability: { xpAll: 0.3, teamSpeed: 0.15 },
+    abilityText: '全員の成長 +30%  速さ +15%',
+    scene: '赤い宝石を手に、楽しそうにプログラムを書くメガネの男がいる…',
+  },
 };
 
