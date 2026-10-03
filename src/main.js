@@ -971,10 +971,9 @@ async function showOnDetail(legend, { reveal = false } = {}) {
   const obj = await p;
   if (token === detailToken) detailStage.setCharacter(obj);
 }
-// 我の強いレジェンドは「いつか辞める」と、誘う前から見せておく（あとで辞めても理不尽に感じないように）
-function legendHead(legend) {
-  const q = R.LEGEND_RULES[legend.id]?.quit;
-  return `<h2>${legend.name}</h2><div class="sub">${legend.title}</div>${q ? `<div class="quit-tag">${icon('back')}いつか辞める</div>` : ''}`;
+// まだ仲間でないとき（secret）は名前を出さず、肩書きだけ
+function legendHead(legend, { secret = false } = {}) {
+  return secret ? `<h2>${legend.title}</h2>` : `<h2>${legend.name}</h2><div class="sub">${legend.title}</div>`;
 }
 // まだ仲間でないレジェンドは、姿はシルエットのまま（出会ったときと同じ）
 function showSilhouette(legend) {
@@ -988,7 +987,7 @@ function showSilhouette(legend) {
     wrap.append(img);
   });
 }
-// まだ会っていないレジェンド：力・出会いの条件・説明だけ見られる（姿はシークレット）
+// まだ仲間でないレジェンド：肩書き・力・出会いの条件だけ見られる（名前と姿はシークレット）
 function openLockedLegend(legend) {
   detailStage ??= new Stage($('#detail-canvas'));
   detailStage.setCharacter(null);
@@ -996,10 +995,9 @@ function openLockedLegend(legend) {
   const conds = G.meetProgress(S, legend.id)
     .map((c) => `<div class="cond ${c.ok ? 'ok' : ''}"><span>${esc(c.label)}</span><i><b style="width:${pct(c.ratio)}"></b></i></div>`)
     .join('');
-  $('#detail-info').innerHTML = `${legendHead(legend)}
+  $('#detail-info').innerHTML = `${legendHead(legend, { secret: true })}
     <div class="ability">${esc(R.LEGEND_RULES[legend.id].abilityText)}</div>
-    <div class="conds">${conds}</div>
-    <details><summary>くわしく</summary><p>${legend.summary}</p></details>`;
+    <div class="conds">${conds}</div>`;
   $('#detail').showModal();
   showSilhouette(legend);
 }
@@ -1032,7 +1030,7 @@ function openEncounter() {
   const rule = R.LEGEND_RULES[e.id];
   detailStage ??= new Stage($('#detail-canvas'));
   detailStage.setCharacter(null);
-  $('#detail-info').innerHTML = `${legendHead(legend)}
+  $('#detail-info').innerHTML = `${legendHead(legend, { secret: true })}
     <p class="scene">${esc(rule.scene)}</p>
     <div class="ability">${esc(rule.abilityText)}</div>
     <div class="vals">${val('target', pct(G.scoutChance(S, e.id)))}${val('clock', `<span data-left="${e.until}"></span>`)}</div>
@@ -1050,7 +1048,7 @@ function openEncounter() {
       $('#detail-info').innerHTML = `${legendHead(legend)}<div class="joined">仲間になった</div><div class="ability">${esc(rule.abilityText)}</div>`;
       await showOnDetail(legend, { reveal: true });
     } else {
-      $('#detail-info').innerHTML = `${legendHead(legend)}<p class="scene">「まだ早いようだ」</p>`;
+      $('#detail-info').innerHTML = `${legendHead(legend, { secret: true })}<p class="scene">「まだ早いようだ」</p>`;
     }
   };
 }
@@ -1085,7 +1083,7 @@ function showStory() {
   const slides = [
     { art: `<div class="st-face" style="background-image:url(${faceShot(hero.look, hero.job)})"></div>`, text: '小さな部屋で、<br>IT会社をはじめた' },
     { art: glow(['task', 'coin', 'star']), text: '仕事を受けて、<br>会社を大きくする' },
-    { art: `<div class="st-legends">${[...modelIds].map((id) => `<img src="models/${id}.webp" alt="">`).join('')}</div>`, text: '時を超えて、<br>レジェンドが現れる' },
+    { art: `<div class="st-legends">${[...modelIds].map((id) => `<img src="models/${id}.webp" alt="">`).join('')}</div>`, text: '時を超えて、<br>レジェンドを雇える' },
     { art: $('.title-emblem').outerHTML.replace(/tneon/g, 'sneon'), text: '伝説のIT会社をつくれ' },
   ];
   const el = document.createElement('div');
