@@ -366,20 +366,37 @@ function growTo(s, m, lv) {
 }
 // 1日ごとに新しい人が面接に来る。前から待っている人は、待てる期限（until）までは残る
 function refreshCandidates(s, t = 0) {
-  const jobs = Object.keys(R.JOBS);
   s.candidates = s.candidates.filter((c) => c.until > t);
   // 平均 n 人（小数のぶんは確率で1人増える）
   const n = R.CANDIDATES_PER_DAY[s.office] ?? 3;
   const count = Math.min(Math.floor(n) + (rand(s) < n % 1 ? 1 : 0), R.MAX_CANDIDATES - s.candidates.length);
-  for (let i = 0; i < count; i++) {
-    const m = makePerson(s, pick(s, jobs));
-    // 会社が大きくなると、育った人も応募してくる
-    const [lo, hi] = R.OFFICES[s.office].lv;
-    growTo(s, m, lo + Math.floor(rand(s) * (hi - lo + 1)));
-    m.until = t + between(s, ...R.CANDIDATE_LIFE) * R.DAY;
-    m.at = t; // 来た時刻（新着の印に使う）
-    s.candidates.push(m);
-  }
+  for (let i = 0; i < count; i++) addCandidate(s, t);
+}
+function addCandidate(s, t) {
+  const m = makePerson(s, pick(s, Object.keys(R.JOBS)));
+  // 会社が大きくなると、育った人も応募してくる
+  const [lo, hi] = R.OFFICES[s.office].lv;
+  growTo(s, m, lo + Math.floor(rand(s) * (hi - lo + 1)));
+  m.until = t + between(s, ...R.CANDIDATE_LIFE) * R.DAY;
+  m.at = t; // 来た時刻（新着の印に使う）
+  s.candidates.push(m);
+}
+// ---------- 求人広告 ----------
+export const adCost = (s) => round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * R.AD_HOURS, 1000);
+export const adPerDay = (s) => Math.max(R.AD_PER_DAY, R.CANDIDATES_PER_DAY[s.office] ?? 3);
+export const adActive = (s, t) => (s.adUntil ?? 0) > t;
+export function startAd(s, now) {
+  const cost = adCost(s);
+  if (adActive(s, now) || s.money < cost) return false;
+  s.money -= cost;
+  s.adUntil = now + R.AD_DAYS * R.DAY;
+  addLog(s, now, `求人広告  -${cost.toLocaleString('ja-JP')}円`);
+  return true;
+}
+// 広告を出している間は、1時間ごとに確率で1人ずつ面接に来る
+function rollAd(s, t) {
+  if (!adActive(s, t - R.HOUR) || s.candidates.length >= R.MAX_CANDIDATES || rand(s) >= adPerDay(s) / 24) return;
+  addCandidate(s, t);
 }
 // 訪ねてきた人は雇うのにお金がかからない
 export const hireCost = (s, m) => (m.walkin ? 0 : round(m.salary * 5 * (1 - Math.min(0.8, companyEffects(s).hireCost))));
@@ -658,6 +675,7 @@ export function advance(s, now, ev = []) {
       rollRival(s, next, ev);
       rollQuit(s, next, ev);
       rollWalkin(s, next, ev);
+      rollAd(s, next);
     }
     s.time = next;
   }

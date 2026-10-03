@@ -740,6 +740,14 @@ function memberRow(m, { candidate = false } = {}) {
     }
   </div>`;
 }
+// 求人広告: お金を出すと、期限つきで面接に来る人が増える。出している間は残り時間を出す
+function adRow() {
+  const perDay = val('people', `+${G.adPerDay(S)}/日`);
+  if (G.adActive(S, Date.now()))
+    return `<div class="panel ad-row on">${icon('ad')}<b>求人広告</b><span class="grow"></span>${perDay}${val('hourglass', `<span data-left="${S.adUntil}"></span>`)}</div>`;
+  const cost = G.adCost(S);
+  return `<button class="panel ad-row" id="ad" ${S.money < cost ? 'disabled' : ''}>${icon('ad')}<b>求人広告</b><span class="grow"></span>${perDay}${val('clock', dur(R.AD_DAYS * R.DAY))}${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}</button>`;
+}
 function renderTeam() {
   S.teamSeenAt = Date.now(); // 仲間タブを見た（通知の点を消す）
   renderHeader();
@@ -747,6 +755,7 @@ function renderTeam() {
   v.innerHTML = `
     <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
     <div class="sec interview">${icon('people')}<b>面接</b><span class="grow"></span>${val('home', `${G.seatsUsed(S)}/${G.capacity(S)}`)}${val('clock', `<span data-left="${S.candAt + R.CANDIDATE_EVERY}"></span>`)}</div>
+    ${adRow()}
     <div class="list">${
       S.candidates.length
         ? S.candidates.map((c) => memberRow(c, { candidate: true })).join('')
@@ -769,6 +778,7 @@ function renderTeam() {
       save();
       document.querySelector('.tab[data-view="office"]').click();
     });
+  $('#ad') && ($('#ad').onclick = () => G.startAd(S, Date.now()) && commit());
   v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
   v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('解雇しますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));
