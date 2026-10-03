@@ -712,7 +712,8 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .st-legends img:nth-child(2n) { animation-delay: -1.3s; }
 .st-legends img:nth-child(3n) { animation-delay: -2.6s; }
 #story .title-emblem { width: 130px; height: 130px; filter: drop-shadow(0 0 16px rgba(62, 240, 255, 0.5)); }
-.st-foot { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.st-foot { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 18px; padding-bottom: 24px; }
+#story { cursor: pointer; user-select: none; -webkit-user-select: none; }
 .st-foot .dots i { background: rgba(255, 255, 255, 0.18); }
 .st-foot .dots i.on { background: #3ef0ff; }
 .st-foot .big { margin: 0; width: 100%; background: linear-gradient(90deg, #22c8e8, #8b5cff); color: #fff; }

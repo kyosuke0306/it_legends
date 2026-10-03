@@ -1102,15 +1102,17 @@ function showStory() {
   };
   const draw = () => {
     const sl = slides[i];
-    const last = i === slides.length - 1;
     el.innerHTML = `
       <button class="st-skip" aria-label="とばす">×</button>
       <div class="st-slide" key="${i}">${sl.art}<p>${sl.text}</p></div>
-      <div class="st-foot"><div class="dots">${slides.map((_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('')}</div>
-      <button class="big st-next">${last ? 'はじめる' : '次へ'}</button></div>`;
-    el.querySelector('.st-skip').onclick = end;
-    el.querySelector('.st-next').onclick = () => (last ? end() : (i++, draw()));
+      <div class="st-foot"><div class="dots">${slides.map((_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('')}</div></div>`;
+    el.querySelector('.st-skip').onclick = (e) => {
+      e.stopPropagation();
+      end();
+    };
   };
+  // 画面のどこを押しても次へ（最後の1枚で押すとはじまる）
+  el.onclick = () => (i === slides.length - 1 ? end() : (i++, draw()));
   draw();
 }
 
@@ -1121,9 +1123,12 @@ const GUIDE = [
   { sel: '.tab[data-view="work"]', text: '仕事を受ける', tap: true },
   { sel: '#view-work.active [data-offer]', text: '依頼を選ぶ', tap: true, back: 0 },
   { sel: '#assign[open] .person[data-id]', text: 'CEO に任せる', tap: true, back: 1 },
+  { sel: '#assign[open] .temp-head', text: '派遣<br>お金を払うと、仕事の間だけ<br>人を借りられる', ok: true, sheet: true, back: 1 },
   { sel: '#assign[open] #assign-go:not([disabled])', text: 'スタート', tap: true, back: 2 },
   { sel: '.tab[data-view="office"]', text: '会社へ', tap: true },
-  // 手が空いたときの過ごし方。それぞれ何が起きるか
+  { sel: '#rep', text: '評判<br>仕事が成功すると上がる<br>依頼が増え、引っ越しにも必要', ok: true },
+  // 手が空いたときの過ごし方は、仕事が終わってから（仕事中はボタンが押せないため）
+  { sel: '#activity .act-lock .pill', text: '仕事が終わるまで待つ', auto: true },
   { sel: '#activity [data-act="walk"]', text: '散歩<br>レジェンドに偶然会える<br>仕事の相談も来る', ok: true },
   { sel: '#activity [data-act="net"]', text: 'ネット<br>臨時収入が入る', ok: true },
   { sel: '#activity [data-act="meetup"]', text: '勉強会<br>面接に来る人がいる', ok: true },
@@ -1173,10 +1178,12 @@ function startGuide() {
       return;
     }
     guideLoop = requestAnimationFrame(tick);
-    const el = [...document.querySelectorAll(g.sel)].find((x) => x.offsetParent);
+    const all = [...document.querySelectorAll(g.sel)];
+    const el = all.find((x) => x.offsetParent);
     if (!el) {
-      if (g.back != null && !$('#notice').open) S.guide = g.back; // シートを閉じたなどで場所がなくなったら1つ前へ
-      else if (g.ok) guideNext(); // 見せるだけの案内は、場所がなければ飛ばす
+      if (g.sheet && $('#assign[open]') && !all.length) guideNext(); // シートは開いているのに場所がない（派遣が無い仕事など）は飛ばす
+      else if (g.back != null && !$('#notice').open) S.guide = g.back; // シートを閉じたなどで場所がなくなったら1つ前へ
+      else if ((g.ok || g.auto) && !all.length) guideNext(); // 見せるだけの案内は、場所が無くなれば飛ばす（ほかのタブで隠れているだけなら待つ）
       guideEl.style.display = 'none';
       return;
     }

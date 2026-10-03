@@ -454,7 +454,7 @@ export function meetProgress(s, id) {
   const meet = R.LEGEND_RULES[id].meet;
   const out = [];
   const add = (label, now, need) => out.push({ label: `${label} ${Math.min(now, need)}/${need}`, ratio: Math.min(1, now / need), ok: now >= need });
-  if (meet.office) out.push({ label: R.OFFICES[meet.office].name, ratio: Math.min(1, s.office / meet.office), ok: s.office >= meet.office });
+  if (meet.office) out.push({ label: `${R.OFFICES[meet.office].name}へ引っ越し`, ratio: Math.min(1, s.office / meet.office), ok: s.office >= meet.office });
   if (meet.rep) add('評判', s.rep, meet.rep);
   for (const [cat, n] of Object.entries(meet.cat ?? {})) add(R.CAT_NAMES[cat], s.counts.cat[cat] ?? 0, n);
   if (meet.tasks) add('仕事', s.counts.tasks, meet.tasks);
