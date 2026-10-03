@@ -177,7 +177,7 @@ export const PRODUCT_HALF_LIFE = 7 * DAY; // 収入が半分になるまでの�
 export const TREND_PERIOD = 2 * DAY; // 流行が変わる間隔
 
 export const START_MONEY = 100_000;
-export const FIRST_OFFER_HOURS = [1 / 6, 0.5, 1]; // 始めたときの依頼の時間（10分・30分・1時間。2026-10-03 序盤を速く）
+export const FIRST_OFFER_HOURS = [1 / 60, 1 / 6, 0.5]; // 始めたときの依頼の時間（1分・10分・30分。2026-10-03 序盤を速く。案内で選ぶ最初の仕事はすぐ終わるように）
 // 1時間ごとに新しい依頼が届く確率は、会社の評判で決まる（並んでいる数が上限より少ないときだけ）
 // 確率 = (OFFER_BASE + OFFER_PER_DIGIT × log10(評判+1)) × 営業・レジェンドの倍率（offers: 0.25 なら ×1.25。重ねると掛け算）、最大100%
 // 並べておける数に上限はない（18時間で期限切れになるので、溜まるのは平均「確率×18件」くらい）

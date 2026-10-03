@@ -109,6 +109,19 @@ export class Office {
           p.obj = obj;
         });
       }
+      // 見た目が変わったら（CEO の顔を変えたとき）体を作り直す
+      const lk = JSON.stringify(m.look ?? null);
+      if (p.lk && p.lk !== lk) {
+        if (p.obj) p.holder.remove(p.obj);
+        p.obj = null;
+        this.makeBody(m).then((obj) => {
+          if (this.people.get(m.id) !== p || p.lk !== lk) return;
+          obj.scale.setScalar(0.55);
+          p.holder.add(obj);
+          p.obj = obj;
+        });
+      }
+      p.lk = lk;
       p.busy = Boolean(m.busy);
       p.hero = m.kind === 'hero';
       p.canSit = m.kind === 'staff'; // 社員は手が空くとクッションに座ってノートPCで働く（レジェンドは座る動きがないので立ったまま）

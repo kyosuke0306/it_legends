@@ -27,7 +27,7 @@ function hash01(...xs) {
 export const companyTitle = (c) => (c.includes('株式会社') ? c : `株式会社${c}`);
 export const displayName = (m) => (m.kind === 'hero' ? `CEO ${m.name}` : m.name);
 
-export function newGame({ job, name, company }, now = Date.now()) {
+export function newGame({ job, name, company, look }, now = Date.now()) {
   const seed = (Math.random() * 2 ** 31) | 0;
   const s = {
     v: 1,
@@ -56,8 +56,9 @@ export function newGame({ job, name, company }, now = Date.now()) {
   };
   const hero = makePerson(s, job, { hero: true });
   hero.name = name;
+  if (look) hero.look = { ...hero.look, ...look, shirt: R.JOBS[job].shirt }; // 自分で選んだ顔
   s.members.push(hero);
-  // 最初は短くてやさしい仕事（10分・30分・1時間）。始めてすぐ「終わった」「育った」が見られるように
+  // 最初は短くてやさしい仕事（1分・10分・30分）。始めてすぐ「終わった」「育った」が見られるように
   for (const h of R.FIRST_OFFER_HOURS) addOffer(s, now, 0, h);
   refreshCandidates(s, now);
   addLog(s, now, `${s.company} 創業`);

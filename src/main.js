@@ -10,6 +10,7 @@ import { VERSION } from './version.js';
 import { icon } from './icons.js';
 import * as G from './game/state.js';
 import * as R from './game/rules.js';
+import { FACE_OPTIONS } from './game/names.js';
 import * as cloud from './cloud.js';
 
 const $ = (s) => document.querySelector(s);
@@ -125,6 +126,35 @@ function drawFaces() {
   faceQueue.shift();
   if (faceQueue.length) (window.requestIdleCallback ?? setTimeout)(drawFaces);
 }
+// ---------- CEO の顔を選ぶ（はじめるときと、設定の「顔を変更」） ----------
+// 肌の色・髪の色は色の丸、髪形とメガネは小さな顔の絵で選ぶ。上の大きな丸が今の顔
+const faceShots = new Map();
+function faceShot(look, job) {
+  const k = `${job}:${JSON.stringify(look)}`;
+  if (!faceShots.has(k)) faceShots.set(k, renderThumbnail(buildPerson(look, job, { ceo: true })));
+  return faceShots.get(k);
+}
+function faceEditor(box, look, job) {
+  const noGlasses = ['data', 'consul'].includes(job); // この2つの職種はもともとメガネ
+  const pic = (l) => `<span class="fe-pic" style="background-image:url(${faceShot({ ...look, ...l }, job)})"></span>`;
+  const sw = (key, list) =>
+    `<div class="fe-row">${list.map((c) => `<button class="fe-sw ${look[key] === c ? 'on' : ''}" data-k="${key}" data-v="${c}" style="--c:${hex(c)}"></button>`).join('')}</div>`;
+  box.innerHTML = `
+    <div class="fe-main" style="background-image:url(${faceShot(look, job)})"></div>
+    ${sw('skin', FACE_OPTIONS.skin)}
+    ${sw('hairColor', FACE_OPTIONS.hairColor)}
+    <div class="fe-row">${FACE_OPTIONS.hairStyle.map((h) => `<button class="fe-opt ${look.hairStyle === h ? 'on' : ''}" data-k="hairStyle" data-v="${h}">${pic({ hairStyle: h })}</button>`).join('')}</div>
+    ${noGlasses ? '' : `<div class="fe-row">${[false, true].map((g) => `<button class="fe-opt ${Boolean(look.glasses) === g ? 'on' : ''}" data-k="glasses" data-v="${g}">${pic({ glasses: g })}</button>`).join('')}</div>`}`;
+  box.onclick = (e) => {
+    const b = e.target.closest('[data-k]');
+    if (!b) return;
+    const { k, v } = b.dataset;
+    look[k] = k === 'hairStyle' ? v : k === 'glasses' ? v === 'true' : +v;
+    faceEditor(box, look, job);
+  };
+}
+const defaultLook = () => ({ hairStyle: 'short', skin: FACE_OPTIONS.skin[1], hairColor: FACE_OPTIONS.hairColor[0], glasses: false });
+
 // 4つの能力を小さな棒で（ラベルは1文字）
 function statBars(st) {
   // 小さい差も見えるように平方根で（25 → 半分、100 → いっぱい）
@@ -335,13 +365,21 @@ function initStart() {
     if (!b) return;
     chosen = b.dataset.job;
     box.querySelectorAll('.job').forEach((x) => x.classList.toggle('active', x === b));
-    $('#start-go').disabled = false;
+    $('#start-job-next').disabled = false;
+  };
+  // 職種を選んだら顔を選ぶ（職種の小物を付けた姿で見せる）
+  const look = defaultLook();
+  $('#start-job-next').onclick = () => {
+    if (!chosen) return;
+    faceEditor($('#start-face'), look, chosen);
+    goStep(4);
   };
   $('#start-go').onclick = async () => {
     if (!chosen) return;
     if (newSlot && newSlot !== slot) await useSlot(newSlot);
     newSlot = null;
-    S = G.newGame({ job: chosen, name: $('#start-name').value.trim(), company: $('#start-company').value.trim() });
+    S = G.newGame({ job: chosen, name: $('#start-name').value.trim(), company: $('#start-company').value.trim(), look: { ...look } });
+    S.story = 0; // はじめる前にストーリーを見せる（showStory）
     pendingWelcome = null;
     office?.reset();
     save();
@@ -372,7 +410,8 @@ function enterGame() {
     welcomeBack(...pendingWelcome);
     pendingWelcome = null;
   }
-  startGuide();
+  if (S.story === 0) showStory();
+  else startGuide();
 }
 
 document.querySelectorAll('.tab').forEach((tab) => {
@@ -1016,6 +1055,41 @@ function notice(html) {
   if (!$('#notice').open) $('#notice').showModal();
 }
 
+// ---------- はじめる前のストーリー（スライド。新しく始めたときだけ。終わったら案内へ） ----------
+// S.story: 0 = まだ見ていない、-1 = 見た（前の記録には無いので出ない）
+function showStory() {
+  const hero = S.members.find((m) => m.kind === 'hero');
+  const glow = (names) => `<div class="st-icons">${names.map((n) => icon(n)).join('<span class="st-arrow"></span>')}</div>`;
+  const slides = [
+    { art: `<div class="st-face" style="background-image:url(${faceShot(hero.look, hero.job)})"></div>`, text: '小さな部屋で、<br>IT会社をはじめた' },
+    { art: glow(['task', 'coin', 'star']), text: '仕事を受けて、<br>会社を大きくする' },
+    { art: `<div class="st-legends">${[...modelIds].map((id) => `<img src="models/${id}.webp" alt="">`).join('')}</div>`, text: '時を超えて、<br>レジェンドが現れる' },
+    { art: $('.title-emblem').outerHTML.replace(/tneon/g, 'sneon'), text: '伝説のIT会社をつくれ' },
+  ];
+  const el = document.createElement('div');
+  el.id = 'story';
+  document.body.append(el);
+  let i = 0;
+  const end = () => {
+    S.story = -1;
+    save();
+    el.remove();
+    startGuide();
+  };
+  const draw = () => {
+    const sl = slides[i];
+    const last = i === slides.length - 1;
+    el.innerHTML = `
+      <button class="st-skip" aria-label="とばす">×</button>
+      <div class="st-slide" key="${i}">${sl.art}<p>${sl.text}</p></div>
+      <div class="st-foot"><div class="dots">${slides.map((_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('')}</div>
+      <button class="big st-next">${last ? 'はじめる' : '次へ'}</button></div>`;
+    el.querySelector('.st-skip').onclick = end;
+    el.querySelector('.st-next').onclick = () => (last ? end() : (i++, draw()));
+  };
+  draw();
+}
+
 // ---------- 最初の1回だけの案内（光る枠と短い言葉） ----------
 // S.guide: 何番目の案内か（新しく始めたときだけ 0 から。終わったら -1。前の記録には無いので出ない）
 // tap: その場所を押すと次へ / ok: 「OK」で次へ。back: 枠の場所が見つからないときに戻る番号
@@ -1352,10 +1426,10 @@ document.querySelectorAll('.sync').forEach((b) => {
   b.addEventListener('pointerdown', cloud.warmUp, { once: true });
 });
 
-// 設定の画面は3つ：main（タイトルへ・名前を変更）/ rename（名前を変更）/ more（Google のログイン・ログアウト・最初から）
+// 設定の画面は4つ：main（タイトルへ・名前を変更・顔を変更）/ rename（名前を変更）/ face（顔を変更）/ more（Google のログイン・ログアウト・最初から）
 // ログアウトと「最初から」は押し間違えないよう「アカウントと記録」の奥に置き、確かめてから行う
 let settingsPage = 'main';
-const renaming = () => settingsPage === 'rename';
+const renaming = () => settingsPage === 'rename' || settingsPage === 'face'; // 入力・選んでいる途中は描き直さない
 function renderRename() {
   const hero = S.members.find((m) => m.kind === 'hero');
   $('#settings-body').innerHTML = `
@@ -1369,6 +1443,21 @@ function renderRename() {
     const company = $('#set-company').value.trim();
     if (name) hero.name = name; // 空のときは元のまま
     if (company) S.company = G.companyTitle(company);
+    commit();
+    setPage('main');
+  };
+}
+function renderFace() {
+  const hero = S.members.find((m) => m.kind === 'hero');
+  const look = { ...defaultLook(), ...hero.look };
+  $('#settings-body').innerHTML = `
+    <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">顔を変更</span></button>
+    <div id="set-face" class="face-editor"></div>
+    <button class="big" id="face-save">保存</button>`;
+  faceEditor($('#set-face'), look, hero.job);
+  $('#set-back').onclick = () => setPage('main');
+  $('#face-save').onclick = () => {
+    hero.look = { ...look, shirt: R.JOBS[hero.job].shirt };
     commit();
     setPage('main');
   };
@@ -1407,12 +1496,15 @@ function setPage(p) {
 function renderSettings() {
   if (settingsPage === 'rename' && S) return renderRename();
   if (settingsPage === 'more') return renderMore();
+  if (settingsPage === 'face' && S) return renderFace();
   const inGame = S && !$('#game').classList.contains('hidden');
   $('#settings-body').innerHTML = `
     ${inGame ? `<button class="big set-title" id="to-title">${icon('home')}タイトルへ</button>` : ''}
     ${inGame ? `<button class="set-row link-row" id="to-rename">${icon('pen')}<span class="grow">名前を変更</span>${icon('back', 'flip')}</button>` : ''}
+    ${inGame ? `<button class="set-row link-row" id="to-face">${icon('face')}<span class="grow">顔を変更</span>${icon('back', 'flip')}</button>` : ''}
     <button class="set-row link-row set-more" id="to-more"><span class="grow">アカウントと記録</span>${icon('back', 'flip')}</button>`;
   $('#to-rename') && ($('#to-rename').onclick = () => setPage('rename'));
+  $('#to-face') && ($('#to-face').onclick = () => setPage('face'));
   $('#to-more') && ($('#to-more').onclick = () => setPage('more'));
   $('#to-title') &&
     ($('#to-title').onclick = () => {

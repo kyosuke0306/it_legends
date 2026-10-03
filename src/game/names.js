@@ -5,6 +5,13 @@ const SKINS = [0xf6d7c3, 0xf3d2bd, 0xeac0a0, 0xd9a882, 0xf8dccb];
 const HAIRS = [0x2a1d14, 0x3b2417, 0x1d1a1a, 0x6b4a2f, 0x8a6a4a, 0x4a3426];
 const STYLES = ['short', 'side', 'long', 'bun', 'short', 'side'];
 
+// CEO の顔を選ぶときの色と髪形（main.js の faceEditor）
+export const FACE_OPTIONS = {
+  skin: [0xfbe3d3, 0xf6d7c3, 0xeac0a0, 0xd9a882, 0xc68e64, 0x8d5a3b, 0x6e4329],
+  hairColor: [0x1d1a1a, 0x3b2417, 0x6b4a2f, 0x8a6a4a, 0xe0c068, 0xa0482a, 0xc8c8d0, 0x4a5ad8],
+  hairStyle: ['short', 'side', 'long', 'bun'],
+};
+
 // 海外から来た人の名前（カタカナ）。order: 'first' は「名・姓」、'last' は「姓・名」の順
 const LIGHT = [0xfbe3d3, 0xf6d7c3, 0xf3cdb4];
 const TAN = [0xd9a882, 0xc68e64, 0xb97c50];
