@@ -1126,12 +1126,8 @@ const GUIDE = [
   { sel: '#assign[open] .temp-head', text: '派遣<br>お金を払うと、仕事の間だけ<br>人を借りられる', ok: true, sheet: true, back: 1 },
   { sel: '#assign[open] #assign-go:not([disabled])', text: 'スタート', tap: true, back: 2 },
   { sel: '.tab[data-view="office"]', text: '会社へ', tap: true },
+  // 仕事をしている間に、ほかの所を説明する
   { sel: '#rep', text: '評判<br>仕事が成功すると上がる<br>依頼が増え、引っ越しにも必要', ok: true },
-  // 手が空いたときの過ごし方は、仕事が終わってから（仕事中はボタンが押せないため）
-  { sel: '#activity .act-lock .pill', text: '仕事が終わるまで待つ', auto: true },
-  { sel: '#activity [data-act="walk"]', text: '散歩<br>レジェンドに偶然会える<br>仕事の相談も来る', ok: true },
-  { sel: '#activity [data-act="net"]', text: 'ネット<br>臨時収入が入る', ok: true },
-  { sel: '#activity [data-act="meetup"]', text: '勉強会<br>面接に来る人がいる', ok: true },
   { sel: '#upgrade', text: 'お金と評判がたまったら<br>広いオフィスへ。席が増える', ok: true },
   { sel: '#next-legend .next-legend', text: '次に会えるレジェンド', ok: true },
   { sel: '.tab[data-view="team"]', text: '仲間', tap: true },
@@ -1140,6 +1136,12 @@ const GUIDE = [
   { sel: '#view-product.active .genre', text: '自社製品を作る<br>発売すると収入が入る', ok: true },
   { sel: '.tab[data-view="legends"]', text: 'レジェンド', tap: true },
   { sel: '#zukan-grid .card', text: '条件を満たすと出会える<br>誘って仲間に', ok: true },
+  { sel: '.tab[data-view="office"]', text: '会社へ', tap: true },
+  // 手が空いたときの過ごし方は、仕事が終わってから（仕事中はボタンが押せないため）。もう終わっていれば飛ばす
+  { sel: '#activity .act-lock .pill', text: '仕事が終わるまで待つ', auto: true },
+  { sel: '#activity [data-act="walk"]', text: '散歩<br>レジェンドに偶然会える<br>仕事の相談も来る', ok: true },
+  { sel: '#activity [data-act="net"]', text: 'ネット<br>臨時収入が入る', ok: true },
+  { sel: '#activity [data-act="meetup"]', text: '勉強会<br>面接に来る人がいる', ok: true },
 ];
 const guideEl = document.createElement('div');
 guideEl.id = 'guide';
