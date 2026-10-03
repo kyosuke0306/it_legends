@@ -1087,7 +1087,7 @@ function showStory() {
   const slides = [
     { art: `<div class="st-face" style="background-image:url(${faceShot(hero.look, hero.job)})"></div>`, text: '小さな部屋で、<br>IT会社をはじめた' },
     { art: glow(['task', 'coin', 'star']), text: '仕事を受けて、<br>会社を大きくする' },
-    { art: `<div class="st-legends">${[...modelIds].map((id) => `<img src="models/${id}.webp" alt="">`).join('')}</div>`, text: '時を超えて、<br>レジェンドを雇える' },
+    { art: `<div class="st-legends">${[...modelIds].map((id) => `<img src="models/${id}.webp" alt="">`).join('')}</div>`, text: 'IT業界のレジェンドが集結<br>雇うことができるかも' },
     { art: $('.title-emblem').outerHTML.replace(/tneon/g, 'sneon'), text: '伝説のIT会社をつくれ' },
   ];
   const el = document.createElement('div');
@@ -1123,8 +1123,18 @@ const GUIDE = [
   { sel: '#assign[open] .person[data-id]', text: 'CEO に任せる', tap: true, back: 1 },
   { sel: '#assign[open] #assign-go:not([disabled])', text: 'スタート', tap: true, back: 2 },
   { sel: '.tab[data-view="office"]', text: '会社へ', tap: true },
-  { sel: '#activity', text: '手が空いたら、過ごし方', ok: true },
+  // 手が空いたときの過ごし方。それぞれ何が起きるか
+  { sel: '#activity [data-act="walk"]', text: '散歩<br>レジェンドに偶然会える<br>仕事の相談も来る', ok: true },
+  { sel: '#activity [data-act="net"]', text: 'ネット<br>臨時収入が入る', ok: true },
+  { sel: '#activity [data-act="meetup"]', text: '勉強会<br>面接に来る人がいる', ok: true },
+  { sel: '#upgrade', text: 'お金と評判がたまったら<br>広いオフィスへ。席が増える', ok: true },
   { sel: '#next-legend .next-legend', text: '次に会えるレジェンド', ok: true },
+  { sel: '.tab[data-view="team"]', text: '仲間', tap: true },
+  { sel: '#view-team.active .ad-row', text: '面接に来た人を雇う<br>求人広告で来やすくなる', ok: true },
+  { sel: '.tab[data-view="product"]', text: '製品', tap: true },
+  { sel: '#view-product.active .genre', text: '自社製品を作る<br>発売すると収入が入る', ok: true },
+  { sel: '.tab[data-view="legends"]', text: 'レジェンド', tap: true },
+  { sel: '#zukan-grid .card', text: '条件を満たすと出会える<br>誘って仲間に', ok: true },
 ];
 const guideEl = document.createElement('div');
 guideEl.id = 'guide';
@@ -1178,7 +1188,7 @@ function startGuide() {
     const ring = guideEl.querySelector('.g-ring');
     Object.assign(ring.style, { left: `${r.left - 6}px`, top: `${r.top - 6}px`, width: `${r.width + 12}px`, height: `${r.height + 12}px` });
     const b = guideEl.querySelector('.g-bubble');
-    guideEl.querySelector('.g-text').textContent = g.text;
+    guideEl.querySelector('.g-text').innerHTML = g.text; // 決まった言葉だけ（改行に <br> を使う）
     guideEl.querySelector('.g-ok').style.display = g.ok ? '' : 'none';
     const below = r.top + r.height / 2 < innerHeight / 2;
     const bw = b.offsetWidth;

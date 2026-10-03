@@ -639,7 +639,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 #guide { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
 .g-ring { position: fixed; border-radius: 16px; border: 3px solid #5fe6ff; box-shadow: 0 0 0 9999px rgba(5, 8, 20, 0.45), 0 0 18px #5fe6ff; animation: g-pulse 1.2s ease-in-out infinite; }
 @keyframes g-pulse { 50% { border-color: #b08bff; box-shadow: 0 0 0 9999px rgba(5, 8, 20, 0.45), 0 0 28px #b08bff; } }
-.g-bubble { position: fixed; display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; border-radius: 16px; background: linear-gradient(90deg, #22c8ff, #8b5cff); color: #fff; font-weight: 800; white-space: nowrap; pointer-events: auto; box-shadow: 0 8px 24px rgba(40, 60, 200, 0.4); }
+.g-bubble { position: fixed; display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; border-radius: 16px; background: linear-gradient(90deg, #22c8ff, #8b5cff); color: #fff; font-weight: 800; line-height: 1.45; max-width: calc(100vw - 16px); pointer-events: auto; box-shadow: 0 8px 24px rgba(40, 60, 200, 0.4); }
 .g-bubble button { border: 0; font: inherit; color: #fff; background: rgba(255, 255, 255, 0.22); border-radius: 10px; padding: 4px 12px; }
 .g-bubble .g-skip { background: none; padding: 0 4px; font-size: 1.1rem; opacity: 0.8; }
 /* レベルアップした人（完了・おかえりなさいの一覧） */
