@@ -635,3 +635,8 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .slot-info .muted { color: rgba(233, 251, 255, 0.6); }
 .slot-back { align-self: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3); background: transparent; color: #e9fbff; display: grid; place-items: center; cursor: pointer; }
 #rename-save { margin-top: 16px; }
+/* 設定：タイトルへは大きく押しやすく、ログアウト・最初からは「その他」の奥に小さく */
+.big.set-title { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 8px; }
+.big.set-title .ic { width: 1.2em; height: 1.2em; }
+.set-more { color: var(--muted); font-weight: 500; font-size: 0.85rem; padding-top: 18px; }
+.btn.small { padding: 5px 10px; font-size: 0.75rem; opacity: 0.8; }

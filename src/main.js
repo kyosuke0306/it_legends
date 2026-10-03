@@ -1195,12 +1195,12 @@ function showSync(text, cls) {
     el.className = `sync ${cls}`;
     el.title = text;
   }
-  if ($('#settings').open && !renaming) renderSettings(); // 名前を入力している途中は描き直さない
+  if ($('#settings').open && !renaming()) renderSettings(); // 名前を入力している途中は描き直さない
 }
 async function toggleLogin() {
   const u = cloud.currentUser();
   if (!u) return cloud.login();
-  renaming = false;
+  settingsPage = 'main';
   renderSettings();
   $('#settings').showModal();
 }
@@ -1209,59 +1209,39 @@ document.querySelectorAll('.sync').forEach((b) => {
   b.addEventListener('pointerdown', cloud.warmUp, { once: true });
 });
 
-// 名前の変更は、設定の「名前を変更」を押したときだけ入力欄を出す
-let renaming = false;
+// 設定の画面は3つ：main（タイトルへ・名前を変更・ログイン）/ rename（名前を変更）/ more（ログアウト・最初から）
+// ログアウトと「最初から」は押し間違えないよう「その他」の奥に置き、確かめてから行う
+let settingsPage = 'main';
+const renaming = () => settingsPage === 'rename';
 function renderRename() {
   const hero = S.members.find((m) => m.kind === 'hero');
   $('#settings-body').innerHTML = `
-    <button class="set-row link-row" id="rename-back">${icon('back')}<span class="grow">名前を変更</span></button>
+    <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">名前を変更</span></button>
     <label class="set-row rename"><b>CEO</b><input id="set-name" maxlength="12" autocomplete="off" value="${esc(hero.name)}" /></label>
     <label class="set-row rename"><b>株式会社</b><input id="set-company" maxlength="16" autocomplete="off" value="${esc(S.company.replace('株式会社', ''))}" /></label>
     <button class="big" id="rename-save">保存</button>`;
-  const back = () => {
-    renaming = false;
-    renderSettings();
-  };
-  $('#rename-back').onclick = back;
+  $('#set-back').onclick = () => setPage('main');
   $('#rename-save').onclick = () => {
     const name = $('#set-name').value.trim();
     const company = $('#set-company').value.trim();
     if (name) hero.name = name; // 空のときは元のまま
     if (company) S.company = G.companyTitle(company);
     commit();
-    back();
+    setPage('main');
   };
 }
-
-function renderSettings() {
-  if (renaming && S) return renderRename();
+function renderMore() {
   const u = cloud.currentUser();
-  const inGame = S && !$('#game').classList.contains('hidden');
   $('#settings-body').innerHTML = `
-    ${inGame ? `<button class="set-row link-row" id="to-rename">${icon('pen')}<span class="grow">名前を変更</span>${icon('back', 'flip')}</button>` : ''}
-    ${inGame ? `<button class="set-row link-row" id="to-title">${icon('home')}<span class="grow">タイトルへ</span>${icon('back', 'flip')}</button>` : ''}
-    <div class="set-row">${icon(u ? SYNC_ICON[syncState.cls] : 'cloud')}<span class="grow">${u ? esc(u.email ?? '') : 'Google'}</span>
-      ${u ? '<button class="btn ghost" id="logout">ログアウト</button>' : '<button class="btn" id="login">ログイン</button>'}</div>
-    ${S ? `<div class="set-row">${icon('error')}<span class="grow">最初から</span><button class="btn ghost danger" id="reset">消す</button></div>` : ''}`;
-  if ($('#login')) {
-    $('#login').onclick = () => cloud.login();
-    cloud.warmUp();
-  }
-  $('#logout') && ($('#logout').onclick = () => cloud.logout());
-  $('#to-rename') &&
-    ($('#to-rename').onclick = () => {
-      renaming = true;
-      renderRename();
-    });
-  $('#to-title') &&
-    ($('#to-title').onclick = () => {
-      save();
-      $('#settings').close();
-      showTitle();
-    });
+    <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">その他</span></button>
+    ${u ? `<div class="set-row">${icon('login')}<span class="grow muted">${esc(u.email ?? '')}</span><button class="btn ghost small" id="logout">ログアウト</button></div>` : ''}
+    ${S ? `<div class="set-row">${icon('error')}<span class="grow">最初から</span><button class="btn ghost danger small" id="reset">消す</button></div>` : ''}`;
+  $('#set-back').onclick = () => setPage('main');
+  $('#logout') && ($('#logout').onclick = () => confirm('ログアウトしますか？') && cloud.logout().then(() => setPage('main')));
   $('#reset') &&
     ($('#reset').onclick = async () => {
-      if (!confirm(`記録を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
+      if (!confirm(`記録${slot} を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
+      if (!confirm('本当に消しますか？もとに戻せません')) return;
       S = null;
       try {
         localStorage.removeItem(saveKey(slot)); // 消すのはいま遊んでいる記録だけ
@@ -1270,8 +1250,37 @@ function renderSettings() {
       location.reload();
     });
 }
+function setPage(p) {
+  settingsPage = p;
+  renderSettings();
+}
+
+function renderSettings() {
+  if (settingsPage === 'rename' && S) return renderRename();
+  if (settingsPage === 'more') return renderMore();
+  const u = cloud.currentUser();
+  const inGame = S && !$('#game').classList.contains('hidden');
+  $('#settings-body').innerHTML = `
+    ${inGame ? `<button class="big set-title" id="to-title">${icon('home')}タイトルへ</button>` : ''}
+    ${inGame ? `<button class="set-row link-row" id="to-rename">${icon('pen')}<span class="grow">名前を変更</span>${icon('back', 'flip')}</button>` : ''}
+    <div class="set-row">${icon(u ? SYNC_ICON[syncState.cls] : 'cloud')}<span class="grow">${u ? esc(u.email ?? '') : 'Google'}</span>
+      ${u ? '' : '<button class="btn" id="login">ログイン</button>'}</div>
+    ${u || S ? `<button class="set-row link-row set-more" id="to-more"><span class="grow">その他</span>${icon('back', 'flip')}</button>` : ''}`;
+  if ($('#login')) {
+    $('#login').onclick = () => cloud.login();
+    cloud.warmUp();
+  }
+  $('#to-rename') && ($('#to-rename').onclick = () => setPage('rename'));
+  $('#to-more') && ($('#to-more').onclick = () => setPage('more'));
+  $('#to-title') &&
+    ($('#to-title').onclick = () => {
+      save();
+      $('#settings').close();
+      showTitle();
+    });
+}
 $('#open-settings').onclick = () => {
-  renaming = false;
+  settingsPage = 'main';
   renderSettings();
   $('#settings').showModal();
 };
