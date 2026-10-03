@@ -956,7 +956,7 @@ function renderLegends() {
     })
     .join('');
   fillThumbs($('#zukan-grid'));
-  $('#zukan-grid').querySelectorAll('.card:not(.locked)').forEach((c) => (c.onclick = () => openLegend(c.dataset.id)));
+  $('#zukan-grid').querySelectorAll('.card').forEach((c) => (c.onclick = () => openLegend(c.dataset.id)));
 }
 
 // ---------- 偉人の詳細・出会い ----------
@@ -976,10 +976,38 @@ function legendHead(legend) {
   const q = R.LEGEND_RULES[legend.id]?.quit;
   return `<h2>${legend.name}</h2><div class="sub">${legend.title}</div>${q ? `<div class="quit-tag">${icon('back')}いつか辞める</div>` : ''}`;
 }
+// まだ仲間でないレジェンドは、姿はシルエットのまま（出会ったときと同じ）
+function showSilhouette(legend) {
+  const wrap = $('#detail-canvas').parentElement;
+  wrap.querySelector('.silhouette')?.remove();
+  thumbnailFor(legend).then((src) => {
+    if (!$('#detail').open) return;
+    const img = new Image();
+    img.src = src;
+    img.className = 'silhouette';
+    wrap.append(img);
+  });
+}
+// まだ会っていないレジェンド：力・出会いの条件・説明だけ見られる（姿はシークレット）
+function openLockedLegend(legend) {
+  detailStage ??= new Stage($('#detail-canvas'));
+  detailStage.setCharacter(null);
+  detailToken = {};
+  const conds = G.meetProgress(S, legend.id)
+    .map((c) => `<div class="cond ${c.ok ? 'ok' : ''}"><span>${esc(c.label)}</span><i><b style="width:${pct(c.ratio)}"></b></i></div>`)
+    .join('');
+  $('#detail-info').innerHTML = `${legendHead(legend)}
+    <div class="ability">${esc(R.LEGEND_RULES[legend.id].abilityText)}</div>
+    <div class="conds">${conds}</div>
+    <details><summary>くわしく</summary><p>${legend.summary}</p></details>`;
+  $('#detail').showModal();
+  showSilhouette(legend);
+}
 function openLegend(id) {
   const legend = byId[id];
   const left = G.leftLegend(S, id);
   const m = S.members.find((x) => x.legend === id) ?? left;
+  if (!m) return openLockedLegend(legend);
   // 辞めたレジェンドは、高いお金で呼び戻せる（また出会うのを待ってもよい）
   const cost = G.rehireCost(S);
   $('#detail-info').innerHTML = `${legendHead(legend)}
@@ -1013,13 +1041,7 @@ function openEncounter() {
   $('#detail').showModal();
   // まだ姿はシルエットだけ
   const wrap = $('#detail-canvas').parentElement;
-  wrap.querySelector('.silhouette')?.remove();
-  thumbnailFor(legend).then((src) => {
-    const img = new Image();
-    img.src = src;
-    img.className = 'silhouette';
-    wrap.append(img);
-  });
+  showSilhouette(legend);
   $('#scout').onclick = async () => {
     const r = G.scout(S, Date.now());
     commit();

@@ -714,3 +714,5 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .st-foot .dots i { background: rgba(255, 255, 255, 0.18); }
 .st-foot .dots i.on { background: #3ef0ff; }
 .st-foot .big { margin: 0; width: 100%; background: linear-gradient(90deg, #22c8e8, #8b5cff); color: #fff; }
+#detail-info .conds { gap: 8px; margin: 12px 0 4px; }
+#detail-info .cond { font-size: 0.8rem; }
