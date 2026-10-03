@@ -634,3 +634,4 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .slot-info .vals { color: rgba(233, 251, 255, 0.8); }
 .slot-info .muted { color: rgba(233, 251, 255, 0.6); }
 .slot-back { align-self: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3); background: transparent; color: #e9fbff; display: grid; place-items: center; cursor: pointer; }
+#rename-save { margin-top: 16px; }

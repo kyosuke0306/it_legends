@@ -1195,11 +1195,12 @@ function showSync(text, cls) {
     el.className = `sync ${cls}`;
     el.title = text;
   }
-  if ($('#settings').open) renderSettings();
+  if ($('#settings').open && !renaming) renderSettings(); // 名前を入力している途中は描き直さない
 }
 async function toggleLogin() {
   const u = cloud.currentUser();
   if (!u) return cloud.login();
+  renaming = false;
   renderSettings();
   $('#settings').showModal();
 }
@@ -1208,13 +1209,36 @@ document.querySelectorAll('.sync').forEach((b) => {
   b.addEventListener('pointerdown', cloud.warmUp, { once: true });
 });
 
+// 名前の変更は、設定の「名前を変更」を押したときだけ入力欄を出す
+let renaming = false;
+function renderRename() {
+  const hero = S.members.find((m) => m.kind === 'hero');
+  $('#settings-body').innerHTML = `
+    <button class="set-row link-row" id="rename-back">${icon('back')}<span class="grow">名前を変更</span></button>
+    <label class="set-row rename"><b>CEO</b><input id="set-name" maxlength="12" autocomplete="off" value="${esc(hero.name)}" /></label>
+    <label class="set-row rename"><b>株式会社</b><input id="set-company" maxlength="16" autocomplete="off" value="${esc(S.company.replace('株式会社', ''))}" /></label>
+    <button class="big" id="rename-save">保存</button>`;
+  const back = () => {
+    renaming = false;
+    renderSettings();
+  };
+  $('#rename-back').onclick = back;
+  $('#rename-save').onclick = () => {
+    const name = $('#set-name').value.trim();
+    const company = $('#set-company').value.trim();
+    if (name) hero.name = name; // 空のときは元のまま
+    if (company) S.company = G.companyTitle(company);
+    commit();
+    back();
+  };
+}
+
 function renderSettings() {
+  if (renaming && S) return renderRename();
   const u = cloud.currentUser();
   const inGame = S && !$('#game').classList.contains('hidden');
-  const hero = S?.members.find((m) => m.kind === 'hero');
   $('#settings-body').innerHTML = `
-    ${inGame ? `<label class="set-row rename"><b>CEO</b><input id="set-name" maxlength="12" autocomplete="off" value="${esc(hero.name)}" /></label>
-    <label class="set-row rename"><b>株式会社</b><input id="set-company" maxlength="16" autocomplete="off" value="${esc(S.company.replace('株式会社', ''))}" /></label>` : ''}
+    ${inGame ? `<button class="set-row link-row" id="to-rename">${icon('pen')}<span class="grow">名前を変更</span>${icon('back', 'flip')}</button>` : ''}
     ${inGame ? `<button class="set-row link-row" id="to-title">${icon('home')}<span class="grow">タイトルへ</span>${icon('back', 'flip')}</button>` : ''}
     <div class="set-row">${icon(u ? SYNC_ICON[syncState.cls] : 'cloud')}<span class="grow">${u ? esc(u.email ?? '') : 'Google'}</span>
       ${u ? '<button class="btn ghost" id="logout">ログアウト</button>' : '<button class="btn" id="login">ログイン</button>'}</div>
@@ -1224,17 +1248,11 @@ function renderSettings() {
     cloud.warmUp();
   }
   $('#logout') && ($('#logout').onclick = () => cloud.logout());
-  // 名前と会社名は途中でも変えられる（空のときは元に戻す）
-  const rename = (el, apply) =>
-    el &&
-    (el.onchange = () => {
-      const v = el.value.trim();
-      if (v) apply(v);
-      el.value = v || el.defaultValue;
-      commit();
+  $('#to-rename') &&
+    ($('#to-rename').onclick = () => {
+      renaming = true;
+      renderRename();
     });
-  rename($('#set-name'), (v) => (hero.name = v));
-  rename($('#set-company'), (v) => (S.company = G.companyTitle(v)));
   $('#to-title') &&
     ($('#to-title').onclick = () => {
       save();
@@ -1253,6 +1271,7 @@ function renderSettings() {
     });
 }
 $('#open-settings').onclick = () => {
+  renaming = false;
   renderSettings();
   $('#settings').showModal();
 };
