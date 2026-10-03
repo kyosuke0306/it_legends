@@ -786,11 +786,10 @@ function memberRow(m, { candidate = false } = {}) {
 }
 // 求人広告: お金を出すと、期限つきで面接に来る人が増える。出している間は残り時間を出す
 function adRow() {
-  const perDay = val('people', `+${G.adPerDay(S)}/日`);
   if (G.adActive(S, Date.now()))
-    return `<div class="panel ad-row on">${icon('ad')}<b>求人広告</b><span class="grow"></span>${perDay}${val('hourglass', `<span data-left="${S.adUntil}"></span>`)}</div>`;
+    return `<div class="panel ad-row on">${icon('ad')}<b>求人広告</b><span class="grow"></span>${val('hourglass', `<span data-left="${S.adUntil}"></span>`)}</div>`;
   const cost = G.adCost(S);
-  return `<button class="panel ad-row" id="ad" ${S.money < cost ? 'disabled' : ''}>${icon('ad')}<b>求人広告</b><span class="grow"></span>${perDay}${val('clock', dur(R.AD_DAYS * R.DAY))}${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}</button>`;
+  return `<button class="panel ad-row" id="ad" ${S.money < cost ? 'disabled' : ''}>${icon('ad')}<b>求人広告</b><span class="grow"></span>${val('clock', dur(R.AD_DAYS * R.DAY))}${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}</button>`;
 }
 function renderTeam() {
   S.teamSeenAt = Date.now(); // 仲間タブを見た（通知の点を消す）
