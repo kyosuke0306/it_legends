@@ -147,7 +147,10 @@ function addOffer(s, now, forceTier, easy = false) {
     const r = rand(s);
     tier = r < 0.55 ? maxTier : r < 0.85 ? Math.max(0, maxTier - 1) : Math.floor(rand(s) * (maxTier + 1));
   }
-  const tpl = pick(s, R.TASKS.filter((t) => t.tier === tier));
+  // いま並んでいる依頼と同じ名前はなるべく出さない（全部並んでいるときだけ重なる）
+  const pool = R.TASKS.filter((t) => t.tier === tier);
+  const fresh = pool.filter((t) => !s.offers.some((o) => o.title === t.title));
+  const tpl = pick(s, fresh.length ? fresh : pool);
   const T = R.TIERS[tier];
   const hours = easy ? pick(s, [1, 2]) : pick(s, T.hours);
   const diff = Math.round(easy ? T.diff[0] * 0.8 : between(s, ...T.diff));
