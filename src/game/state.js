@@ -342,7 +342,7 @@ function finishDev(s, dev, t, ev) {
   for (const m of team) m.busy = null;
   s.devs = s.devs.filter((x) => x !== dev);
   addLog(s, t, `${product.name}  発売`, 'good');
-  ev.push({ type: 'product', name: product.name, q });
+  ev.push({ type: 'product', id: product.id, genre: dev.genre, name: product.name, q });
 }
 
 export function productIncome(s, p, t, ce = companyEffects(s)) {

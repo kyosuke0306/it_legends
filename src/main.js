@@ -170,6 +170,24 @@ function rating(q) {
   const n = Math.max(1, Math.min(5, Math.round(q * 2)));
   return `<span class="rating">${'<i class="on"></i>'.repeat(n)}${'<i></i>'.repeat(5 - n)}</span>`;
 }
+// 製品の種類ごとの絵と色（アプリのアイコンのような四角）
+const GENRE_LOOK = {
+  web: ['g_web', '#36b6ff', '#4b6bff'],
+  app: ['g_app', '#22d3a6', '#1f8fd6'],
+  game: ['g_game', '#ff6f9f', '#a24bff'],
+  biz: ['g_biz', '#5d7bff', '#2e3f9e'],
+  ai: ['g_ai', '#b06bff', '#ff5fb7'],
+  cloud: ['cloud', '#5fd3ff', '#3a7bff'],
+  sns: ['g_sns', '#ff9a3d', '#ff4f7a'],
+  car: ['g_car', '#2fd17a', '#14866b'],
+  quantum: ['g_quantum', '#8f6bff', '#2b1d7a'],
+  satnet: ['g_satnet', '#2f6bff', '#0b1d55'],
+  agi: ['spark', '#ffd35a', '#ff7a2f'],
+};
+function prodIcon(genre, cls = '') {
+  const [ic, a, b] = GENRE_LOOK[genre] ?? GENRE_LOOK.web;
+  return `<span class="prod-ic ${cls}" style="--g1:${a};--g2:${b}">${icon(ic)}</span>`;
+}
 function progress(start, end) {
   return `<div class="prog"><div class="bar" data-start="${start}" data-ends="${end}"><i></i></div><span class="left" data-left="${end}"></span></div>`;
 }
@@ -862,12 +880,14 @@ function renderProduct() {
         .join('')}</span></div>${progress(d.startAt, d.endsAt)}</button>`,
     )
     .join('');
-  const products = S.products
+  // 発売した製品：アプリのアイコンのような絵・名前・出来・1時間の稼ぎ・これまでの稼ぎ（新しい順）
+  const products = [...S.products]
+    .reverse()
     .map(
       (p) => `<div class="panel prod">
-        <span class="pname">${esc(p.name)}<small>${R.GENRES[p.genre].name}</small></span>
-        ${rating(p.q)}
-        <span class="val strong">+${yen(G.productIncome(S, p, now, ce))}/時</span>
+        ${prodIcon(p.genre)}
+        <span class="prod-main"><b>${esc(p.name)}</b><small>${R.GENRES[p.genre].name}</small>${rating(p.q)}</span>
+        <span class="prod-earn"><b>+${yen(G.productIncome(S, p, now, ce))}<small>/時</small></b><small>${icon('wallet')}${yen(p.earned ?? 0)}</small></span>
         <button class="x" data-stop="${p.id}" aria-label="販売終了">×</button>
       </div>`,
     )
@@ -876,7 +896,7 @@ function renderProduct() {
     <div class="sec">${icon('clock')}<span data-left="${next}"></span></div>
     <div class="genres">${genres}</div>
     ${devs}
-    ${products}`;
+    ${S.products.length ? `<div class="sec prod-head">${icon('box')}<b>自社製品</b><span class="grow"></span>${val('coin', `+${yen(hourlyIncome())}/時`, 'ok')}</div>${products}` : ''}`;
   const v = $('#view-product');
   v.querySelectorAll('[data-genre]').forEach((b) => (b.onclick = () => assignDev(b.dataset.genre)));
   fillThumbs(v);
@@ -1358,12 +1378,28 @@ function resultsHtml(ev, { head = true } = {}) {
         <span class="vals">${t.great ? icon('bolt', 'res-great') : ''}${t.early ? icon('clock', 'res-early') : ''}${val('coin', `+${yen(t.money)}`, t.ok ? 'ok' : '')}${t.rep ? val('star', `${t.rep > 0 ? '+' : ''}${t.rep}`, t.rep < 0 ? 'bad' : '') : ''}</span></div>`,
     ),
     tasks.length > 5 ? `<div class="muted">+${tasks.length - 5}</div>` : '',
-    ...prods.map((p) => `<div class="result ok">${icon('box')}<b>${esc(p.name)}</b><span class="vals">${rating(p.q)}</span></div>`),
+    ...prods.map((p) => launchCard(p, !tasks.length)),
     ...levelRows(levels),
   ];
   const list = `<div class="results">${rows.join('')}</div>`;
   // 見出しはいつも「完了」（成功・失敗は1行ずつの札で見せる。見出しまで「失敗」にすると二重になる）
+  // 製品だけのときは見出しも「発売」
+  if (head && prods.length && !tasks.length) return `<h2 class="launch-h">発売</h2>${list}`;
   return head ? `${icon(tasks.some((t) => t.ok) || prods.length ? 'check' : 'task', 'big-ic done-ic')}<h2>完了</h2>${list}` : list;
+}
+// 発売した製品は大きなカードで（光る絵・名前・出来・はじめの1時間の稼ぎ）。見出しが「発売」のときは札を出さない（二重になるため）
+function launchCard(e, alone = false) {
+  const p = S.products.find((x) => x.id === e.id);
+  const genre = e.genre ?? p?.genre ?? 'web';
+  const income = p ? G.productIncome(S, p, p.launchedAt) : 0;
+  return `<div class="launch">
+    <div class="launch-art">${prodIcon(genre, 'big')}</div>
+    ${alone ? '' : `<span class="launch-tag">${icon('box')}発売</span>`}
+    <b class="launch-name">${esc(e.name)}</b>
+    <small>${R.GENRES[genre]?.name ?? ''}</small>
+    ${rating(e.q)}
+    ${income ? `<span class="launch-earn">+${yen(income)}<small>/時</small></span>` : ''}
+  </div>`;
 }
 
 // レベルが上がった人（同じ人が何度も上がったら1行にまとめて「Lv2 → Lv4」）

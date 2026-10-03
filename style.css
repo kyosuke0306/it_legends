@@ -385,8 +385,41 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 .t.up2 { color: var(--bad); }
 .t.down { color: #4a78c2; }
 .genre .vals { font-size: 0.78rem; color: var(--muted); }
-.prod { display: flex; align-items: center; gap: 12px; }
-.prod .val { font-size: 0.9rem; }
+.prod { display: flex; align-items: center; gap: 12px; position: relative; }
+.prod-ic { display: grid; place-items: center; width: 52px; height: 52px; flex: none; border-radius: 14px; color: #fff; background: linear-gradient(140deg, var(--g1), var(--g2)); box-shadow: 0 4px 12px color-mix(in srgb, var(--g2) 45%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+.prod-ic .ic { width: 28px; height: 28px; stroke-width: 1.7; }
+.prod-ic.big { width: 92px; height: 92px; border-radius: 24px; }
+.prod-ic.big .ic { width: 50px; height: 50px; stroke-width: 1.5; }
+.prod-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prod-main b { font-size: 0.98rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prod-main small { color: var(--muted); font-size: 0.74rem; }
+.prod-earn { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; margin-right: 14px; }
+.prod-earn b { color: var(--ok); font-size: 1.02rem; white-space: nowrap; }
+.prod-earn b small { font-size: 0.72rem; margin-left: 1px; }
+.prod-earn > small { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); font-size: 0.74rem; white-space: nowrap; }
+.prod-earn > small .ic { width: 1em; height: 1em; }
+.prod .x { position: absolute; top: 6px; right: 6px; }
+.prod-head b { color: var(--text); font-size: 0.95rem; }
+/* 発売のお知らせ：光る絵と大きな名前 */
+.launch { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 22px 12px 18px; border-radius: 18px; overflow: hidden; text-align: center;
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--gold) 22%, transparent), transparent 65%), color-mix(in srgb, var(--text) 4%, transparent); }
+.launch-art { position: relative; margin-bottom: 8px; animation: launch-pop 0.7s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.launch-art::before { content: ''; position: absolute; inset: -40px; z-index: -1; border-radius: 50%;
+  background: repeating-conic-gradient(color-mix(in srgb, var(--gold) 40%, transparent) 0 10deg, transparent 10deg 30deg);
+  -webkit-mask: radial-gradient(circle, #000 30%, transparent 70%); mask: radial-gradient(circle, #000 30%, transparent 70%); animation: launch-spin 12s linear infinite; }
+.launch-art .prod-ic::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%); background-size: 250% 100%; animation: launch-shine 2.4s ease-in-out 0.5s infinite; }
+.launch-art .prod-ic { position: relative; overflow: hidden; }
+.launch-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; color: #fff; background: linear-gradient(90deg, #f0b93a, #ff7a2f); }
+.launch-tag .ic { width: 1em; height: 1em; }
+.launch-name { font-size: 1.25rem; margin-top: 4px; }
+.launch small { color: var(--muted); font-size: 0.78rem; }
+.launch-earn { margin-top: 4px; font-weight: 800; font-size: 1.15rem; color: var(--ok); }
+.launch-earn small { color: inherit; font-size: 0.75rem; }
+.launch-h { margin-top: 0; }
+@keyframes launch-pop { from { transform: scale(0.3) rotate(-12deg); opacity: 0; } }
+@keyframes launch-spin { to { transform: rotate(360deg); } }
+@keyframes launch-shine { 0% { background-position: 150% 0; } 60%, 100% { background-position: -50% 0; } }
+@media (prefers-reduced-motion: reduce) { .launch-art, .launch-art::before, .launch-art .prod-ic::after { animation: none; } }
 .x { border: 0; background: none; color: var(--muted); font-size: 1.2rem; padding: 0 2px; }
 
 /* ---------- 偉人 ---------- */
