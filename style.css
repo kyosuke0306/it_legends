@@ -684,6 +684,10 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .fe-opt { padding: 0; border: 0; background: none; border-radius: 50%; }
 .fe-pic { display: block; width: 58px; height: 58px; border-radius: 50%; background-color: var(--panel); box-shadow: 0 0 0 1px var(--line); }
 .fe-opt.on .fe-pic { box-shadow: 0 0 0 3px var(--accent); }
+.fe-gender { gap: 18px; }
+.fe-gender .fe-opt { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+.fe-gender .fe-pic { width: 72px; height: 72px; }
+.fe-gender .fe-opt.on { color: var(--accent); }
 #settings .face-editor { margin: 8px 0 14px; }
 
 /* はじめる前のストーリー（スライド） */

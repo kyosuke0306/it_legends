@@ -87,12 +87,34 @@ export function buildChibi(look) {
   head.add(eyes);
   parts.eyes = eyes;
 
-  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 16, Math.PI), mat(0x8a3b3b));
+  // 女性はまつ毛と、少し赤い口（CEO の顔を選ぶとき、男女が見分けやすいように）
+  const female = look.gender === 'f';
+  if (female) {
+    for (const side of [-1, 1]) {
+      for (const k of [0, 1]) {
+        const lash = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.022, 0.02), dark);
+        lash.position.set((0.25 + k * 0.015) * side, 0.045 + k * 0.035, R - 0.065 - k * 0.012);
+        lash.rotation.z = (0.5 + k * 0.35) * side;
+        lash.rotation.y = -0.45 * side;
+        head.add(lash);
+      }
+    }
+  }
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.05, female ? 0.016 : 0.012, 6, 16, Math.PI), mat(female ? 0xd2506a : 0x8a3b3b));
   mouth.rotation.z = Math.PI;
   mouth.position.set(0, -0.2, R - 0.04);
   head.add(mouth);
 
   addHair(head, look.hairStyle, hair, R);
+  // 女性で髪を結んでいるときも、顔の横に少し髪を垂らす（前から見て男女がわかるように）
+  if (female && ['ponytail', 'bun'].includes(look.hairStyle)) {
+    for (const side of [-1, 1]) {
+      const lock = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.28, 6, 12), hair);
+      lock.position.set(0.47 * side, -0.12, 0.16);
+      lock.rotation.z = 0.12 * side;
+      head.add(lock);
+    }
+  }
 
   if (look.beard) {
     const beard = new THREE.Mesh(
@@ -151,6 +173,51 @@ function addHair(head, style, hair, R) {
       back.scale.z = 0.6;
       back.position.set(0, -0.25, -0.18);
       head.add(back);
+      // 顔の横に垂れる髪（前から見ても長い髪とわかるように）
+      for (const side of [-1, 1]) {
+        const lock = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.5, 6, 12), hair);
+        lock.position.set(0.47 * side, -0.25, 0.12);
+        lock.rotation.z = 0.08 * side;
+        head.add(lock);
+      }
+      break;
+    }
+    case 'spiky': {
+      // ツンツン頭
+      cap(-0.35);
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.26, 8), hair);
+        const tip = new THREE.Vector3(Math.sin(a) * 0.26, 0.62, Math.cos(a) * 0.26 - 0.08);
+        spike.position.copy(tip);
+        spike.lookAt(tip.clone().multiplyScalar(2).setY(tip.y * 1.6));
+        spike.rotateX(Math.PI / 2);
+        head.add(spike);
+      }
+      break;
+    }
+    case 'mash': {
+      // マッシュ（おでこまでかかる丸い前髪）
+      const m = cap(-0.05, Math.PI * 0.48);
+      m.scale.set(1.04, 1, 1.04);
+      break;
+    }
+    case 'bob': {
+      // ボブ（耳の下までの丸い髪。顔の前は空ける）
+      cap(-0.3);
+      const side = new THREE.Mesh(new THREE.SphereGeometry(R * 1.1, 40, 16, Math.PI / 2 + 0.75, Math.PI * 2 - 1.5, Math.PI * 0.25, Math.PI * 0.4), hair);
+      head.add(side);
+      break;
+    }
+    case 'ponytail': {
+      cap(-0.3);
+      const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.42, 6, 12), hair);
+      tail.position.set(0, -0.08, -0.66);
+      tail.rotation.x = 0.35;
+      const tie = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.025, 6, 16), mat(0xe0406a));
+      tie.position.set(0, 0.2, -0.58);
+      tie.rotation.x = Math.PI / 2 + 0.35;
+      head.add(tail, tie);
       break;
     }
     case 'bun': {

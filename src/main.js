@@ -136,24 +136,29 @@ function faceShot(look, job) {
 }
 function faceEditor(box, look, job) {
   const noGlasses = ['data', 'consul'].includes(job); // この2つの職種はもともとメガネ
+  look.gender = genderOf(look);
   const pic = (l) => `<span class="fe-pic" style="background-image:url(${faceShot({ ...look, ...l }, job)})"></span>`;
   const sw = (key, list) =>
     `<div class="fe-row">${list.map((c) => `<button class="fe-sw ${look[key] === c ? 'on' : ''}" data-k="${key}" data-v="${c}" style="--c:${hex(c)}"></button>`).join('')}</div>`;
   box.innerHTML = `
     <div class="fe-main" style="background-image:url(${faceShot(look, job)})"></div>
+    <div class="fe-row fe-gender">${[['m', '男性'], ['f', '女性']].map(([g, t]) => `<button class="fe-opt ${look.gender === g ? 'on' : ''}" data-k="gender" data-v="${g}">${pic({ gender: g, hairStyle: look.gender === g ? look.hairStyle : FACE_OPTIONS.hairStyle[g][0] })}<span>${t}</span></button>`).join('')}</div>
     ${sw('skin', FACE_OPTIONS.skin)}
     ${sw('hairColor', FACE_OPTIONS.hairColor)}
-    <div class="fe-row">${FACE_OPTIONS.hairStyle.map((h) => `<button class="fe-opt ${look.hairStyle === h ? 'on' : ''}" data-k="hairStyle" data-v="${h}">${pic({ hairStyle: h })}</button>`).join('')}</div>
+    <div class="fe-row">${FACE_OPTIONS.hairStyle[look.gender].map((h) => `<button class="fe-opt ${look.hairStyle === h ? 'on' : ''}" data-k="hairStyle" data-v="${h}">${pic({ hairStyle: h })}</button>`).join('')}</div>
     ${noGlasses ? '' : `<div class="fe-row">${[false, true].map((g) => `<button class="fe-opt ${Boolean(look.glasses) === g ? 'on' : ''}" data-k="glasses" data-v="${g}">${pic({ glasses: g })}</button>`).join('')}</div>`}`;
   box.onclick = (e) => {
     const b = e.target.closest('[data-k]');
     if (!b) return;
     const { k, v } = b.dataset;
-    look[k] = k === 'hairStyle' ? v : k === 'glasses' ? v === 'true' : +v;
+    look[k] = k === 'hairStyle' || k === 'gender' ? v : k === 'glasses' ? v === 'true' : +v;
+    if (k === 'gender' && !FACE_OPTIONS.hairStyle[v].includes(look.hairStyle)) look.hairStyle = FACE_OPTIONS.hairStyle[v][0];
     faceEditor(box, look, job);
   };
 }
-const defaultLook = () => ({ hairStyle: 'short', skin: FACE_OPTIONS.skin[1], hairColor: FACE_OPTIONS.hairColor[0], glasses: false });
+// 男女を選ぶ前の記録の CEO は、髪形から決める
+const genderOf = (look) => look.gender ?? (FACE_OPTIONS.hairStyle.f.includes(look.hairStyle) ? 'f' : 'm');
+const defaultLook = () => ({ gender: 'm', hairStyle: 'short', skin: FACE_OPTIONS.skin[1], hairColor: FACE_OPTIONS.hairColor[0], glasses: false });
 
 // 4つの能力を小さな棒で（ラベルは1文字）
 function statBars(st) {
@@ -1469,7 +1474,7 @@ function renderRename() {
 }
 function renderFace() {
   const hero = S.members.find((m) => m.kind === 'hero');
-  const look = { ...defaultLook(), ...hero.look };
+  const look = { ...defaultLook(), ...hero.look, gender: genderOf(hero.look) };
   $('#settings-body').innerHTML = `
     <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">顔を変更</span></button>
     <div id="set-face" class="face-editor"></div>
