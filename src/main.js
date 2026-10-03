@@ -131,6 +131,7 @@ function fillThumbs(root) {
   requestAnimationFrame(draw);
 })();
 
+let modelIds = new Set(); // 3Dのできているレジェンド（models/manifest.json）
 // タイトルに、3Dのできているレジェンドを並べる。仲間にした人だけ姿を見せ、ほかは影（シークレット）
 async function titleLegends() {
   const box = $('#title-legends');
@@ -139,6 +140,7 @@ async function titleLegends() {
   try {
     ids = await (await fetch('models/manifest.json')).json();
   } catch {}
+  modelIds = new Set(ids);
   const owned = new Set((S ?? loadLocal())?.members.filter((m) => m.kind === 'legend').map((m) => m.legend) ?? []);
   const mid = (ids.length - 1) / 2;
   box.innerHTML = ids
@@ -257,6 +259,7 @@ function enterGame() {
     welcomeBack(...pendingWelcome);
     pendingWelcome = null;
   }
+  startGuide();
 }
 
 document.querySelectorAll('.tab').forEach((tab) => {
@@ -300,6 +303,42 @@ function hourlyIncome() {
   const ce = G.companyEffects(S);
   return S.products.reduce((a, p) => a + G.productIncome(S, p, Date.now(), ce), 0);
 }
+// 次に会えそうなレジェンド（影）と、いちばん足りない条件を会社の画面の左下に出す。押すとレジェンドタブでその人を光らせる
+// 進み具合が同じなら、3Dのできている人・会いやすい人（rarity）を先に。ほかのレジェンドが条件の人は後回し
+function nextLegend() {
+  const owned = G.ownedLegends(S);
+  const order = { R: 0, SR: 1, SSR: 2 };
+  const list = [];
+  for (const l of LEGENDS) {
+    if (owned.has(l.id) || G.leftLegend(S, l.id)) continue;
+    const conds = G.meetProgress(S, l.id);
+    if (!conds.length) continue;
+    const avg = conds.reduce((a, c) => a + c.ratio, 0) / conds.length;
+    list.push({ l, conds, avg, key: [-avg, R.LEGEND_RULES[l.id].meet.legends ? 1 : 0, modelIds.has(l.id) ? 0 : 1, order[l.rarity]] });
+  }
+  list.sort((a, b) => a.key.findIndex((v, i) => v !== b.key[i]) < 0 ? 0 : (([x, y]) => x - y)(a.key.map((v, i) => [v, b.key[i]]).find(([x, y]) => x !== y)));
+  return list[0] ?? null;
+}
+function renderNextLegend(show) {
+  const n = show && nextLegend();
+  const box = $('#next-legend');
+  if (!n) return (box.innerHTML = '');
+  // まだのうちで、いちばん進んでいない条件（次にやること）
+  const todo = n.conds.filter((c) => !c.ok).sort((a, b) => a.ratio - b.ratio)[0];
+  box.innerHTML = `<button class="next-legend" id="go-next-legend">
+    <span class="nl-thumb"><img data-thumb="${n.l.id}" alt=""></span>
+    <span class="nl-main">${todo ? `<small>${esc(todo.label)}</small><i><b style="width:${pct(todo.ratio)}"></b></i>` : `<small>${icon('spark')}</small>`}</span>
+  </button>`;
+  fillThumbs(box);
+  $('#go-next-legend').onclick = () => {
+    $('.tab[data-view="legends"]').click();
+    const card = $(`#zukan-grid .card[data-id="${n.l.id}"]`);
+    card?.scrollIntoView({ block: 'center' });
+    card?.classList.add('pulse');
+    setTimeout(() => card?.classList.remove('pulse'), 2400);
+  };
+}
+
 function renderOffice() {
   office.sync(S);
   const o = R.OFFICES[S.office];
@@ -312,6 +351,7 @@ function renderOffice() {
     ? `<button class="encounter" id="go-encounter">${icon('spark', 'spin')}<span>誰かが現れた</span><span class="left" data-left="${enc.until}"></span></button>`
     : '';
   if (enc) $('#go-encounter').onclick = openEncounter;
+  renderNextLegend(!enc);
   // CEO の過ごし方（いつもどれか1つ）。右下の小さなアイコンは、それで起きる出来事
   const EVENT_ICON = { legend: 'spark', luck: 'coin', walkin: 'people' };
   // CEO が仕事中は選べない（仕事が終わるまでの時間を上に出す）
@@ -717,8 +757,10 @@ async function showOnDetail(legend, { reveal = false } = {}) {
   const obj = await p;
   if (token === detailToken) detailStage.setCharacter(obj);
 }
+// 我の強いレジェンドは「いつか辞める」と、誘う前から見せておく（あとで辞めても理不尽に感じないように）
 function legendHead(legend) {
-  return `<h2>${legend.name}</h2><div class="sub">${legend.title}</div>`;
+  const q = R.LEGEND_RULES[legend.id]?.quit;
+  return `<h2>${legend.name}</h2><div class="sub">${legend.title}</div>${q ? `<div class="quit-tag">${icon('back')}いつか辞める</div>` : ''}`;
 }
 function openLegend(id) {
   const legend = byId[id];
@@ -788,7 +830,90 @@ $('#notice-ok').onclick = () => $('#notice').close();
 function notice(html) {
   $('#notice-body').innerHTML = html;
   fillThumbs($('#notice-body'));
+  // 辞めたレジェンドを押すと、呼び戻す画面へ
+  $('#notice-body').querySelectorAll('[data-legend]').forEach(
+    (b) =>
+      (b.onclick = () => {
+        $('#notice').close();
+        openLegend(b.dataset.legend);
+      }),
+  );
   if (!$('#notice').open) $('#notice').showModal();
+}
+
+// ---------- 最初の1回だけの案内（光る枠と短い言葉） ----------
+// S.guide: 何番目の案内か（新しく始めたときだけ 0 から。終わったら -1。前の記録には無いので出ない）
+// tap: その場所を押すと次へ / ok: 「OK」で次へ。back: 枠の場所が見つからないときに戻る番号
+const GUIDE = [
+  { sel: '.tab[data-view="work"]', text: '仕事を受ける', tap: true },
+  { sel: '#view-work.active [data-offer]', text: '依頼を選ぶ', tap: true, back: 0 },
+  { sel: '#assign[open] .person[data-id]', text: 'CEO に任せる', tap: true, back: 1 },
+  { sel: '#assign[open] #assign-go:not([disabled])', text: 'スタート', tap: true, back: 2 },
+  { sel: '.tab[data-view="office"]', text: '会社へ', tap: true },
+  { sel: '#activity', text: '手が空いたら、過ごし方', ok: true },
+  { sel: '#next-legend .next-legend', text: '次に会えるレジェンド', ok: true },
+];
+const guideEl = document.createElement('div');
+guideEl.id = 'guide';
+guideEl.innerHTML = `<div class="g-ring"></div><div class="g-bubble"><span class="g-text"></span><button class="g-ok">OK</button><button class="g-skip" aria-label="閉じる">×</button></div>`;
+let guideLoop = 0;
+function guideStep() {
+  return S && S.guide >= 0 && S.guide < GUIDE.length ? GUIDE[S.guide] : null;
+}
+function guideNext() {
+  S.guide = S.guide + 1 >= GUIDE.length ? -1 : S.guide + 1;
+  save();
+}
+function guideEnd() {
+  S.guide = -1;
+  save();
+  guideEl.remove();
+}
+guideEl.querySelector('.g-ok').onclick = () => guideNext();
+guideEl.querySelector('.g-skip').onclick = () => guideEnd();
+// 枠の場所を押したら次へ（押した処理はそのまま動く）
+document.addEventListener(
+  'click',
+  (e) => {
+    const g = guideStep();
+    if (g?.tap && e.target.closest(g.sel)) guideNext();
+  },
+  true,
+);
+function startGuide() {
+  if (guideLoop || !guideStep()) return;
+  const tick = () => {
+    const g = guideStep();
+    if (!g || $('#game').classList.contains('hidden')) {
+      guideEl.remove();
+      guideLoop = 0;
+      return;
+    }
+    guideLoop = requestAnimationFrame(tick);
+    const el = [...document.querySelectorAll(g.sel)].find((x) => x.offsetParent);
+    if (!el) {
+      if (g.back != null && !$('#notice').open) S.guide = g.back; // シートを閉じたなどで場所がなくなったら1つ前へ
+      else if (g.ok) guideNext(); // 見せるだけの案内は、場所がなければ飛ばす
+      guideEl.style.display = 'none';
+      return;
+    }
+    // ポップアップ（ダイアログ）の中の場所は、案内もその中に入れないと見えない
+    const host = el.closest('dialog') ?? document.body;
+    if (guideEl.parentElement !== host) host.append(guideEl);
+    guideEl.style.display = '';
+    const r = el.getBoundingClientRect();
+    const ring = guideEl.querySelector('.g-ring');
+    Object.assign(ring.style, { left: `${r.left - 6}px`, top: `${r.top - 6}px`, width: `${r.width + 12}px`, height: `${r.height + 12}px` });
+    const b = guideEl.querySelector('.g-bubble');
+    guideEl.querySelector('.g-text').textContent = g.text;
+    guideEl.querySelector('.g-ok').style.display = g.ok ? '' : 'none';
+    const below = r.top + r.height / 2 < innerHeight / 2;
+    const bw = b.offsetWidth;
+    b.style.left = `${Math.min(Math.max(8, r.left + r.width / 2 - bw / 2), innerWidth - bw - 8)}px`;
+    b.style.top = below ? `${r.bottom + 14}px` : `${r.top - b.offsetHeight - 14}px`;
+    b.classList.toggle('up', !below);
+  };
+  guideLoop = requestAnimationFrame(tick);
 }
 
 // ---------- 壁の落書き（自分で描く） ----------
@@ -960,7 +1085,7 @@ function rivalsHtml(ev, { head = true } = {}) {
       ${r.poached ? val('people', '-1', 'bad') : val('coin', `-${yen(r.money)}`, 'bad')}
     </div>`,
   );
-  return `${head ? `${icon('error', 'big-ic rival-ic')}<h2>冷やかし</h2>` : ''}<div class="results">${rows.join('')}</div>`;
+  return `${head ? `${icon('error', 'big-ic rival-ic')}<h2>冷やかし</h2><p class="muted small">${icon('task')}仕事中に来る</p>` : ''}<div class="results">${rows.join('')}</div>`;
 }
 
 // 自分から辞めたレジェンド（呼び戻すお金も出す）
@@ -968,11 +1093,11 @@ function quitsHtml(ev, { head = true } = {}) {
   const qs = ev.filter((e) => e.type === 'quit');
   if (!qs.length) return '';
   const rows = qs.map(
-    (q) => `<div class="rival">
+    (q) => `<button class="rival quit-row" data-legend="${q.id}">
       <span class="av legend" style="--c:var(--muted)"><img data-thumb="${q.id}" alt=""></span>
       <span class="rival-what"><b>${esc(byId[q.id].name)}</b><small>${esc(R.LEGEND_RULES[q.id].quitText)}</small></span>
-      ${val('crown', '-1', 'bad')}
-    </div>`,
+      <span class="quit-back">${icon('back')}呼び戻す</span>
+    </button>`,
   );
   return `${head ? `${icon('back', 'big-ic rival-ic')}<h2>辞任</h2>` : ''}<div class="results">${rows.join('')}</div>`;
 }

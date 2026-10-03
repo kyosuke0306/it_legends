@@ -135,6 +135,7 @@ export const PRODUCT_HALF_LIFE = 7 * DAY; // 収入が半分になるまでの�
 export const TREND_PERIOD = 2 * DAY; // 流行が変わる間隔
 
 export const START_MONEY = 100_000;
+export const FIRST_OFFER_HOURS = [1 / 6, 0.5, 1]; // 始めたときの依頼の時間（10分・30分・1時間。2026-10-03 序盤を速く）
 export const OFFER_EVERY = 2 * HOUR; // 新しい依頼が届く間隔
 export const OFFER_LIFE = 18 * HOUR; // 依頼の受付期限
 export const BASE_OFFERS = 4;
@@ -182,6 +183,8 @@ export const LUCKS = [
 export const RIVAL_PER_HOUR = 1 / 96; // 仕事をし続けて平均4日に1回くらい
 export const RIVAL_POACH = 0.25; // 社員を引き抜かれる確率（社員が2人以上いて、手の空いている社員がいるとき。最後の1人は取られない）
 export const RIVAL_STAY = 20 * 60_000;
+export const RIVAL_GRACE = 3 * DAY; // 始めてからしばらくは冷やかしに来ない（最初から取られると理不尽に感じるため。2026-10-03）
+export const LEGEND_SETTLE = 7 * DAY; // 仲間になって（戻って）しばらくは辞めない
 // お金を減らされるとき。amount は今の会社の仕事1時間ぶんの報酬の何倍か
 export const RIVAL_HITS = [
   { title: '安い値段で仕事を横取りされた', amount: [3, 6] },

@@ -53,11 +53,13 @@ export function newGame({ job, name, company }, now = Date.now()) {
     counts: { tasks: 0, cat: {}, products: 0 },
     log: [],
     nextId: 1,
+    guide: 0, // 最初の1回だけの案内（main.js の GUIDE）
   };
   const hero = makePerson(s, job, { hero: true });
   hero.name = name;
   s.members.push(hero);
-  for (let i = 0; i < 3; i++) addOffer(s, now, 0, true); // 最初は短くてやさしい仕事
+  // 最初は短くてやさしい仕事（10分・30分・1時間）。始めてすぐ「終わった」「育った」が見られるように
+  for (const h of R.FIRST_OFFER_HOURS) addOffer(s, now, 0, h);
   refreshCandidates(s, now);
   addLog(s, now, `${s.company} 創業`);
   return s;
@@ -78,9 +80,9 @@ function makePerson(s, job, { hero = false } = {}) {
   return m;
 }
 
-function makeLegend(s, id) {
+function makeLegend(s, id, now) {
   const rule = R.LEGEND_RULES[id];
-  return { id: newId(s), kind: 'legend', legend: id, name: LEGEND_BY_ID[id].name, stats: { ...rule.stats }, level: 1, xp: 0, busy: null };
+  return { id: newId(s), kind: 'legend', legend: id, name: LEGEND_BY_ID[id].name, stats: { ...rule.stats }, level: 1, xp: 0, busy: null, joinedAt: now };
 }
 
 // ---------- 効果（職種の得意・偉人の力） ----------
@@ -140,6 +142,7 @@ export const capacity = (s) => R.OFFICES[s.office].cap + (s.floors ?? 0) * R.FLO
 export const seatsUsed = (s) => s.members.filter((m) => m.kind !== 'legend').length;
 
 // ---------- 依頼（受託の仕事） ----------
+// easy: 最初の仕事の時間（時間。0 や false ならふつうの仕事）
 function addOffer(s, now, forceTier, easy = false) {
   const maxTier = Math.min(s.office, R.TIERS.length - 1);
   let tier = forceTier;
@@ -149,7 +152,7 @@ function addOffer(s, now, forceTier, easy = false) {
   }
   const tpl = pick(s, R.TASKS.filter((t) => t.tier === tier));
   const T = R.TIERS[tier];
-  const hours = easy ? pick(s, [1, 2]) : pick(s, T.hours);
+  const hours = easy ? easy : pick(s, T.hours);
   const diff = Math.round(easy ? T.diff[0] * 0.8 : between(s, ...T.diff));
   s.offers.push({
     id: newId(s),
@@ -162,7 +165,7 @@ function addOffer(s, now, forceTier, easy = false) {
     team: T.team,
     reward: round(T.rate * hours * between(s, 0.85, 1.2) * (diff / T.diff[0]) ** 0.3),
     rep: Math.max(1, Math.round(T.rep * Math.sqrt(hours))),
-    xp: Math.round(hours * 3 * (tier + 1) * (T.xp ?? 1)),
+    xp: Math.max(easy ? 5 : 0, Math.round(hours * 3 * (tier + 1) * (T.xp ?? 1))), // 最初の3つで CEO が Lv2 になる
     expiresAt: now + R.OFFER_LIFE,
   });
 }
@@ -472,7 +475,7 @@ export function scout(s, now) {
   s.encounter = null;
   if (ok) {
     // 前に辞めたレジェンドなら、そのときのレベルのまま戻ってくる
-    s.members.push(met.left ? { ...met.left, busy: null } : makeLegend(s, id));
+    s.members.push(met.left ? { ...met.left, busy: null, joinedAt: now } : makeLegend(s, id, now));
     delete met.left;
     addLog(s, now, `${LEGEND_BY_ID[id].name}  仲間に`, 'legend');
     return 'joined';
@@ -542,7 +545,8 @@ function rollWalkin(s, t, ev) {
 function rollQuit(s, t, ev) {
   for (const m of s.members.filter((x) => x.kind === 'legend' && !x.busy)) {
     const days = R.LEGEND_RULES[m.legend].quit;
-    if (!days || rand(s) >= 1 / (days * 24)) continue;
+    if (!days || t - (m.joinedAt ?? 0) < R.LEGEND_SETTLE) continue; // 仲間になってしばらくは辞めない
+    if (rand(s) >= 1 / (days * 24)) continue;
     s.members = s.members.filter((x) => x !== m);
     // 辞めたときの姿（レベル・能力）を覚えておく。少しの間は出会えない
     s.met[m.legend] = { ...s.met[m.legend], left: { ...m, busy: null }, cooldown: t + R.RETRY_COOLDOWN };
@@ -558,7 +562,7 @@ export function rehire(s, id, now) {
   const cost = rehireCost(s);
   if (!m || s.money < cost) return false;
   s.money -= cost;
-  s.members.push({ ...m, busy: null });
+  s.members.push({ ...m, busy: null, joinedAt: now });
   delete s.met[id].left;
   if (s.encounter?.id === id) s.encounter = null;
   addLog(s, now, `${m.name}  復帰`, 'legend');
@@ -568,6 +572,7 @@ export function rehire(s, id, now) {
 // ---------- 冷やかし（まだ仲間でないレジェンドがライバルとして来る） ----------
 function rollRival(s, t, ev) {
   if (!s.tasks.length && !s.devs.length) return; // 仕事中だけ
+  if (t - s.createdAt < R.RIVAL_GRACE) return; // 始めてしばらくは来ない
   if (rand(s) >= R.RIVAL_PER_HOUR) return;
   const owned = ownedLegends(s);
   const pool = LEGENDS.filter((l) => !owned.has(l.id) && l.id !== s.encounter?.id);
@@ -659,6 +664,7 @@ export function migrate(s) {
   delete s.notes;
   s.log = s.log.filter((l) => l.kind !== 'note');
   backfillHistory(s);
+  for (const m of s.members) if (m.kind === 'legend') m.joinedAt ??= s.time; // 前の記録のレジェンドは、いまから数える
   return s;
 }
 
