@@ -1200,7 +1200,7 @@ function showSync(text, cls) {
 async function toggleLogin() {
   const u = cloud.currentUser();
   if (!u) return cloud.login();
-  settingsPage = 'main';
+  settingsPage = 'more'; // 上の「保存済み」を押したときは、Google のある「その他」を開く
   renderSettings();
   $('#settings').showModal();
 }
@@ -1209,7 +1209,7 @@ document.querySelectorAll('.sync').forEach((b) => {
   b.addEventListener('pointerdown', cloud.warmUp, { once: true });
 });
 
-// 設定の画面は3つ：main（タイトルへ・名前を変更・ログイン）/ rename（名前を変更）/ more（ログアウト・最初から）
+// 設定の画面は3つ：main（タイトルへ・名前を変更）/ rename（名前を変更）/ more（Google のログイン・ログアウト・最初から）
 // ログアウトと「最初から」は押し間違えないよう「その他」の奥に置き、確かめてから行う
 let settingsPage = 'main';
 const renaming = () => settingsPage === 'rename';
@@ -1234,9 +1234,15 @@ function renderMore() {
   const u = cloud.currentUser();
   $('#settings-body').innerHTML = `
     <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">その他</span></button>
-    ${u ? `<div class="set-row">${icon('login')}<span class="grow muted">${esc(u.email ?? '')}</span><button class="btn ghost small" id="logout">ログアウト</button></div>` : ''}
+    ${u
+      ? `<div class="set-row">${icon(SYNC_ICON[syncState.cls])}<span class="grow muted">${esc(u.email ?? '')}</span><button class="btn ghost small" id="logout">ログアウト</button></div>`
+      : `<div class="set-row">${icon('cloud')}<span class="grow">Google</span><button class="btn" id="login">ログイン</button></div>`}
     ${S ? `<div class="set-row">${icon('error')}<span class="grow">最初から</span><button class="btn ghost danger small" id="reset">消す</button></div>` : ''}`;
   $('#set-back').onclick = () => setPage('main');
+  if ($('#login')) {
+    $('#login').onclick = () => cloud.login();
+    cloud.warmUp();
+  }
   $('#logout') && ($('#logout').onclick = () => confirm('ログアウトしますか？') && cloud.logout().then(() => setPage('main')));
   $('#reset') &&
     ($('#reset').onclick = async () => {
@@ -1258,18 +1264,11 @@ function setPage(p) {
 function renderSettings() {
   if (settingsPage === 'rename' && S) return renderRename();
   if (settingsPage === 'more') return renderMore();
-  const u = cloud.currentUser();
   const inGame = S && !$('#game').classList.contains('hidden');
   $('#settings-body').innerHTML = `
     ${inGame ? `<button class="big set-title" id="to-title">${icon('home')}タイトルへ</button>` : ''}
     ${inGame ? `<button class="set-row link-row" id="to-rename">${icon('pen')}<span class="grow">名前を変更</span>${icon('back', 'flip')}</button>` : ''}
-    <div class="set-row">${icon(u ? SYNC_ICON[syncState.cls] : 'cloud')}<span class="grow">${u ? esc(u.email ?? '') : 'Google'}</span>
-      ${u ? '' : '<button class="btn" id="login">ログイン</button>'}</div>
-    ${u || S ? `<button class="set-row link-row set-more" id="to-more"><span class="grow">その他</span>${icon('back', 'flip')}</button>` : ''}`;
-  if ($('#login')) {
-    $('#login').onclick = () => cloud.login();
-    cloud.warmUp();
-  }
+    <button class="set-row link-row set-more" id="to-more"><span class="grow">その他</span>${icon('back', 'flip')}</button>`;
   $('#to-rename') && ($('#to-rename').onclick = () => setPage('rename'));
   $('#to-more') && ($('#to-more').onclick = () => setPage('more'));
   $('#to-title') &&
