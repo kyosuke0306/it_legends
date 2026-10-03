@@ -166,9 +166,12 @@ export function renderThumbnail(obj, size = 256) {
     camera.lookAt(0, 1, 0);
     thumb = { renderer, scene, camera };
   }
+  const mark = obj.userData.ceoMark; // CEO の頭の上の印は写さない
+  if (mark) mark.visible = false;
   thumb.scene.add(obj);
   obj.rotation.y = -0.25;
   thumb.renderer.render(thumb.scene, thumb.camera);
   thumb.scene.remove(obj);
+  if (mark) mark.visible = true;
   return thumb.renderer.domElement.toDataURL('image/png');
 }

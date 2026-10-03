@@ -307,6 +307,13 @@ button.panel:disabled { opacity: 0.45; }
 /* ---------- 仕事 ---------- */
 .offer { border-left: 4px solid var(--c, var(--accent)); }
 .offer b { display: block; margin-bottom: 6px; }
+.offer-top { display: flex; align-items: flex-start; gap: 8px; }
+.offer-top b { flex: 1; min-width: 0; }
+/* 受付期限：ふだんは薄く、近づくと赤く点滅する */
+.expire { display: inline-flex; align-items: center; gap: 3px; flex: none; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.expire .ic { width: 13px; height: 13px; }
+.expire.soon { color: var(--bad); font-weight: 700; animation: expire-blink 1.4s ease-in-out infinite; }
+@keyframes expire-blink { 50% { opacity: 0.45; } }
 .cat-web { --c: #4a90e2; }
 .cat-app { --c: #e0607e; }
 .cat-infra { --c: #3f9f72; }
@@ -633,3 +640,34 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .g-bubble { position: fixed; display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; border-radius: 16px; background: linear-gradient(90deg, #22c8ff, #8b5cff); color: #fff; font-weight: 800; white-space: nowrap; pointer-events: auto; box-shadow: 0 8px 24px rgba(40, 60, 200, 0.4); }
 .g-bubble button { border: 0; font: inherit; color: #fff; background: rgba(255, 255, 255, 0.22); border-radius: 10px; padding: 4px 12px; }
 .g-bubble .g-skip { background: none; padding: 0 4px; font-size: 1.1rem; opacity: 0.8; }
+/* レベルアップした人（完了・おかえりなさいの一覧） */
+.rival.lvup { background: color-mix(in srgb, var(--accent) 10%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.rival.lvup .av { width: 38px; height: 38px; }
+.lv-to { display: inline-flex; align-items: center; gap: 4px; flex: none; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lv-to .ic { color: var(--accent); }
+.lv-to b { font-size: 1rem; color: var(--accent); }
+.lv-to .arrow { opacity: 0.6; }
+/* 社員・CEO の顔：レジェンドと同じ見え方（頭と肩）に。仮の体は頭が大きいので、レジェンドより少し引いて切り抜く */
+.av.face:has(img) { background: var(--panel); box-shadow: 0 0 0 2px var(--c); }
+.av.face img { width: 145%; height: 145%; object-position: 50% 12%; }
+/* タイトルの記録1・記録2を選ぶところ */
+.title-buttons { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.title-slots { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.slot { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 18px; border-radius: 16px; border: 1px solid rgba(120, 220, 255, 0.45); background: rgba(10, 16, 40, 0.6); backdrop-filter: blur(6px); color: #e9fbff; text-align: left; font: inherit; cursor: pointer; }
+.slot:disabled { opacity: 0.35; cursor: default; }
+.slot.empty { border-style: dashed; }
+.slot-no { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: linear-gradient(135deg, #22c8ff, #8b5cff); color: #fff; }
+.slot-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.slot-info b { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot-info .vals { color: rgba(233, 251, 255, 0.8); }
+.slot-info .muted { color: rgba(233, 251, 255, 0.6); }
+.slot-back { align-self: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3); background: transparent; color: #e9fbff; display: grid; place-items: center; cursor: pointer; }
+#rename-save { margin-top: 16px; }
+/* 設定：タイトルへは大きく押しやすく、ログアウト・最初からは「その他」の奥に小さく */
+.big.set-title { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 8px; }
+.big.set-title .ic { width: 1.2em; height: 1.2em; }
+.set-more { color: var(--muted); font-weight: 500; font-size: 0.85rem; padding-top: 18px; }
+.btn.small { padding: 5px 10px; font-size: 0.75rem; opacity: 0.8; }
+/* 前に見たあとに届いた依頼・面接に来た人の「新着」の札 */
+.new-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; vertical-align: 2px; color: #fff; background: linear-gradient(90deg, #ff5a7a, #ff8a3d); letter-spacing: 0.05em; }
+.pname .new-tag { align-self: flex-start; margin: 0 0 2px; }

@@ -7,7 +7,7 @@ import { buildChibi, createCharacter, animateCharacter } from './character.js';
 import { byId as LEGEND_BY_ID } from './data.js';
 import { OFFICES, JOBS } from './game/rules.js';
 import { displayName, workOf, capacity } from './game/state.js';
-import { dress } from './outfits.js';
+import { buildPerson } from './outfits.js';
 import { themeOf, LIGHT, makeDesk, decorate, windowMaterial } from './office-decor.js';
 
 const mat = (color, opts) => new THREE.MeshToonMaterial({ color, ...opts });
@@ -154,7 +154,7 @@ export class Office {
     this.scene.add(holder);
     this.visitor = { id: c.id, holder, label: { name: c.name, sub: `${JOBS[c.job].full}・面接` } };
     holder.userData.label = this.visitor.label;
-    const obj = dress(buildChibi({ hairStyle: 'short', ...c.look, glasses: c.look.glasses || ['data', 'consul'].includes(c.job) }), c.job);
+    const obj = buildPerson(c.look, c.job);
     obj.scale.setScalar(0.55);
     holder.add(obj);
     holder.userData.obj = obj;
@@ -163,7 +163,7 @@ export class Office {
   async makeBody(m) {
     if (m.kind === 'legend' || m.kind === 'rival') return createCharacter(LEGEND_BY_ID[m.legend]);
     // 職種ごとの小物を付ける（データ分析とコンサルはメガネ）。CEO は金のネクタイと頭の上の印
-    return dress(buildChibi({ hairStyle: 'short', ...m.look, glasses: m.look.glasses || ['data', 'consul'].includes(m.job) }), m.job, { ceo: m.kind === 'hero' });
+    return buildPerson(m.look, m.job, { ceo: m.kind === 'hero' });
   }
 
   buildRoom(level, cap = OFFICES[level].cap) {

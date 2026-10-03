@@ -11,7 +11,7 @@ export const DAY = 24 * HOUR;
 //   teamSpeed / teamReward / teamSuccess / teamQuality / teamXp … その人が参加した仕事・開発だけに効く
 //   income / offers / nextTrend … 会社にいるだけで効く
 export const JOBS = {
-  se: { name: 'SE', full: 'システムエンジニア', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamReward: 0.1 }, perkText: '報酬 +10%', shirt: 0x4a78c2 },
+  se: { name: 'SE', full: 'システムエンジニア', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamSuccess: 0.15 }, perkText: '成功率 +15%', shirt: 0x4a78c2 },
   pg: { name: 'プログラマー', full: 'プログラマー', w: { idea: 1, tech: 3.5, plan: 1, talk: 0.5 }, perk: { teamSpeed: 0.15 }, perkText: '速さ +15%', shirt: 0x2f2f3a },
   infra: { name: 'インフラ', full: 'インフラエンジニア', w: { idea: 0.5, tech: 3, plan: 2, talk: 0.5 }, perk: { teamSuccess: 0.1 }, perkText: '成功率 +10%', shirt: 0x3f8f6b },
   designer: { name: 'デザイナー', full: 'デザイナー', w: { idea: 3.5, tech: 1, plan: 1, talk: 1.5 }, perk: { teamQuality: 0.2 }, perkText: '製品の出来 +20%', shirt: 0xe0607e },
@@ -19,7 +19,7 @@ export const JOBS = {
   pm: { name: 'PM', full: 'プロジェクトマネージャー', w: { idea: 1, tech: 1, plan: 2.5, talk: 2.5 }, perk: { teamSpeed: 0.1, teamSuccess: 0.05 }, perkText: '速さ +10%  成功率 +5%', shirt: 0x2d6ea8 },
   gm: { name: 'GM', full: 'ゼネラルマネージャー', w: { idea: 2, tech: 1, plan: 2, talk: 2 }, perk: { teamXp: 0.5 }, perkText: 'チームの成長 +50%', shirt: 0x50505a },
   consul: { name: 'コンサル', full: 'ITコンサルタント', w: { idea: 2, tech: 1, plan: 2, talk: 3 }, perk: { teamReward: 0.2 }, perkText: '報酬 +20%', shirt: 0x24324a },
-  sales: { name: '営業', full: 'IT営業', w: { idea: 1, tech: 0.5, plan: 1, talk: 4 }, perk: { offers: 1 }, perkText: '依頼 +1件', shirt: 0xc9822c },
+  sales: { name: '営業', full: 'IT営業', w: { idea: 1, tech: 0.5, plan: 1, talk: 4 }, perk: { offers: 0.25 }, perkText: '依頼 ×1.25', shirt: 0xc9822c },
 };
 
 // 会社の広さ。cap は入れる人数（自分も含む）、tier は受けられる仕事の大きさ
@@ -65,48 +65,90 @@ export const TASKS = [
   { tier: 0, cat: 'consult', title: '町内会の名簿づくりを自動化', w: { idea: 1, tech: 1, plan: 2, talk: 0 } },
   { tier: 0, cat: 'app', title: '小さなアプリの不具合直し', w: { idea: 0, tech: 3, plan: 1, talk: 0 } },
   { tier: 0, cat: 'web', title: 'カフェの予約ページ作り', w: { idea: 1, tech: 2, plan: 1, talk: 0 } },
+  { tier: 0, cat: 'web', title: 'パン屋さんのお知らせページ作り', w: { idea: 2, tech: 1, plan: 0, talk: 1 } },
+  { tier: 0, cat: 'web', title: 'ブログのデザイン直し', w: { idea: 3, tech: 1, plan: 0, talk: 0 } },
+  { tier: 0, cat: 'app', title: 'スマホの写真整理アプリの手直し', w: { idea: 1, tech: 2, plan: 1, talk: 0 } },
+  { tier: 0, cat: 'app', title: 'サークルの出欠アプリ作り', w: { idea: 1, tech: 2, plan: 1, talk: 0 } },
+  { tier: 0, cat: 'infra', title: '家のWi-Fiがつながらない相談', w: { idea: 0, tech: 2, plan: 1, talk: 1 } },
+  { tier: 0, cat: 'infra', title: 'お店のレジのパソコンの修理', w: { idea: 0, tech: 2, plan: 1, talk: 1 } },
+  { tier: 0, cat: 'consult', title: 'Excel の表を自動で集計', w: { idea: 0, tech: 1, plan: 2, talk: 1 } },
+  { tier: 0, cat: 'consult', title: 'おじいちゃんのスマホ教室', w: { idea: 0, tech: 1, plan: 1, talk: 3 } },
+  { tier: 0, cat: 'consult', title: '古いパソコンのデータを救出', w: { idea: 0, tech: 3, plan: 1, talk: 0 } },
   // tier 1
   { tier: 1, cat: 'web', title: '中小企業のWebサイト制作', w: { idea: 2, tech: 2, plan: 1, talk: 1 } },
   { tier: 1, cat: 'app', title: '美容室の予約システム開発', w: { idea: 1, tech: 2, plan: 2, talk: 1 } },
   { tier: 1, cat: 'infra', title: '会社のサーバーのお引っ越し', w: { idea: 0, tech: 3, plan: 2, talk: 0 } },
   { tier: 1, cat: 'consult', title: '工場のIT導入の相談', w: { idea: 1, tech: 0, plan: 2, talk: 3 } },
+  { tier: 1, cat: 'web', title: '病院のホームページ作り', w: { idea: 2, tech: 1, plan: 1, talk: 1 } },
+  { tier: 1, cat: 'web', title: '地元の観光案内サイト', w: { idea: 3, tech: 1, plan: 1, talk: 1 } },
+  { tier: 1, cat: 'app', title: '塾の宿題アプリ開発', w: { idea: 2, tech: 2, plan: 1, talk: 1 } },
+  { tier: 1, cat: 'app', title: '農家の出荷管理アプリ', w: { idea: 1, tech: 2, plan: 2, talk: 1 } },
+  { tier: 1, cat: 'infra', title: '事務所のネットワーク工事', w: { idea: 0, tech: 3, plan: 2, talk: 0 } },
+  { tier: 1, cat: 'infra', title: 'ウイルス対策の見直し', w: { idea: 0, tech: 3, plan: 1, talk: 1 } },
+  { tier: 1, cat: 'consult', title: '商店街のキャッシュレス導入', w: { idea: 1, tech: 0, plan: 2, talk: 3 } },
   // tier 2
   { tier: 2, cat: 'web', title: 'ネットショップの立ち上げ', w: { idea: 2, tech: 2, plan: 2, talk: 1 } },
   { tier: 2, cat: 'app', title: '人気店のスマホアプリ開発', w: { idea: 2, tech: 3, plan: 1, talk: 1 } },
   { tier: 2, cat: 'infra', title: 'オープンソースで社内システムを刷新', w: { idea: 1, tech: 3, plan: 2, talk: 0 } },
   { tier: 2, cat: 'consult', title: '地方銀行のIT戦略づくり', w: { idea: 1, tech: 1, plan: 2, talk: 3 } },
+  { tier: 2, cat: 'web', title: '旅館の予約サイトの作り直し', w: { idea: 2, tech: 2, plan: 2, talk: 1 } },
+  { tier: 2, cat: 'web', title: 'ファッション通販のサイト作り', w: { idea: 3, tech: 2, plan: 1, talk: 1 } },
+  { tier: 2, cat: 'app', title: 'フィットネスジムの会員アプリ', w: { idea: 2, tech: 3, plan: 1, talk: 1 } },
+  { tier: 2, cat: 'app', title: 'タクシーを呼べるアプリ', w: { idea: 1, tech: 3, plan: 2, talk: 1 } },
+  { tier: 2, cat: 'infra', title: '市役所のサーバー入れ替え', w: { idea: 0, tech: 3, plan: 3, talk: 0 } },
+  { tier: 2, cat: 'consult', title: '病院の電子カルテ導入', w: { idea: 1, tech: 1, plan: 3, talk: 2 } },
   // tier 3
   { tier: 3, cat: 'infra', title: '大手企業のクラウド移行', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
   { tier: 3, cat: 'ai', title: 'AIで売上を予測するシステム', w: { idea: 2, tech: 3, plan: 1, talk: 0 } },
   { tier: 3, cat: 'web', title: '全国チェーンの会員サービス開発', w: { idea: 2, tech: 2, plan: 2, talk: 2 } },
   { tier: 3, cat: 'space', title: '人工衛星の管制ソフト開発', w: { idea: 1, tech: 3, plan: 3, talk: 0 } },
+  { tier: 3, cat: 'ai', title: '工場の不良品を見つけるAI', w: { idea: 1, tech: 3, plan: 2, talk: 0 } },
+  { tier: 3, cat: 'ai', title: 'お客さんの問い合わせに答えるAI', w: { idea: 2, tech: 3, plan: 1, talk: 1 } },
+  { tier: 3, cat: 'web', title: '全国ニュースサイトの作り直し', w: { idea: 2, tech: 3, plan: 2, talk: 1 } },
+  { tier: 3, cat: 'app', title: '鉄道会社の乗換案内アプリ', w: { idea: 1, tech: 3, plan: 2, talk: 1 } },
+  { tier: 3, cat: 'infra', title: '大学のネットワークを丸ごと更新', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
+  { tier: 3, cat: 'consult', title: '大手スーパーのデータ活用', w: { idea: 2, tech: 1, plan: 2, talk: 3 } },
+  { tier: 3, cat: 'space', title: '気象衛星の画像処理', w: { idea: 1, tech: 3, plan: 2, talk: 0 } },
   // tier 4
   { tier: 4, cat: 'space', title: '月面探査機の着陸プログラム', w: { idea: 1, tech: 3, plan: 4, talk: 0 } },
   { tier: 4, cat: 'ai', title: '会話できるAIアシスタントの開発', w: { idea: 3, tech: 3, plan: 1, talk: 1 } },
   { tier: 4, cat: 'infra', title: '全国の交通ICカードの基盤づくり', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
+  { tier: 4, cat: 'space', title: 'ロケット打ち上げの管制システム', w: { idea: 1, tech: 3, plan: 4, talk: 0 } },
+  { tier: 4, cat: 'ai', title: '翻訳AIの開発', w: { idea: 2, tech: 3, plan: 2, talk: 0 } },
+  { tier: 4, cat: 'web', title: '国の手続きをネットでできるように', w: { idea: 1, tech: 2, plan: 3, talk: 2 } },
+  { tier: 4, cat: 'app', title: '全国の病院をつなぐ予約アプリ', w: { idea: 1, tech: 2, plan: 3, talk: 2 } },
+  { tier: 4, cat: 'consult', title: '大手銀行のシステム統合の相談', w: { idea: 1, tech: 1, plan: 3, talk: 3 } },
   // tier 5（高層タワー）
   { tier: 5, cat: 'web', title: '動画配信サービスの基盤づくり', w: { idea: 1, tech: 3, plan: 2, talk: 0 } },
   { tier: 5, cat: 'app', title: '全国の銀行アプリの作り直し', w: { idea: 1, tech: 2, plan: 3, talk: 1 } },
   { tier: 5, cat: 'infra', title: '国の行政システムのクラウド化', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
   { tier: 5, cat: 'consult', title: '世界的な自動車メーカーのDX戦略', w: { idea: 2, tech: 0, plan: 2, talk: 3 } },
   { tier: 5, cat: 'ai', title: '病院の画像診断AI', w: { idea: 1, tech: 3, plan: 2, talk: 0 } },
+  { tier: 5, cat: 'space', title: '民間宇宙船の操縦ソフト', w: { idea: 1, tech: 3, plan: 3, talk: 0 } },
+  { tier: 5, cat: 'web', title: '世界的なSNSの日本版づくり', w: { idea: 3, tech: 2, plan: 1, talk: 1 } },
   // tier 6（テックキャンパス）
   { tier: 6, cat: 'ai', title: '自動運転車のAI開発', w: { idea: 2, tech: 3, plan: 2, talk: 0 } },
   { tier: 6, cat: 'infra', title: '海底ケーブルの通信網づくり', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
   { tier: 6, cat: 'space', title: '宇宙望遠鏡のデータ解析', w: { idea: 2, tech: 3, plan: 2, talk: 0 } },
   { tier: 6, cat: 'web', title: '世界で使われる検索エンジン', w: { idea: 2, tech: 3, plan: 1, talk: 1 } },
   { tier: 6, cat: 'app', title: '1億人が使う決済アプリ', w: { idea: 1, tech: 2, plan: 3, talk: 1 } },
+  { tier: 6, cat: 'consult', title: '世界の空港をつなぐ計画', w: { idea: 1, tech: 1, plan: 3, talk: 3 } },
+  { tier: 6, cat: 'ai', title: '工場をまるごと動かすAI', w: { idea: 1, tech: 3, plan: 3, talk: 0 } },
   // tier 7（世界本社）
   { tier: 7, cat: 'ai', title: '1か月先の天気を当てるAI', w: { idea: 2, tech: 3, plan: 2, talk: 0 } },
   { tier: 7, cat: 'infra', title: '世界のデータセンターをつなぐ', w: { idea: 0, tech: 3, plan: 3, talk: 1 } },
   { tier: 7, cat: 'space', title: '火星探査車の自動運転', w: { idea: 1, tech: 3, plan: 3, talk: 0 } },
   { tier: 7, cat: 'consult', title: '国の通貨のデジタル化', w: { idea: 1, tech: 1, plan: 3, talk: 3 } },
   { tier: 7, cat: 'app', title: '世界同時配信のオンラインゲーム', w: { idea: 3, tech: 3, plan: 1, talk: 0 } },
+  { tier: 7, cat: 'web', title: '世界の学校をつなぐ授業サイト', w: { idea: 2, tech: 2, plan: 2, talk: 2 } },
+  { tier: 7, cat: 'ai', title: '災害を予測するAI', w: { idea: 2, tech: 3, plan: 2, talk: 0 } },
   // tier 8（スマートシティ）
   { tier: 8, cat: 'ai', title: '新しい薬を見つけるAI', w: { idea: 3, tech: 3, plan: 1, talk: 0 } },
   { tier: 8, cat: 'space', title: '月面基地の生命維持システム', w: { idea: 1, tech: 3, plan: 4, talk: 0 } },
   { tier: 8, cat: 'infra', title: '量子暗号の通信網', w: { idea: 1, tech: 4, plan: 2, talk: 0 } },
   { tier: 8, cat: 'web', title: '街じゅうのセンサーをつなぐ', w: { idea: 1, tech: 3, plan: 3, talk: 1 } },
+  { tier: 8, cat: 'app', title: '街の全員が使う暮らしのアプリ', w: { idea: 2, tech: 2, plan: 2, talk: 2 } },
+  { tier: 8, cat: 'consult', title: '空飛ぶクルマの交通ルールづくり', w: { idea: 1, tech: 1, plan: 3, talk: 3 } },
   // tier 9（宇宙ステーション）
   { tier: 9, cat: 'space', title: '火星の都市の管制システム', w: { idea: 1, tech: 3, plan: 4, talk: 1 } },
   { tier: 9, cat: 'ai', title: '人と話せる汎用AI', w: { idea: 3, tech: 4, plan: 1, talk: 1 } },
@@ -136,9 +178,14 @@ export const TREND_PERIOD = 2 * DAY; // 流行が変わる間隔
 
 export const START_MONEY = 100_000;
 export const FIRST_OFFER_HOURS = [1 / 6, 0.5, 1]; // 始めたときの依頼の時間（10分・30分・1時間。2026-10-03 序盤を速く）
-export const OFFER_EVERY = 2 * HOUR; // 新しい依頼が届く間隔
-export const OFFER_LIFE = 18 * HOUR; // 依頼の受付期限
-export const BASE_OFFERS = 4;
+// 1時間ごとに新しい依頼が届く確率は、会社の評判で決まる（並んでいる数が上限より少ないときだけ）
+// 確率 = (OFFER_BASE + OFFER_PER_DIGIT × log10(評判+1)) × 営業・レジェンドの倍率（offers: 0.25 なら ×1.25。重ねると掛け算）、最大100%
+// 並べておける数に上限はない（18時間で期限切れになるので、溜まるのは平均「確率×18件」くらい）
+// 評判 0 で 20%（平均5時間に1件）、30 で 35%、600 で 48%、6000 で 58%、25万で 74%
+export const OFFER_BASE = 0.2;
+export const OFFER_PER_DIGIT = 0.1;
+export const OFFER_LIFE = 18 * HOUR; // 依頼の受付期限（過ぎると消える）
+export const OFFER_SOON = 3 * HOUR; // 期限がこれより近い依頼は赤く出す
 // 要員派遣: お金を払うと、席の数を超えて仕事の間だけ人を借りられる（仕事が終わると帰る。成長はしない）
 // 1人ぶんの料金は仕事の報酬の TEMP_FEE 倍。来る人は今の会社で雇える人くらいの腕で、その仕事に向いた職種
 export const TEMP_FEE = 0.3;
@@ -161,13 +208,12 @@ export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会える�
 // CEO の過ごし方（無料。いつもどれか1つを選んでいる）。選んだものに合った出来事がまれに起きる（1時間ごとに判定）
 //   event: legend 偉人と偶然出会う（条件を満たしていなくても） / luck 臨時収入 / walkin 入社したい人が面接に来る
 export const ACTIVITIES = {
-  // 散歩はご近所で仕事の相談も受ける（平均4時間に1件、依頼の上限を WALK_OFFER_EXTRA 件こえて届く）
+  // 散歩はご近所で仕事の相談も受ける（平均4時間に1件。ふつうの依頼とは別に届く）
   walk: { name: '散歩', icon: 'walk', event: 'legend', perHour: 1 / 400, offerPerHour: 1 / 4 }, // 平均17日に1回くらい
   net: { name: 'ネット', icon: 'globe', event: 'luck', perHour: 1 / 36 }, // 平均1日半に1回くらい
   meetup: { name: '勉強会', icon: 'seminar', event: 'walkin', perHour: 1 / 48 }, // 平均2日に1回くらい
 };
 export const DEFAULT_ACTIVITY = 'net';
-export const WALK_OFFER_EXTRA = 2;
 export const WALKIN_LIFE = DAY; // 訪ねてきた人が待ってくれる時間
 // 臨時収入（ネットで見つかる）。amount は今の会社の仕事1時間ぶんの報酬の何倍か
 export const LUCKS = [
@@ -218,8 +264,8 @@ export const LEGEND_RULES = {
     meet: { products: 3, rep: 100 },
     hint: '自社製品を 3 つ売り出すと…',
     join: 0.4,
-    ability: { income: 0.25 },
-    abilityText: '全製品の収入 +25%',
+    ability: { income: 0.4 },
+    abilityText: '全製品の収入 +40%',
     quit: 50,
     quitText: '「自分の会社を始める」と去った',
     scene: '製品の売れ行きを熱心に調べている眼鏡の若者がいる…',
@@ -240,8 +286,8 @@ export const LEGEND_RULES = {
     meet: { cat: { infra: 10 } },
     hint: 'インフラの仕事を 10 回こなすと…',
     join: 0.4,
-    ability: { hireCost: 0.5, teamSpeed: 0.2 },
-    abilityText: '雇う費用 半分  速さ +20%',
+    ability: { hireCost: 0.5, teamSpeed: 0.3, teamSuccess: 0.1 },
+    abilityText: '雇う費用 半分  速さ +30%  成功率 +10%',
     quit: 25,
     quitText: '「自分のやり方でやる」と言って去った',
     scene: 'ペンギンのぬいぐるみを持った青年が、サーバーをのぞきこんでいる…',
@@ -251,8 +297,8 @@ export const LEGEND_RULES = {
     meet: { tasks: 120, office: 3 },
     hint: '仕事を 120 回こなし、オフィスビルを構えると…',
     join: 0.3,
-    ability: { statAll: { tech: 0.15 } },
-    abilityText: '全員の技術 +15%',
+    ability: { statAll: { tech: 0.25 } },
+    abilityText: '全員の技術 +25%',
     scene: 'ひげの男が、分厚いプログラミングの本を静かに読んでいる…',
   },
   bernerslee: {
@@ -260,8 +306,8 @@ export const LEGEND_RULES = {
     meet: { cat: { web: 30 }, rep: 1500 },
     hint: 'Web の仕事を 30 回こなし、評判が 1500 を超えると…',
     join: 0.3,
-    ability: { offers: 2, incomeGenre: { web: 0.3 } },
-    abilityText: '依頼 +2件  Web の収入 +30%',
+    ability: { offers: 1, incomeGenre: { web: 0.5 } },
+    abilityText: '依頼 ×2  Web の収入 +50%',
     scene: '「情報をつなぐ仕組み」の図を描いている紳士がいる…',
   },
   hopper: {
@@ -287,8 +333,8 @@ export const LEGEND_RULES = {
     meet: { rep: 5000 },
     hint: '評判が 5000 を超えると…',
     join: 0.3,
-    ability: { teamSpeed: 0.4, teamReward: 0.2 },
-    abilityText: '速さ +40%  報酬 +20%',
+    ability: { teamSpeed: 0.4, teamReward: 0.4 },
+    abilityText: '速さ +40%  報酬 +40%',
     quit: 30,
     quitText: 'ほかの研究所に呼ばれて去った',
     scene: '暗算で何かを一瞬で解いた紳士が、にやりと笑った…',
@@ -298,8 +344,8 @@ export const LEGEND_RULES = {
     meet: { cat: { ai: 10 } },
     hint: 'AI の仕事を 10 回こなすと…',
     join: 0.2,
-    ability: { teamSuccess: 0.2, incomeGenre: { ai: 0.6 } },
-    abilityText: '成功率 +20%  AI の収入 +60%',
+    ability: { teamSuccess: 0.3, incomeGenre: { ai: 1 } },
+    abilityText: '成功率 +30%  AI の収入 2倍',
     scene: '「機械は考えることができるか？」とつぶやく青年がいる…',
   },
   lovelace: {
@@ -326,7 +372,7 @@ export const LEGEND_RULES = {
     hint: '小さな事務所を構え、Web の仕事を 15 回こなすと…',
     join: 0.3,
     ability: { income: 0.2, offers: 1 },
-    abilityText: '全製品の収入 +20%  依頼 +1件',
+    abilityText: '全製品の収入 +20%  依頼 ×2',
     quit: 35,
     quitText: '「宇宙ロケットの会社に専念する」と去った',
     scene: '段ボール箱の山の前で、大きな声で笑う男がいる…',

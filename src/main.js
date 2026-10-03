@@ -4,6 +4,7 @@ import { LEGENDS, byId } from './data.js';
 const LEGEND_COLOR = 0xf0b93a; // レジェンドはランクを付けず、みんな同じ金色（ユーザー指示 2026-10-01）
 import { createCharacter, preloadCharacters, thumbnailUrl } from './character.js';
 import { Stage, renderThumbnail } from './stage.js';
+import { buildPerson } from './outfits.js';
 import { Office } from './office.js';
 import { VERSION } from './version.js';
 import { icon } from './icons.js';
@@ -21,15 +22,22 @@ document.querySelectorAll('.tab').forEach((t) => t.insertAdjacentHTML('afterbegi
 // iPhone の Safari は2本指で画面ごと拡大できてしまう（描く画面がはみ出す）ので止める。3Dの部屋の2本指は別に動く
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
+// 記録は2つまで。1 はもとからの場所（今までの記録はそのまま 1 になる）、2 は別の場所
 const SAVE_KEY = 'it_legends.save.v1';
+const SLOT_KEY = 'it_legends.slot'; // いま遊んでいる記録の番号
+const saveKey = (slot) => (slot === 2 ? `${SAVE_KEY}.2` : SAVE_KEY);
+let slot = 1;
+try {
+  slot = localStorage.getItem(SLOT_KEY) === '2' ? 2 : 1;
+} catch {}
 let S = null; // ゲームの状態
 let view = 'office';
 let office;
 
 // ---------- 保存 ----------
-function loadLocal() {
+function loadLocal(n = slot) {
   try {
-    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    const s = JSON.parse(localStorage.getItem(saveKey(n)));
     return s?.v === 1 ? G.migrate(s) : null;
   } catch {
     return null;
@@ -39,7 +47,7 @@ function save() {
   if (!S) return;
   S.savedAt = Date.now();
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+    localStorage.setItem(saveKey(slot), JSON.stringify(S));
   } catch {}
   cloud.changed();
 }
@@ -79,7 +87,43 @@ const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
 function avatar(m) {
   if (m.kind === 'legend') return `<span class="av legend" style="--c:var(--gold)"><img data-thumb="${m.legend}" alt=""></span>`;
   const c = m.kind === 'hero' ? 'var(--accent)' : hex(R.JOBS[m.job].shirt);
-  return `<span class="av ${m.kind === 'temp' ? 'temp' : ''}" style="--c:${c}">${esc(m.name.replace(/\s.*/, '').slice(0, 1))}</span>`;
+  // 3D の姿から作った顔の絵。できるまでは名前の1文字を出し、できたら差し替える（faceFor）
+  const k = faceKey(m);
+  const src = faceFor(m);
+  const inner = src ? `<img src="${src}" alt="">` : esc(m.name.replace(/\s.*/, '').slice(0, 1));
+  return `<span class="av face ${m.kind === 'temp' ? 'temp' : ''}" style="--c:${c}" data-face="${esc(k)}">${inner}</span>`;
+}
+// 顔の絵は見た目（髪・肌・メガネ・職種の小物・CEO か）ごとに1回だけ作って覚えておく
+const faces = new Map();
+const faceQueue = [];
+const faceKey = (m) => `${m.kind === 'hero' ? 'ceo:' : ''}${m.job}:${JSON.stringify(m.look)}`;
+function faceFor(m) {
+  const k = faceKey(m);
+  const v = faces.get(k);
+  if (typeof v === 'string') return v;
+  if (!v) {
+    faces.set(k, true);
+    faceQueue.push([k, m]);
+    if (faceQueue.length === 1) setTimeout(drawFaces);
+  }
+  return null;
+}
+// 画面を止めないよう、1つずつ間をあけて作る
+function drawFaces() {
+  const next = faceQueue[0];
+  if (!next) return;
+  const [k, m] = next;
+  try {
+    // レジェンドの絵（models/<id>.webp）と同じ写し方・同じ切り抜きにする
+    faces.set(k, renderThumbnail(buildPerson(m.look, m.job, { ceo: m.kind === 'hero' })));
+    document.querySelectorAll('.av.face').forEach((el) => {
+      if (el.dataset.face === k) el.innerHTML = `<img src="${faces.get(k)}" alt="">`;
+    });
+  } catch (e) {
+    console.warn('顔の絵を作れませんでした', e);
+  }
+  faceQueue.shift();
+  if (faceQueue.length) (window.requestIdleCallback ?? setTimeout)(drawFaces);
 }
 // 4つの能力を小さな棒で（ラベルは1文字）
 function statBars(st) {
@@ -164,16 +208,80 @@ function showTitle() {
   $('#start').classList.remove('hidden');
   $('#game').classList.add('hidden');
   $('#title-msg').textContent = '';
+  closeSlots();
   titleLegends();
-  $('#btn-continue').classList.toggle('sub', !S);
-  $('#btn-new').classList.toggle('sub', Boolean(S));
-  if (S) $('#btn-continue').after($('#btn-new')); // 大きい方を上に
+  const any = Boolean(S || loadLocal(otherSlot()));
+  $('#btn-continue').classList.toggle('sub', !any);
+  $('#btn-new').classList.toggle('sub', any);
+  if (any) $('#btn-continue').after($('#btn-new')); // 大きい方を上に
   else $('#btn-new').after($('#btn-continue'));
   goStep(0);
 }
 
-$('#btn-continue').onclick = () => {
+// ----- 記録1・記録2 -----
+const otherSlot = () => (slot === 2 ? 1 : 2);
+const slotData = (n) => (n === slot ? S : loadLocal(n));
+// 遊ぶ記録を切り替える（いまの記録は保存してから）
+async function useSlot(n) {
+  if (n === slot) return;
+  save();
+  await cloud.flush().catch(() => {});
+  slot = n;
+  try {
+    localStorage.setItem(SLOT_KEY, String(n));
+  } catch {}
+  S = loadLocal(n);
+  pendingWelcome = null;
+  if (S) {
+    const away = Date.now() - S.time;
+    pendingWelcome = [G.advance(S, Date.now()), away];
+    save();
+  }
+  office?.reset();
+}
+// タイトルで記録を選ぶ（mode: 'continue' つづきから / 'new' はじめから）
+let newSlot = null; // はじめからで選んだ記録の番号
+function openSlots(mode) {
+  const card = (n) => {
+    const s = slotData(n);
+    const info = s
+      ? `<b>${esc(s.company)}</b><span class="vals">${val('coin', yen(s.money))}${val('star', s.rep)}${val('crown', legendCount(s))}</span>`
+      : `<span class="muted">${icon('plus')}</span>`;
+    return `<button class="slot ${s ? '' : 'empty'}" data-slot="${n}" ${mode === 'continue' && !s ? 'disabled' : ''}><span class="slot-no">${n}</span><span class="slot-info">${info}</span></button>`;
+  };
+  $('#title-slots').innerHTML = `${card(1)}${card(2)}<button class="slot-back" id="slot-back">${icon('back')}</button>`;
+  $('#title-slots').classList.remove('hidden');
+  $('#title-buttons').classList.add('hidden');
+  $('#slot-back').onclick = closeSlots;
+  $('#title-slots').querySelectorAll('[data-slot]').forEach(
+    (b) =>
+      (b.onclick = async () => {
+        const n = +b.dataset.slot;
+        if (mode === 'continue') {
+          await useSlot(n);
+          if (S) enterGame();
+          return;
+        }
+        if (slotData(n) && !confirm(`記録${n} は消えます。はじめからにしますか？`)) return;
+        newSlot = n;
+        closeSlots();
+        goStep(1);
+      }),
+  );
+}
+function closeSlots() {
+  $('#title-slots').classList.add('hidden');
+  $('#title-buttons').classList.remove('hidden');
+}
+
+$('#btn-continue').onclick = async () => {
+  const other = loadLocal(otherSlot());
+  if (S && other) return openSlots('continue'); // 記録が2つあるときは選ぶ
   if (S) return enterGame();
+  if (other) {
+    await useSlot(otherSlot());
+    return enterGame();
+  }
   // この端末に記録がなければ、Google でログインしてクラウドの記録を読む
   wantContinue = true;
   $('#title-msg').textContent = '';
@@ -182,7 +290,9 @@ $('#btn-continue').onclick = () => {
 };
 $('#btn-continue').addEventListener('pointerdown', cloud.warmUp, { once: true });
 $('#btn-new').onclick = () => {
-  if (S && !confirm('いまの記録は消えます。はじめからにしますか？')) return;
+  // 記録があるときは、どちらに作るかを選ぶ（もう片方は消えない）
+  if (S || loadLocal(otherSlot())) return openSlots('new');
+  newSlot = slot;
   goStep(1);
 };
 
@@ -191,6 +301,7 @@ function onSynced() {
   if (!wantContinue) return;
   wantContinue = false;
   if (S) enterGame();
+  else if (loadLocal(otherSlot())) useSlot(otherSlot()).then(enterGame);
   else $('#title-msg').textContent = '記録がありません';
 }
 
@@ -226,8 +337,10 @@ function initStart() {
     box.querySelectorAll('.job').forEach((x) => x.classList.toggle('active', x === b));
     $('#start-go').disabled = false;
   };
-  $('#start-go').onclick = () => {
+  $('#start-go').onclick = async () => {
     if (!chosen) return;
+    if (newSlot && newSlot !== slot) await useSlot(newSlot);
+    newSlot = null;
     S = G.newGame({ job: chosen, name: $('#start-name').value.trim(), company: $('#start-company').value.trim() });
     pendingWelcome = null;
     office?.reset();
@@ -264,6 +377,8 @@ function enterGame() {
 
 document.querySelectorAll('.tab').forEach((tab) => {
   tab.onclick = () => {
+    // 仕事・仲間のタブを開いたとき、前に見た時刻を覚えておく（それより後に来た依頼・面接に「新着」を付ける）
+    if (view !== tab.dataset.view && seenSnap[tab.dataset.view] !== undefined) seenSnap[tab.dataset.view] = S[`${tab.dataset.view}SeenAt`] ?? 0;
     view = tab.dataset.view;
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${view}`));
@@ -272,12 +387,16 @@ document.querySelectorAll('.tab').forEach((tab) => {
   };
 });
 
+// タブを開く前に最後に見た時刻（新着の印に使う）
+const seenSnap = { work: Infinity, team: Infinity };
+const newTag = '<span class="new-tag">新着</span>';
 function renderHeader() {
   $('#company-name').textContent = S.company;
   $('#money').innerHTML = val('coin', yen(S.money), S.money < 0 ? 'minus' : '');
   $('#rep').innerHTML = val('star', S.rep);
   $('#dot-office').classList.toggle('on', Boolean(S.encounter));
-  $('#dot-team').classList.toggle('on', S.candidates.some((c) => c.walkin));
+  // 勉強会で訪ねてきた人がいるか、仲間タブを最後に開いたあとに面接に来た人がいるとき
+  $('#dot-team').classList.toggle('on', S.candidates.some((c) => c.walkin || (c.at ?? 0) > (S.teamSeenAt ?? 0)));
   // 仕事タブを最後に開いたあとに新しい依頼が届いていて、手の空いている人がいるときだけ（開くと消える）
   const arrived = (o) => o.expiresAt - R.OFFER_LIFE;
   $('#dot-work').classList.toggle('on', G.freeMembers(S).length > 0 && S.offers.some((o) => arrived(o) > (S.workSeenAt ?? 0)));
@@ -296,6 +415,8 @@ function updateTimers() {
     el.firstElementChild.style.width = pct(Math.min(1, (now - el.dataset.start) / (el.dataset.ends - el.dataset.start)));
   });
   document.querySelectorAll('[data-left]').forEach((el) => (el.textContent = dur(el.dataset.left - now)));
+  // 依頼の受付期限：近づくと赤く点滅する
+  document.querySelectorAll('[data-expire]').forEach((el) => el.classList.toggle('soon', el.dataset.expire - now < R.OFFER_SOON));
 }
 
 // ----- 会社 -----
@@ -401,7 +522,7 @@ function renderWork() {
   const offers = S.offers
     .map(
       (o) => `<button class="panel offer cat-${o.cat}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
-        <b>${catTag(o.cat)}${esc(o.title)}</b>
+        <span class="offer-top"><b>${o.expiresAt - R.OFFER_LIFE > seenSnap.work ? newTag : ''}${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}"></span></span></span>
         <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
       </button>`,
     )
@@ -410,7 +531,7 @@ function renderWork() {
   $('#view-work').innerHTML = `
     <div class="work-top"><button class="hist-btn" id="open-history">${icon('check')}${S.counts.tasks}</button></div>
     ${running}
-    ${offers || `<p class="empty">${icon('clock')}<span data-left="${S.offerAt + R.OFFER_EVERY}"></span></p>`}`;
+    ${offers || `<p class="empty">${icon('task')}</p>`}`;
   fillThumbs($('#view-work'));
   $('#view-work').querySelectorAll('[data-offer]').forEach((b) => (b.onclick = () => assignTask(+b.dataset.offer)));
   $('#view-work').querySelectorAll('[data-run]').forEach((el) => (el.onclick = () => openRunning(+el.dataset.run)));
@@ -605,7 +726,7 @@ function memberRow(m, { candidate = false } = {}) {
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''} ${open ? 'open' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
-      <span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>
+      <span class="pname">${candidate && (m.at ?? 0) > seenSnap.team ? newTag : ''}${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>
       ${statBars(st)}
     </button>
     ${
@@ -620,6 +741,8 @@ function memberRow(m, { candidate = false } = {}) {
   </div>`;
 }
 function renderTeam() {
+  S.teamSeenAt = Date.now(); // 仲間タブを見た（通知の点を消す）
+  renderHeader();
   const v = $('#view-team');
   v.innerHTML = `
     <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
@@ -676,8 +799,15 @@ function renderProduct() {
       </button>`;
     })
     .join('');
+  // 開発中の製品：タップすると担当者・出来の見込み・稼ぎの見込みが下から出る（openDevRunning）
   const devs = S.devs
-    .map((d) => `<div class="panel run"><div class="row1"><b>${R.GENRES[d.genre].name}</b>${icon('busy', 'spin')}</div>${progress(d.startAt, d.endsAt)}</div>`)
+    .map(
+      (d) => `<button class="panel run" data-dev="${d.id}"><div class="row1"><b>${R.GENRES[d.genre].name}</b><span class="avs">${d.members
+        .map((id) => S.members.find((m) => m.id === id))
+        .filter(Boolean)
+        .map((m) => avatar(m))
+        .join('')}</span></div>${progress(d.startAt, d.endsAt)}</button>`,
+    )
     .join('');
   const products = S.products
     .map(
@@ -696,6 +826,8 @@ function renderProduct() {
     ${products}`;
   const v = $('#view-product');
   v.querySelectorAll('[data-genre]').forEach((b) => (b.onclick = () => assignDev(b.dataset.genre)));
+  fillThumbs(v);
+  v.querySelectorAll('[data-dev]').forEach((el) => (el.onclick = () => openDevRunning(+el.dataset.dev)));
   v.querySelectorAll('[data-stop]').forEach((b) => (b.onclick = () => confirm('販売をやめますか？') && (G.stopProduct(S, +b.dataset.stop), commit())));
 }
 
@@ -713,6 +845,39 @@ function assignDev(genre) {
     },
     confirm: (ids) => G.startDev(S, genre, ids, Date.now()),
   });
+}
+
+// 開発中の製品のくわしい様子（担当者と力・ゲージ・出来の見込み・1時間の稼ぎの見込み・残り時間）
+function openDevRunning(devId) {
+  const d = S.devs.find((x) => x.id === devId);
+  if (!d) return;
+  const g = R.GENRES[d.genre];
+  const dlg = $('#assign');
+  const team = d.members.map((id) => S.members.find((m) => m.id === id)).filter(Boolean);
+  const power = (m) => Math.round(G.teamPower(S, [m], g.w));
+  const sum = team.reduce((a, m) => a + power(m), 0);
+  const p = G.devPreview(S, d.genre, team.map((m) => m.id));
+  const now = Date.now();
+  // 今の流行で発売したときの、はじめの1時間の稼ぎ（出来は運で 0.6〜1.4 倍に振れる）
+  const income = (q) => G.productIncome(S, { genre: d.genre, q: Math.min(3, q), launchedAt: now }, now);
+  $('#assign-body').innerHTML = `
+    <div class="sheet-head"><b>${g.name}</b><span class="muted">${icon('people')}${team.length}</span></div>
+    <div class="need ${sum >= g.need ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / g.need))}"></i></span><span class="need-num"><b>${sum}</b>/${g.need}</span></div>
+    <div class="pick">${team
+      .map(
+        (m) => `<div class="person active">
+          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
+        </div>`,
+      )
+      .join('')}</div>
+    <div class="preview">${rating(p.quality * 0.6)}<span class="muted">〜</span>${rating(p.quality * 1.4)}${trendIcon(G.trendAt(S, d.genre, now))}</div>
+    <div class="preview">${val('coin', `+${yen(income(p.quality * 0.6))}〜${yen(income(p.quality * 1.4))}/時`)}${val('box', yen(g.cost))}</div>
+    ${progress(d.startAt, d.endsAt)}
+    <button class="big ghost" id="run-close">OK</button>`;
+  fillThumbs($('#assign-body'));
+  updateTimers();
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
 }
 
 // ----- 偉人 -----
@@ -1067,11 +1232,30 @@ function resultsHtml(ev, { head = true } = {}) {
     ),
     tasks.length > 5 ? `<div class="muted">+${tasks.length - 5}</div>` : '',
     ...prods.map((p) => `<div class="result ok">${icon('box')}<b>${esc(p.name)}</b><span class="vals">${rating(p.q)}</span></div>`),
-    levels.length ? `<div class="vals center">${levels.map((x) => val('level', `${esc(x.name)} Lv${x.level}`)).join('')}</div>` : '',
+    ...levelRows(levels),
   ];
   const list = `<div class="results">${rows.join('')}</div>`;
   // 見出しはいつも「完了」（成功・失敗は1行ずつの札で見せる。見出しまで「失敗」にすると二重になる）
   return head ? `${icon(tasks.some((t) => t.ok) || prods.length ? 'check' : 'task', 'big-ic done-ic')}<h2>完了</h2>${list}` : list;
+}
+
+// レベルが上がった人（同じ人が何度も上がったら1行にまとめて「Lv2 → Lv4」）
+function levelRows(levels) {
+  const byMember = new Map();
+  for (const x of levels) {
+    const k = x.id ?? x.name;
+    const o = byMember.get(k) ?? { ...x, from: x.level - 1 };
+    o.level = Math.max(o.level, x.level);
+    byMember.set(k, o);
+  }
+  return [...byMember.values()].map((x) => {
+    const m = S.members.find((y) => y.id === x.id);
+    const sub = m ? (m.kind === 'legend' ? 'レジェンド' : R.JOBS[m.job].name) : '';
+    return `<div class="rival lvup">${m ? avatar(m) : `<span class="av" style="--c:var(--accent)">${esc(x.name.slice(0, 1))}</span>`}
+      <span class="rival-what"><b>${esc(x.name)}</b><small>${sub}</small></span>
+      <span class="lv-to">${icon('up')}<span>Lv${x.from}</span><span class="arrow">→</span><b>Lv${x.level}</b></span>
+    </div>`;
+  });
 }
 
 // 冷やかしに来たレジェンドと、されたこと（お金を減らされた・社員を引き抜かれた）
@@ -1144,11 +1328,12 @@ function showSync(text, cls) {
     el.className = `sync ${cls}`;
     el.title = text;
   }
-  if ($('#settings').open) renderSettings();
+  if ($('#settings').open && !renaming()) renderSettings(); // 名前を入力している途中は描き直さない
 }
 async function toggleLogin() {
   const u = cloud.currentUser();
   if (!u) return cloud.login();
+  settingsPage = 'more'; // 上の「保存済み」を押したときは、Google のある「アカウントと記録」を開く
   renderSettings();
   $('#settings').showModal();
 }
@@ -1157,51 +1342,77 @@ document.querySelectorAll('.sync').forEach((b) => {
   b.addEventListener('pointerdown', cloud.warmUp, { once: true });
 });
 
-function renderSettings() {
-  const u = cloud.currentUser();
-  const inGame = S && !$('#game').classList.contains('hidden');
-  const hero = S?.members.find((m) => m.kind === 'hero');
+// 設定の画面は3つ：main（タイトルへ・名前を変更）/ rename（名前を変更）/ more（Google のログイン・ログアウト・最初から）
+// ログアウトと「最初から」は押し間違えないよう「アカウントと記録」の奥に置き、確かめてから行う
+let settingsPage = 'main';
+const renaming = () => settingsPage === 'rename';
+function renderRename() {
+  const hero = S.members.find((m) => m.kind === 'hero');
   $('#settings-body').innerHTML = `
-    ${inGame ? `<label class="set-row rename"><b>CEO</b><input id="set-name" maxlength="12" autocomplete="off" value="${esc(hero.name)}" /></label>
-    <label class="set-row rename"><b>株式会社</b><input id="set-company" maxlength="16" autocomplete="off" value="${esc(S.company.replace('株式会社', ''))}" /></label>` : ''}
-    ${inGame ? `<button class="set-row link-row" id="to-title">${icon('home')}<span class="grow">タイトルへ</span>${icon('back', 'flip')}</button>` : ''}
-    <div class="set-row">${icon(u ? SYNC_ICON[syncState.cls] : 'cloud')}<span class="grow">${u ? esc(u.email ?? '') : 'Google'}</span>
-      ${u ? '<button class="btn ghost" id="logout">ログアウト</button>' : '<button class="btn" id="login">ログイン</button>'}</div>
-    ${S ? `<div class="set-row">${icon('error')}<span class="grow">最初から</span><button class="btn ghost danger" id="reset">消す</button></div>` : ''}`;
+    <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">名前を変更</span></button>
+    <label class="set-row rename"><b>CEO</b><input id="set-name" maxlength="12" autocomplete="off" value="${esc(hero.name)}" /></label>
+    <label class="set-row rename"><b>株式会社</b><input id="set-company" maxlength="16" autocomplete="off" value="${esc(S.company.replace('株式会社', ''))}" /></label>
+    <button class="big" id="rename-save">保存</button>`;
+  $('#set-back').onclick = () => setPage('main');
+  $('#rename-save').onclick = () => {
+    const name = $('#set-name').value.trim();
+    const company = $('#set-company').value.trim();
+    if (name) hero.name = name; // 空のときは元のまま
+    if (company) S.company = G.companyTitle(company);
+    commit();
+    setPage('main');
+  };
+}
+function renderMore() {
+  const u = cloud.currentUser();
+  $('#settings-body').innerHTML = `
+    <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">アカウントと記録</span></button>
+    ${u
+      ? `<div class="set-row">${icon(SYNC_ICON[syncState.cls])}<span class="grow muted">${esc(u.email ?? '')}</span><button class="btn ghost small" id="logout">ログアウト</button></div>`
+      : `<div class="set-row">${icon('cloud')}<span class="grow">Google</span><button class="btn" id="login">ログイン</button></div>`}
+    ${S ? `<div class="set-row">${icon('error')}<span class="grow">最初から</span><button class="btn ghost danger small" id="reset">消す</button></div>` : ''}`;
+  $('#set-back').onclick = () => setPage('main');
   if ($('#login')) {
     $('#login').onclick = () => cloud.login();
     cloud.warmUp();
   }
-  $('#logout') && ($('#logout').onclick = () => cloud.logout());
-  // 名前と会社名は途中でも変えられる（空のときは元に戻す）
-  const rename = (el, apply) =>
-    el &&
-    (el.onchange = () => {
-      const v = el.value.trim();
-      if (v) apply(v);
-      el.value = v || el.defaultValue;
-      commit();
+  $('#logout') && ($('#logout').onclick = () => confirm('ログアウトしますか？') && cloud.logout().then(() => setPage('main')));
+  $('#reset') &&
+    ($('#reset').onclick = async () => {
+      if (!confirm(`記録${slot} を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
+      if (!confirm('本当に消しますか？もとに戻せません')) return;
+      S = null;
+      try {
+        localStorage.removeItem(saveKey(slot)); // 消すのはいま遊んでいる記録だけ
+      } catch {}
+      await cloud.clear().catch(() => {});
+      location.reload();
     });
-  rename($('#set-name'), (v) => (hero.name = v));
-  rename($('#set-company'), (v) => (S.company = G.companyTitle(v)));
+}
+function setPage(p) {
+  settingsPage = p;
+  renderSettings();
+}
+
+function renderSettings() {
+  if (settingsPage === 'rename' && S) return renderRename();
+  if (settingsPage === 'more') return renderMore();
+  const inGame = S && !$('#game').classList.contains('hidden');
+  $('#settings-body').innerHTML = `
+    ${inGame ? `<button class="big set-title" id="to-title">${icon('home')}タイトルへ</button>` : ''}
+    ${inGame ? `<button class="set-row link-row" id="to-rename">${icon('pen')}<span class="grow">名前を変更</span>${icon('back', 'flip')}</button>` : ''}
+    <button class="set-row link-row set-more" id="to-more"><span class="grow">アカウントと記録</span>${icon('back', 'flip')}</button>`;
+  $('#to-rename') && ($('#to-rename').onclick = () => setPage('rename'));
+  $('#to-more') && ($('#to-more').onclick = () => setPage('more'));
   $('#to-title') &&
     ($('#to-title').onclick = () => {
       save();
       $('#settings').close();
       showTitle();
     });
-  $('#reset') &&
-    ($('#reset').onclick = async () => {
-      if (!confirm(`記録を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
-      S = null;
-      try {
-        localStorage.removeItem(SAVE_KEY);
-      } catch {}
-      await cloud.clear().catch(() => {});
-      location.reload();
-    });
 }
 $('#open-settings').onclick = () => {
+  settingsPage = 'main';
   renderSettings();
   $('#settings').showModal();
 };
@@ -1224,7 +1435,7 @@ function applyState(remote) {
   S = remote;
   G.advance(S, Date.now());
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+    localStorage.setItem(saveKey(slot), JSON.stringify(S));
   } catch {}
   $('#assign').close();
   if ($('#game').classList.contains('hidden')) {
@@ -1243,4 +1454,18 @@ if (S) {
 }
 showTitle();
 setInterval(tick, 1000);
-cloud.init({ getState: () => S, applyState, decide, onStatus: showSync, onSynced });
+// クラウドにある、いま遊んでいない方の記録を、この端末の記録と合わせる（新しい方を残す）
+// この端末の方が新しければ、それを返してクラウドに保存してもらう
+function syncOther(n, remote, fromListen = false) {
+  const local = loadLocal(n);
+  if (remote && (!local || (remote.savedAt ?? 0) >= (local.savedAt ?? 0))) {
+    try {
+      localStorage.setItem(saveKey(n), JSON.stringify(remote));
+    } catch {}
+    if ($('#game').classList.contains('hidden') && at === 0) showTitle();
+    return null;
+  }
+  return fromListen ? null : local;
+}
+
+cloud.init({ getState: () => S, applyState, decide, onStatus: showSync, onSynced, syncOther, slot: () => slot });

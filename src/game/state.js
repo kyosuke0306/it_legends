@@ -45,7 +45,6 @@ export function newGame({ job, name, company }, now = Date.now()) {
     devs: [],
     products: [],
     candidates: [],
-    offerAt: now,
     candAt: now,
     encounter: null,
     activity: R.DEFAULT_ACTIVITY,
@@ -92,10 +91,11 @@ function perksOf(m) {
 
 // 会社にいるだけで効くもの
 export function companyEffects(s) {
-  const e = { income: 0, offers: 0, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, luck: 0, statAll: {}, incomeGenre: {} };
+  const e = { income: 0, offers: 1, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, luck: 0, statAll: {}, incomeGenre: {} };
   for (const m of s.members) {
     const p = perksOf(m);
-    for (const k of ['income', 'offers', 'nextTrend', 'hireCost', 'xpAll', 'decaySlow', 'luck']) e[k] += p[k] ?? 0;
+    e.offers *= 1 + (p.offers ?? 0); // 依頼の届きやすさは掛け算で重ねる
+    for (const k of ['income', 'nextTrend', 'hireCost', 'xpAll', 'decaySlow', 'luck']) e[k] += p[k] ?? 0;
     for (const [k, v] of Object.entries(p.statAll ?? {})) e.statAll[k] = (e.statAll[k] ?? 0) + v;
     for (const [k, v] of Object.entries(p.incomeGenre ?? {})) e.incomeGenre[k] = (e.incomeGenre[k] ?? 0) + v;
   }
@@ -150,7 +150,10 @@ function addOffer(s, now, forceTier, easy = false) {
     const r = rand(s);
     tier = r < 0.55 ? maxTier : r < 0.85 ? Math.max(0, maxTier - 1) : Math.floor(rand(s) * (maxTier + 1));
   }
-  const tpl = pick(s, R.TASKS.filter((t) => t.tier === tier));
+  // いま並んでいる依頼と同じ名前はなるべく出さない（全部並んでいるときだけ重なる）
+  const pool = R.TASKS.filter((t) => t.tier === tier);
+  const fresh = pool.filter((t) => !s.offers.some((o) => o.title === t.title));
+  const tpl = pick(s, fresh.length ? fresh : pool);
   const T = R.TIERS[tier];
   const hours = easy ? easy : pick(s, T.hours);
   const diff = Math.round(easy ? T.diff[0] * 0.8 : between(s, ...T.diff));
@@ -169,7 +172,6 @@ function addOffer(s, now, forceTier, easy = false) {
     expiresAt: now + R.OFFER_LIFE,
   });
 }
-const maxOffers = (s) => R.BASE_OFFERS + companyEffects(s).offers;
 
 // ---------- 要員派遣（仕事の間だけ借りる人） ----------
 // その仕事に一番向いた職種
@@ -289,7 +291,7 @@ function giveXp(s, team, base, t, ev) {
       for (const k of R.STAT_KEYS) m.stats[k] += Math.round(w[k] * between(s, 0.8, 1.4));
       if (m.salary) m.salary = round(m.salary * 1.08, 500);
       addLog(s, t, `${displayName(m)}  Lv${m.level}`, 'good');
-      ev.push({ type: 'level', name: displayName(m), level: m.level });
+      ev.push({ type: 'level', id: m.id, name: displayName(m), level: m.level });
     }
   }
 }
@@ -375,6 +377,7 @@ function refreshCandidates(s, t = 0) {
     const [lo, hi] = R.OFFICES[s.office].lv;
     growTo(s, m, lo + Math.floor(rand(s) * (hi - lo + 1)));
     m.until = t + between(s, ...R.CANDIDATE_LIFE) * R.DAY;
+    m.at = t; // 来た時刻（新着の印に使う）
     s.candidates.push(m);
   }
 }
@@ -512,11 +515,17 @@ function activityRoll(s, event) {
   return a?.event === event && !ceoBusyUntil(s) && rand(s) < a.perHour;
 }
 
-// 散歩：仕事の相談を受ける（依頼の上限を少しこえても届く）
+// 新しい依頼が届くか（1時間ごとに、評判と営業・レジェンドの倍率で決まる確率で。並べる数に上限はない）
+export const offerChance = (s) => Math.min(1, (R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1)) * companyEffects(s).offers);
+function rollOffer(s, t) {
+  if (rand(s) < offerChance(s)) addOffer(s, t);
+}
+
+// 散歩：仕事の相談を受ける（ふつうの依頼とは別に届く）
 function rollWalkOffer(s, t) {
   const a = R.ACTIVITIES[s.activity];
   if (!a?.offerPerHour || ceoBusyUntil(s) || rand(s) >= a.offerPerHour) return;
-  if (s.offers.length < maxOffers(s) + R.WALK_OFFER_EXTRA) addOffer(s, t);
+  addOffer(s, t);
 }
 
 function rollLuck(s, t, ev) {
@@ -535,6 +544,7 @@ function rollWalkin(s, t, ev) {
   // 腕のいい人が訪ねてくる（今の会社より少し育っている）
   growTo(s, m, Math.max(2 + s.office * 2, R.OFFICES[s.office].lv[1]) + Math.floor(rand(s) * 3));
   m.walkin = true;
+  m.at = t;
   m.until = t + R.WALKIN_LIFE;
   s.candidates.unshift(m);
   addLog(s, t, `${m.name}  面接に来た`, 'good');
@@ -623,11 +633,8 @@ export function advance(s, now, ev = []) {
     ev.income = (ev.income ?? 0) + income;
     ev.salary = (ev.salary ?? 0) + salary;
     // 依頼が届く・期限切れ
-    while (s.offerAt + R.OFFER_EVERY <= next) {
-      s.offerAt += R.OFFER_EVERY;
-      s.offers = s.offers.filter((o) => o.expiresAt > s.offerAt);
-      if (s.offers.length < maxOffers(s)) addOffer(s, s.offerAt);
-    }
+    for (const o of s.offers.filter((o) => o.expiresAt <= next)) addLog(s, o.expiresAt, `${o.title}  期限切れ`);
+    s.offers = s.offers.filter((o) => o.expiresAt > next);
     // 採用候補の入れ替え
     while (s.candAt + R.CANDIDATE_EVERY <= next) {
       s.candAt += R.CANDIDATE_EVERY;
@@ -646,6 +653,7 @@ export function advance(s, now, ev = []) {
     if (next === boundary) {
       rollEncounter(s, next, ev);
       rollLuck(s, next, ev);
+      rollOffer(s, next);
       rollWalkOffer(s, next);
       rollRival(s, next, ev);
       rollQuit(s, next, ev);
