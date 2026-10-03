@@ -374,6 +374,7 @@ function refreshCandidates(s, t = 0) {
     const [lo, hi] = R.OFFICES[s.office].lv;
     growTo(s, m, lo + Math.floor(rand(s) * (hi - lo + 1)));
     m.until = t + between(s, ...R.CANDIDATE_LIFE) * R.DAY;
+    m.at = t; // 来た時刻（新着の印に使う）
     s.candidates.push(m);
   }
 }
@@ -540,6 +541,7 @@ function rollWalkin(s, t, ev) {
   // 腕のいい人が訪ねてくる（今の会社より少し育っている）
   growTo(s, m, Math.max(2 + s.office * 2, R.OFFICES[s.office].lv[1]) + Math.floor(rand(s) * 3));
   m.walkin = true;
+  m.at = t;
   m.until = t + R.WALKIN_LIFE;
   s.candidates.unshift(m);
   addLog(s, t, `${m.name}  面接に来た`, 'good');

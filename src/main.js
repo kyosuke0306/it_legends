@@ -374,6 +374,8 @@ function enterGame() {
 
 document.querySelectorAll('.tab').forEach((tab) => {
   tab.onclick = () => {
+    // 仕事・仲間のタブを開いたとき、前に見た時刻を覚えておく（それより後に来た依頼・面接に「新着」を付ける）
+    if (view !== tab.dataset.view && seenSnap[tab.dataset.view] !== undefined) seenSnap[tab.dataset.view] = S[`${tab.dataset.view}SeenAt`] ?? 0;
     view = tab.dataset.view;
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${view}`));
@@ -382,12 +384,16 @@ document.querySelectorAll('.tab').forEach((tab) => {
   };
 });
 
+// タブを開く前に最後に見た時刻（新着の印に使う）
+const seenSnap = { work: Infinity, team: Infinity };
+const newTag = '<span class="new-tag">新着</span>';
 function renderHeader() {
   $('#company-name').textContent = S.company;
   $('#money').innerHTML = val('coin', yen(S.money), S.money < 0 ? 'minus' : '');
   $('#rep').innerHTML = val('star', S.rep);
   $('#dot-office').classList.toggle('on', Boolean(S.encounter));
-  $('#dot-team').classList.toggle('on', S.candidates.some((c) => c.walkin));
+  // 勉強会で訪ねてきた人がいるか、仲間タブを最後に開いたあとに面接に来た人がいるとき
+  $('#dot-team').classList.toggle('on', S.candidates.some((c) => c.walkin || (c.at ?? 0) > (S.teamSeenAt ?? 0)));
   // 仕事タブを最後に開いたあとに新しい依頼が届いていて、手の空いている人がいるときだけ（開くと消える）
   const arrived = (o) => o.expiresAt - R.OFFER_LIFE;
   $('#dot-work').classList.toggle('on', G.freeMembers(S).length > 0 && S.offers.some((o) => arrived(o) > (S.workSeenAt ?? 0)));
@@ -476,7 +482,7 @@ function renderWork() {
   const offers = S.offers
     .map(
       (o) => `<button class="panel offer cat-${o.cat}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
-        <span class="offer-top"><b>${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}"></span></span></span>
+        <span class="offer-top"><b>${o.expiresAt - R.OFFER_LIFE > seenSnap.work ? newTag : ''}${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}"></span></span></span>
         <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
       </button>`,
     )
@@ -680,7 +686,7 @@ function memberRow(m, { candidate = false } = {}) {
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''} ${open ? 'open' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
-      <span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>
+      <span class="pname">${candidate && (m.at ?? 0) > seenSnap.team ? newTag : ''}${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>
       ${statBars(st)}
     </button>
     ${
@@ -695,6 +701,8 @@ function memberRow(m, { candidate = false } = {}) {
   </div>`;
 }
 function renderTeam() {
+  S.teamSeenAt = Date.now(); // 仲間タブを見た（通知の点を消す）
+  renderHeader();
   const v = $('#view-team');
   v.innerHTML = `
     <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
@@ -1200,7 +1208,7 @@ function showSync(text, cls) {
 async function toggleLogin() {
   const u = cloud.currentUser();
   if (!u) return cloud.login();
-  settingsPage = 'more'; // 上の「保存済み」を押したときは、Google のある「その他」を開く
+  settingsPage = 'more'; // 上の「保存済み」を押したときは、Google のある「アカウントと記録」を開く
   renderSettings();
   $('#settings').showModal();
 }
@@ -1210,7 +1218,7 @@ document.querySelectorAll('.sync').forEach((b) => {
 });
 
 // 設定の画面は3つ：main（タイトルへ・名前を変更）/ rename（名前を変更）/ more（Google のログイン・ログアウト・最初から）
-// ログアウトと「最初から」は押し間違えないよう「その他」の奥に置き、確かめてから行う
+// ログアウトと「最初から」は押し間違えないよう「アカウントと記録」の奥に置き、確かめてから行う
 let settingsPage = 'main';
 const renaming = () => settingsPage === 'rename';
 function renderRename() {
@@ -1233,7 +1241,7 @@ function renderRename() {
 function renderMore() {
   const u = cloud.currentUser();
   $('#settings-body').innerHTML = `
-    <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">その他</span></button>
+    <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">アカウントと記録</span></button>
     ${u
       ? `<div class="set-row">${icon(SYNC_ICON[syncState.cls])}<span class="grow muted">${esc(u.email ?? '')}</span><button class="btn ghost small" id="logout">ログアウト</button></div>`
       : `<div class="set-row">${icon('cloud')}<span class="grow">Google</span><button class="btn" id="login">ログイン</button></div>`}
@@ -1268,7 +1276,7 @@ function renderSettings() {
   $('#settings-body').innerHTML = `
     ${inGame ? `<button class="big set-title" id="to-title">${icon('home')}タイトルへ</button>` : ''}
     ${inGame ? `<button class="set-row link-row" id="to-rename">${icon('pen')}<span class="grow">名前を変更</span>${icon('back', 'flip')}</button>` : ''}
-    <button class="set-row link-row set-more" id="to-more"><span class="grow">その他</span>${icon('back', 'flip')}</button>`;
+    <button class="set-row link-row set-more" id="to-more"><span class="grow">アカウントと記録</span>${icon('back', 'flip')}</button>`;
   $('#to-rename') && ($('#to-rename').onclick = () => setPage('rename'));
   $('#to-more') && ($('#to-more').onclick = () => setPage('more'));
   $('#to-title') &&

@@ -640,3 +640,6 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .big.set-title .ic { width: 1.2em; height: 1.2em; }
 .set-more { color: var(--muted); font-weight: 500; font-size: 0.85rem; padding-top: 18px; }
 .btn.small { padding: 5px 10px; font-size: 0.75rem; opacity: 0.8; }
+/* 前に見たあとに届いた依頼・面接に来た人の「新着」の札 */
+.new-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; vertical-align: 2px; color: #fff; background: linear-gradient(90deg, #ff5a7a, #ff8a3d); letter-spacing: 0.05em; }
+.pname .new-tag { align-self: flex-start; margin: 0 0 2px; }
