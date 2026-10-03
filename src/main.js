@@ -675,8 +675,15 @@ function renderProduct() {
       </button>`;
     })
     .join('');
+  // 開発中の製品：タップすると担当者・出来の見込み・稼ぎの見込みが下から出る（openDevRunning）
   const devs = S.devs
-    .map((d) => `<div class="panel run"><div class="row1"><b>${R.GENRES[d.genre].name}</b>${icon('busy', 'spin')}</div>${progress(d.startAt, d.endsAt)}</div>`)
+    .map(
+      (d) => `<button class="panel run" data-dev="${d.id}"><div class="row1"><b>${R.GENRES[d.genre].name}</b><span class="avs">${d.members
+        .map((id) => S.members.find((m) => m.id === id))
+        .filter(Boolean)
+        .map((m) => avatar(m))
+        .join('')}</span></div>${progress(d.startAt, d.endsAt)}</button>`,
+    )
     .join('');
   const products = S.products
     .map(
@@ -695,6 +702,8 @@ function renderProduct() {
     ${products}`;
   const v = $('#view-product');
   v.querySelectorAll('[data-genre]').forEach((b) => (b.onclick = () => assignDev(b.dataset.genre)));
+  fillThumbs(v);
+  v.querySelectorAll('[data-dev]').forEach((el) => (el.onclick = () => openDevRunning(+el.dataset.dev)));
   v.querySelectorAll('[data-stop]').forEach((b) => (b.onclick = () => confirm('販売をやめますか？') && (G.stopProduct(S, +b.dataset.stop), commit())));
 }
 
@@ -712,6 +721,39 @@ function assignDev(genre) {
     },
     confirm: (ids) => G.startDev(S, genre, ids, Date.now()),
   });
+}
+
+// 開発中の製品のくわしい様子（担当者と力・ゲージ・出来の見込み・1時間の稼ぎの見込み・残り時間）
+function openDevRunning(devId) {
+  const d = S.devs.find((x) => x.id === devId);
+  if (!d) return;
+  const g = R.GENRES[d.genre];
+  const dlg = $('#assign');
+  const team = d.members.map((id) => S.members.find((m) => m.id === id)).filter(Boolean);
+  const power = (m) => Math.round(G.teamPower(S, [m], g.w));
+  const sum = team.reduce((a, m) => a + power(m), 0);
+  const p = G.devPreview(S, d.genre, team.map((m) => m.id));
+  const now = Date.now();
+  // 今の流行で発売したときの、はじめの1時間の稼ぎ（出来は運で 0.6〜1.4 倍に振れる）
+  const income = (q) => G.productIncome(S, { genre: d.genre, q: Math.min(3, q), launchedAt: now }, now);
+  $('#assign-body').innerHTML = `
+    <div class="sheet-head"><b>${g.name}</b><span class="muted">${icon('people')}${team.length}</span></div>
+    <div class="need ${sum >= g.need ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / g.need))}"></i></span><span class="need-num"><b>${sum}</b>/${g.need}</span></div>
+    <div class="pick">${team
+      .map(
+        (m) => `<div class="person active">
+          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
+        </div>`,
+      )
+      .join('')}</div>
+    <div class="preview">${rating(p.quality * 0.6)}<span class="muted">〜</span>${rating(p.quality * 1.4)}${trendIcon(G.trendAt(S, d.genre, now))}</div>
+    <div class="preview">${val('coin', `+${yen(income(p.quality * 0.6))}〜${yen(income(p.quality * 1.4))}/時`)}${val('box', yen(g.cost))}</div>
+    ${progress(d.startAt, d.endsAt)}
+    <button class="big ghost" id="run-close">OK</button>`;
+  fillThumbs($('#assign-body'));
+  updateTimers();
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
 }
 
 // ----- 偉人 -----
