@@ -622,3 +622,15 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 /* 社員・CEO の顔：レジェンドと同じ見え方（頭と肩）に。仮の体は頭が大きいので、レジェンドより少し引いて切り抜く */
 .av.face:has(img) { background: var(--panel); box-shadow: 0 0 0 2px var(--c); }
 .av.face img { width: 145%; height: 145%; object-position: 50% 12%; }
+/* タイトルの記録1・記録2を選ぶところ */
+.title-buttons { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.title-slots { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.slot { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 18px; border-radius: 16px; border: 1px solid rgba(120, 220, 255, 0.45); background: rgba(10, 16, 40, 0.6); backdrop-filter: blur(6px); color: #e9fbff; text-align: left; font: inherit; cursor: pointer; }
+.slot:disabled { opacity: 0.35; cursor: default; }
+.slot.empty { border-style: dashed; }
+.slot-no { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: linear-gradient(135deg, #22c8ff, #8b5cff); color: #fff; }
+.slot-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.slot-info b { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot-info .vals { color: rgba(233, 251, 255, 0.8); }
+.slot-info .muted { color: rgba(233, 251, 255, 0.6); }
+.slot-back { align-self: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3); background: transparent; color: #e9fbff; display: grid; place-items: center; cursor: pointer; }

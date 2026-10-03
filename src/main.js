@@ -22,15 +22,22 @@ document.querySelectorAll('.tab').forEach((t) => t.insertAdjacentHTML('afterbegi
 // iPhone の Safari は2本指で画面ごと拡大できてしまう（描く画面がはみ出す）ので止める。3Dの部屋の2本指は別に動く
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
+// 記録は2つまで。1 はもとからの場所（今までの記録はそのまま 1 になる）、2 は別の場所
 const SAVE_KEY = 'it_legends.save.v1';
+const SLOT_KEY = 'it_legends.slot'; // いま遊んでいる記録の番号
+const saveKey = (slot) => (slot === 2 ? `${SAVE_KEY}.2` : SAVE_KEY);
+let slot = 1;
+try {
+  slot = localStorage.getItem(SLOT_KEY) === '2' ? 2 : 1;
+} catch {}
 let S = null; // ゲームの状態
 let view = 'office';
 let office;
 
 // ---------- 保存 ----------
-function loadLocal() {
+function loadLocal(n = slot) {
   try {
-    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    const s = JSON.parse(localStorage.getItem(saveKey(n)));
     return s?.v === 1 ? G.migrate(s) : null;
   } catch {
     return null;
@@ -40,7 +47,7 @@ function save() {
   if (!S) return;
   S.savedAt = Date.now();
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+    localStorage.setItem(saveKey(slot), JSON.stringify(S));
   } catch {}
   cloud.changed();
 }
@@ -199,16 +206,80 @@ function showTitle() {
   $('#start').classList.remove('hidden');
   $('#game').classList.add('hidden');
   $('#title-msg').textContent = '';
+  closeSlots();
   titleLegends();
-  $('#btn-continue').classList.toggle('sub', !S);
-  $('#btn-new').classList.toggle('sub', Boolean(S));
-  if (S) $('#btn-continue').after($('#btn-new')); // 大きい方を上に
+  const any = Boolean(S || loadLocal(otherSlot()));
+  $('#btn-continue').classList.toggle('sub', !any);
+  $('#btn-new').classList.toggle('sub', any);
+  if (any) $('#btn-continue').after($('#btn-new')); // 大きい方を上に
   else $('#btn-new').after($('#btn-continue'));
   goStep(0);
 }
 
-$('#btn-continue').onclick = () => {
+// ----- 記録1・記録2 -----
+const otherSlot = () => (slot === 2 ? 1 : 2);
+const slotData = (n) => (n === slot ? S : loadLocal(n));
+// 遊ぶ記録を切り替える（いまの記録は保存してから）
+async function useSlot(n) {
+  if (n === slot) return;
+  save();
+  await cloud.flush().catch(() => {});
+  slot = n;
+  try {
+    localStorage.setItem(SLOT_KEY, String(n));
+  } catch {}
+  S = loadLocal(n);
+  pendingWelcome = null;
+  if (S) {
+    const away = Date.now() - S.time;
+    pendingWelcome = [G.advance(S, Date.now()), away];
+    save();
+  }
+  office?.reset();
+}
+// タイトルで記録を選ぶ（mode: 'continue' つづきから / 'new' はじめから）
+let newSlot = null; // はじめからで選んだ記録の番号
+function openSlots(mode) {
+  const card = (n) => {
+    const s = slotData(n);
+    const info = s
+      ? `<b>${esc(s.company)}</b><span class="vals">${val('coin', yen(s.money))}${val('star', s.rep)}${val('crown', legendCount(s))}</span>`
+      : `<span class="muted">${icon('plus')}</span>`;
+    return `<button class="slot ${s ? '' : 'empty'}" data-slot="${n}" ${mode === 'continue' && !s ? 'disabled' : ''}><span class="slot-no">${n}</span><span class="slot-info">${info}</span></button>`;
+  };
+  $('#title-slots').innerHTML = `${card(1)}${card(2)}<button class="slot-back" id="slot-back">${icon('back')}</button>`;
+  $('#title-slots').classList.remove('hidden');
+  $('#title-buttons').classList.add('hidden');
+  $('#slot-back').onclick = closeSlots;
+  $('#title-slots').querySelectorAll('[data-slot]').forEach(
+    (b) =>
+      (b.onclick = async () => {
+        const n = +b.dataset.slot;
+        if (mode === 'continue') {
+          await useSlot(n);
+          if (S) enterGame();
+          return;
+        }
+        if (slotData(n) && !confirm(`記録${n} は消えます。はじめからにしますか？`)) return;
+        newSlot = n;
+        closeSlots();
+        goStep(1);
+      }),
+  );
+}
+function closeSlots() {
+  $('#title-slots').classList.add('hidden');
+  $('#title-buttons').classList.remove('hidden');
+}
+
+$('#btn-continue').onclick = async () => {
+  const other = loadLocal(otherSlot());
+  if (S && other) return openSlots('continue'); // 記録が2つあるときは選ぶ
   if (S) return enterGame();
+  if (other) {
+    await useSlot(otherSlot());
+    return enterGame();
+  }
   // この端末に記録がなければ、Google でログインしてクラウドの記録を読む
   wantContinue = true;
   $('#title-msg').textContent = '';
@@ -217,7 +288,9 @@ $('#btn-continue').onclick = () => {
 };
 $('#btn-continue').addEventListener('pointerdown', cloud.warmUp, { once: true });
 $('#btn-new').onclick = () => {
-  if (S && !confirm('いまの記録は消えます。はじめからにしますか？')) return;
+  // 記録があるときは、どちらに作るかを選ぶ（もう片方は消えない）
+  if (S || loadLocal(otherSlot())) return openSlots('new');
+  newSlot = slot;
   goStep(1);
 };
 
@@ -226,6 +299,7 @@ function onSynced() {
   if (!wantContinue) return;
   wantContinue = false;
   if (S) enterGame();
+  else if (loadLocal(otherSlot())) useSlot(otherSlot()).then(enterGame);
   else $('#title-msg').textContent = '記録がありません';
 }
 
@@ -261,8 +335,10 @@ function initStart() {
     box.querySelectorAll('.job').forEach((x) => x.classList.toggle('active', x === b));
     $('#start-go').disabled = false;
   };
-  $('#start-go').onclick = () => {
+  $('#start-go').onclick = async () => {
     if (!chosen) return;
+    if (newSlot && newSlot !== slot) await useSlot(newSlot);
+    newSlot = null;
     S = G.newGame({ job: chosen, name: $('#start-name').value.trim(), company: $('#start-company').value.trim() });
     pendingWelcome = null;
     office?.reset();
@@ -1170,7 +1246,7 @@ function renderSettings() {
       if (!confirm(`記録を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
       S = null;
       try {
-        localStorage.removeItem(SAVE_KEY);
+        localStorage.removeItem(saveKey(slot)); // 消すのはいま遊んでいる記録だけ
       } catch {}
       await cloud.clear().catch(() => {});
       location.reload();
@@ -1199,7 +1275,7 @@ function applyState(remote) {
   S = remote;
   G.advance(S, Date.now());
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+    localStorage.setItem(saveKey(slot), JSON.stringify(S));
   } catch {}
   $('#assign').close();
   if ($('#game').classList.contains('hidden')) {
@@ -1218,4 +1294,18 @@ if (S) {
 }
 showTitle();
 setInterval(tick, 1000);
-cloud.init({ getState: () => S, applyState, decide, onStatus: showSync, onSynced });
+// クラウドにある、いま遊んでいない方の記録を、この端末の記録と合わせる（新しい方を残す）
+// この端末の方が新しければ、それを返してクラウドに保存してもらう
+function syncOther(n, remote, fromListen = false) {
+  const local = loadLocal(n);
+  if (remote && (!local || (remote.savedAt ?? 0) >= (local.savedAt ?? 0))) {
+    try {
+      localStorage.setItem(saveKey(n), JSON.stringify(remote));
+    } catch {}
+    if ($('#game').classList.contains('hidden') && at === 0) showTitle();
+    return null;
+  }
+  return fromListen ? null : local;
+}
+
+cloud.init({ getState: () => S, applyState, decide, onStatus: showSync, onSynced, syncOther, slot: () => slot });

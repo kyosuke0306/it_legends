@@ -1,5 +1,6 @@
 // Firebase（Google ログイン + Firestore）で記録を保存・同期する（money_manage の sync.js と同じ方式）
 // - 記録は Firestore の users/<ユーザーID> に { data: 記録のJSON, updatedAt, device } で保存
+//   2つ目の記録は同じ場所の data2 / updatedAt2 / device2 に入れる（自分の分だけを書き換え、もう片方は消さない）
 // - ほかの端末で保存された内容は onSnapshot で受け取って反映する
 // - Firebase の部品は、画面の表示が終わって落ち着いてから読み込む（ゲームの表示を遅らせない）
 // - 通信を少なくするため、画面が裏に回ったら保存してから通信を切り、戻ったらつなぎ直す（sleep / wake）
@@ -22,7 +23,17 @@ let unsubscribe = null;
 let timer = null;
 let dirty = false;
 let asleep = false; // 裏に回って通信を切っているか
-let lastSent = ''; // 最後に保存した中身（同じなら送らない）
+const lastSent = {}; // 記録ごとに、最後に保存した中身（同じなら送らない）
+const lastSeen = {}; // 記録ごとに、最後に受け取った中身（同じなら反映しない）
+// 記録の番号ごとの入れ場所（1 はもとからの data。2 は data2）
+const fields = (slot) => (slot === 2 ? { data: 'data2', at: 'updatedAt2', dev: 'device2' } : { data: 'data', at: 'updatedAt', dev: 'device' });
+const slotNow = () => hooks?.slot?.() ?? 1;
+const userRef = () => fb.store.doc(fb.db, 'users', user.uid);
+// 1つの記録だけを書く（merge なので、もう片方の記録は消えない）
+async function put(slot, json) {
+  const f = fields(slot);
+  await fb.store.setDoc(userRef(), { [f.data]: json, [f.at]: Date.now(), [f.dev]: device }, { merge: true });
+}
 
 export const currentUser = () => user;
 const status = (text, cls) => hooks?.onStatus(text, cls);
@@ -70,16 +81,16 @@ async function upload() {
   dirty = false;
   // 保存した時刻だけが違うときは送らない
   const state = hooks.getState();
+  if (!state) return;
+  const slot = slotNow();
   const same = JSON.stringify({ ...state, savedAt: 0, time: 0 });
-  if (same === lastSent) return status('保存済み', 'ok');
+  if (same === lastSent[slot]) return status('保存済み', 'ok');
   status('保存中', 'busy');
   try {
-    await fb.store.setDoc(fb.store.doc(fb.db, 'users', user.uid), {
-      data: JSON.stringify(state),
-      updatedAt: Date.now(),
-      device,
-    });
-    lastSent = same;
+    const json = JSON.stringify(state);
+    await put(slot, json);
+    lastSent[slot] = same;
+    lastSeen[slot] = json;
     status('保存済み', 'ok');
   } catch (e) {
     console.error(e);
@@ -111,11 +122,20 @@ async function onUser(u) {
   }
   flag.set(true);
   status('読み込み中', 'busy');
-  const { store, db } = fb;
-  const ref = store.doc(db, 'users', u.uid);
+  const { store } = fb;
   try {
-    const snap = await store.getDoc(ref);
-    const remote = snap.exists() ? parse(snap.data().data) : null;
+    const snap = await store.getDoc(userRef());
+    const d = snap.exists() ? snap.data() : {};
+    // いま遊んでいない方の記録は、この端末の記録と新しい方に合わせる（main.js の syncOther）
+    for (const slot of [1, 2]) {
+      if (slot === slotNow()) continue;
+      const other = parse(d[fields(slot).data]);
+      const up = await hooks.syncOther?.(slot, other);
+      if (up) await put(slot, JSON.stringify(up));
+    }
+    lastSeen[1] = d.data;
+    lastSeen[2] = d.data2;
+    const remote = parse(d[fields(slotNow()).data]);
     // クラウドとこの端末のどちらの記録を使うか（main.js が決める）
     if (remote && (await hooks.decide(remote)) === 'remote') {
       hooks.applyState(remote);
@@ -137,14 +157,20 @@ async function onUser(u) {
 // ほかの端末で保存された内容を受け取って反映する（つないだ直後にも最新の内容が1回届く）
 function listen() {
   if (unsubscribe || !user) return;
-  unsubscribe = fb.store.onSnapshot(fb.store.doc(fb.db, 'users', user.uid), (s) => {
+  unsubscribe = fb.store.onSnapshot(userRef(), (s) => {
     if (!s.exists() || s.metadata.hasPendingWrites) return;
     const d = s.data();
-    if (d.device === device) return;
-    const st = parse(d.data);
-    if (!st) return;
-    hooks.applyState(st);
-    status('保存済み', 'ok');
+    for (const slot of [1, 2]) {
+      const f = fields(slot);
+      if (d[f.dev] === device || d[f.data] === lastSeen[slot]) continue;
+      lastSeen[slot] = d[f.data];
+      const st = parse(d[f.data]);
+      if (!st) continue;
+      if (slot === slotNow()) {
+        hooks.applyState(st);
+        status('保存済み', 'ok');
+      } else hooks.syncOther?.(slot, st, true); // 遊んでいない方は、この端末に置いておくだけ
+    }
   });
 }
 
@@ -213,10 +239,17 @@ export async function logout() {
   await fb.auth.signOut(fb.a);
 }
 
-// 記録を消す（最初からやり直すとき）
-export async function clear() {
+// 記録を消す（最初からやり直すとき）。消すのは指定した番号の記録だけ
+export async function clear(slot = slotNow()) {
   if (!user) return;
   clearTimeout(timer);
   dirty = false;
-  await fb.store.setDoc(fb.store.doc(fb.db, 'users', user.uid), { data: 'null', updatedAt: Date.now(), device });
+  delete lastSent[slot];
+  lastSeen[slot] = 'null';
+  await put(slot, 'null');
+}
+
+// 遊ぶ記録を切り替える前に呼ぶ：いまの記録をすぐ保存する
+export async function flush() {
+  if (dirty) await upload();
 }
