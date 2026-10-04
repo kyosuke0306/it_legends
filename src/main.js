@@ -135,7 +135,7 @@ function faceShot(look, job) {
   return faceShots.get(k);
 }
 function faceEditor(box, look, job) {
-  const noGlasses = ['data', 'consul'].includes(job); // この2つの職種はもともとメガネ
+  const noGlasses = ['data', 'consul'].includes(job); // この2つの職種はもともとメガネ（分厚いメガネには変えられる）
   look.gender = genderOf(look);
   const pic = (l) => `<span class="fe-pic" style="background-image:url(${faceShot({ ...look, ...l }, job)})"></span>`;
   const sw = (key, list) =>
@@ -146,12 +146,15 @@ function faceEditor(box, look, job) {
     ${sw('skin', FACE_OPTIONS.skin)}
     ${sw('hairColor', FACE_OPTIONS.hairColor)}
     <div class="fe-row">${FACE_OPTIONS.hairStyle[look.gender].map((h) => `<button class="fe-opt ${look.hairStyle === h ? 'on' : ''}" data-k="hairStyle" data-v="${h}">${pic({ hairStyle: h })}</button>`).join('')}</div>
-    ${noGlasses ? '' : `<div class="fe-row">${[false, true].map((g) => `<button class="fe-opt ${Boolean(look.glasses) === g ? 'on' : ''}" data-k="glasses" data-v="${g}">${pic({ glasses: g })}</button>`).join('')}</div>`}`;
+    <div class="fe-row">${(noGlasses ? [true, 'thick'] : [false, true, 'thick'])
+      .map((g) => `<button class="fe-opt ${(look.glasses || (noGlasses && true)) === g ? 'on' : ''}" data-k="glasses" data-v="${g}">${pic({ glasses: g })}</button>`)
+      .join('')}</div>
+    ${job === 'pg' ? '' : `<div class="fe-row">${[false, true].map((h) => `<button class="fe-opt ${Boolean(look.headphones) === h ? 'on' : ''}" data-k="headphones" data-v="${h}">${pic({ headphones: h })}</button>`).join('')}</div>`}`;
   box.onclick = (e) => {
     const b = e.target.closest('[data-k]');
     if (!b) return;
     const { k, v } = b.dataset;
-    look[k] = k === 'hairStyle' || k === 'gender' ? v : k === 'glasses' ? v === 'true' : +v;
+    look[k] = k === 'hairStyle' || k === 'gender' ? v : k === 'glasses' ? (v === 'thick' ? 'thick' : v === 'true') : k === 'headphones' ? v === 'true' : +v;
     if (k === 'gender' && !FACE_OPTIONS.hairStyle[v].includes(look.hairStyle)) look.hairStyle = FACE_OPTIONS.hairStyle[v][0];
     faceEditor(box, look, job);
   };
@@ -1187,6 +1190,11 @@ document.addEventListener(
   (e) => {
     const g = guideStep();
     if (g?.tap && e.target.closest(g.sel)) guideNext();
+    // 見せるだけの案内（OK）の途中で、次の場所を先に押したとき（派遣の説明中にそのまま「任せる」など）は2つ進める
+    else if (g?.ok && GUIDE[S.guide + 1]?.tap && e.target.closest(GUIDE[S.guide + 1].sel)) {
+      guideNext();
+      guideNext();
+    }
   },
   true,
 );

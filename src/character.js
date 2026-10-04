@@ -126,11 +126,23 @@ export function buildChibi(look) {
   }
 
   if (look.glasses) {
+    // 'thick' は瓶の底のような分厚い丸メガネ（オタクっぽく。レンズが白く光って目が見えない）
+    const thick = look.glasses === 'thick';
     const frame = mat(0x333333);
     for (const side of [-1, 1]) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.014, 8, 24), frame);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(thick ? 0.135 : 0.1, thick ? 0.03 : 0.014, 8, 24), frame);
       ring.position.set(0.18 * side, -0.05, R + 0.01);
       head.add(ring);
+      if (thick) {
+        const lens = new THREE.Mesh(new THREE.CircleGeometry(0.13, 24), new THREE.MeshBasicMaterial({ color: 0xeef6ff, transparent: true, opacity: 0.92 }));
+        lens.position.set(0.18 * side, -0.05, R + 0.02);
+        head.add(lens);
+        for (const r of [0.055, 0.095]) {
+          const swirl = new THREE.Mesh(new THREE.TorusGeometry(r, 0.006, 6, 24), mat(0x9aa6b8));
+          swirl.position.set(0.18 * side, -0.05, R + 0.025);
+          head.add(swirl);
+        }
+      }
     }
     const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.16), frame);
     bridge.rotation.z = Math.PI / 2;
@@ -200,6 +212,13 @@ function addHair(head, style, hair, R) {
       // マッシュ（おでこまでかかる丸い前髪）
       const m = cap(-0.05, Math.PI * 0.48);
       m.scale.set(1.04, 1, 1.04);
+      break;
+    }
+    case 'mekakure': {
+      // 目が隠れるほど長い前髪
+      cap(-0.35);
+      const fringe = new THREE.Mesh(new THREE.SphereGeometry(R * 1.09, 32, 16, Math.PI / 2 - 0.95, 1.9, 0, Math.PI * 0.57), hair);
+      head.add(fringe);
       break;
     }
     case 'bob': {

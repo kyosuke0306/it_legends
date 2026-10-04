@@ -10,7 +10,7 @@ export const FACE_OPTIONS = {
   skin: [0xfbe3d3, 0xf6d7c3, 0xeac0a0, 0xd9a882, 0xc68e64, 0x8d5a3b, 0x6e4329],
   hairColor: [0x1d1a1a, 0x3b2417, 0x6b4a2f, 0x8a6a4a, 0xe0c068, 0xa0482a, 0xc8c8d0, 0x4a5ad8],
   // 髪形は男女で分ける（男女が見分けやすいように）
-  hairStyle: { m: ['short', 'side', 'spiky', 'mash'], f: ['long', 'bob', 'ponytail', 'bun'] },
+  hairStyle: { m: ['short', 'side', 'spiky', 'mash', 'mekakure'], f: ['long', 'bob', 'ponytail', 'bun', 'mekakure'] },
 };
 
 // 海外から来た人の名前（カタカナ）。order: 'first' は「名・姓」、'last' は「姓・名」の順

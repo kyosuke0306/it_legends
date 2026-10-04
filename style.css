@@ -715,7 +715,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .fe-sw { width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--c); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12); }
 .fe-sw.on { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
 .fe-opt { padding: 0; border: 0; background: none; border-radius: 50%; }
-.fe-pic { display: block; width: 58px; height: 58px; border-radius: 50%; background-color: var(--panel); box-shadow: 0 0 0 1px var(--line); }
+.fe-pic { display: block; width: 54px; height: 54px; border-radius: 50%; background-color: var(--panel); box-shadow: 0 0 0 1px var(--line); }
 .fe-opt.on .fe-pic { box-shadow: 0 0 0 3px var(--accent); }
 .fe-gender { gap: 18px; }
 .fe-gender .fe-opt { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--muted); }
