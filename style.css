@@ -451,7 +451,11 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 /* ---------- ダイアログ ---------- */
 dialog { border: 0; border-radius: 20px; padding: 16px; width: min(760px, calc(100% - 24px)); max-height: calc(100% - 24px); background: var(--panel); color: var(--text); }
 dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
-.close { position: absolute; right: 12px; top: 8px; border: 0; background: transparent; font-size: 1.6rem; z-index: 4; }
+/* 閉じるボタン：細い線の × を、うすい丸の上に（四角い枠は出さない。2026-10-04 ユーザー指示） */
+.close { position: absolute; right: 12px; top: 12px; z-index: 4; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); -webkit-tap-highlight-color: transparent; }
+.close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.close:focus { outline: none; }
+.close:active { transform: scale(0.92); }
 .detail-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 640px) {
   .detail-body { grid-template-columns: 1fr; }
@@ -787,15 +791,21 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .seg button { flex: 1; border: 2px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); padding: 8px 4px; font-weight: 700; font-size: 0.88rem; }
 .seg button small { margin-left: 4px; color: var(--muted); font-size: 0.7rem; font-weight: 600; }
 .seg button.active { border-color: var(--accent); color: var(--accent); }
-.cond-pick { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
-.cond { border: 2px solid transparent; border-radius: 999px; padding: 5px 12px; background: var(--c, var(--bg)); color: #fff; font-weight: 800; font-size: 0.8rem; opacity: 0.55; }
-.cond.active { opacity: 1; border-color: var(--text); }
-.cond.job { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); color: var(--text); padding: 3px 10px 3px 3px; opacity: 1; }
-.cond.job.active { border-color: var(--accent); color: var(--accent); }
-.cond img, .cond-jobs img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: var(--panel); }
-.cond-pick.jobs { max-height: 30vh; overflow-y: auto; }
-.cond-jobs { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0; color: var(--muted); font-size: 0.78rem; }
-.cond-jobs span { display: inline-flex; align-items: center; gap: 4px; }
+.seg button small { display: inline-flex; align-items: center; gap: 1px; }
+.seg button small .ic { width: 0.95em; height: 0.95em; }
+.pchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.pchip { border: 2px solid transparent; border-radius: 999px; padding: 5px 12px; background: var(--c, var(--bg)); color: #fff; font-weight: 800; font-size: 0.8rem; opacity: 0.45; }
+.pchip.active { opacity: 1; border-color: var(--text); }
+/* 職種は3列にそろえる（スマホで崩れないように） */
+.pjobs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 10px 0 4px; max-height: 34vh; overflow-y: auto; }
+.pjob { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 6px 2px; border: 2px solid transparent; border-radius: 12px; background: var(--bg); color: var(--text); font-weight: 700; font-size: 0.76rem; }
+.pjob img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: var(--panel); }
+.pjob span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pjob.active { border-color: var(--accent); color: var(--accent); }
+.come-jobs { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0; color: var(--muted); font-size: 0.78rem; }
+.come-jobs span { display: inline-flex; align-items: center; gap: 4px; }
+.come-jobs img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: var(--panel); }
+#promo-go small { margin-left: 8px; font-size: 0.75rem; opacity: 0.85; font-weight: 600; }
 #promo-go { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 4px; }
 #promo-go .ic { width: 1.1em; height: 1.1em; }
 

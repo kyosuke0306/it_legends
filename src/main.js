@@ -581,7 +581,7 @@ function openNextOffice() {
   const o = R.OFFICES[lv];
   if (!o) return;
   const now = R.OFFICES[S.office];
-  const tier = (i) => R.TIERS[Math.min(i, R.TIERS.length - 1)];
+  const round = (n) => Math.round(n / 1000) * 1000;
   const okMoney = S.money >= o.cost;
   const okRep = S.rep >= o.rep;
   const fresh = Object.entries(R.GENRES).filter(([, g]) => g.office === lv);
@@ -592,9 +592,8 @@ function openNextOffice() {
     <div id="peek-slot"></div>
     <p class="office-about">${o.about}</p>
     ${row('people', '席', G.capacity(S), o.cap)}
-    ${row('task', '仕事', `${yen(tier(S.office).rate)}`, `${yen(tier(lv).rate)}<small>/時</small>`)}
-    ${row('people', '面接', `${R.CANDIDATES_PER_DAY[S.office]}`, `${R.CANDIDATES_PER_DAY[lv]}<small>人/日</small>`)}
-    ${row('level', '来る人', `Lv${now.lv[0]}〜${now.lv[1]}`, `Lv${o.lv[0]}〜${o.lv[1]}`)}
+    ${row('task', '仕事の平均', `${yen(round(G.avgRate(S.office)))}`, `${yen(round(G.avgRate(lv)))}<small>/時</small>`)}
+    ${row('people', '面接', `${R.CANDIDATES_PER_DAY[S.office]}<small>人/日</small> Lv${now.lv[0]}〜${now.lv[1]}`, `${R.CANDIDATES_PER_DAY[lv]}<small>人/日</small> Lv${o.lv[0]}〜${o.lv[1]}`)}
     ${fresh.length ? `<div class="cmp">${icon('box')}<small>製品</small><span class="grow"></span>${fresh.map(([k, g]) => `<span class="new-prod">${prodIcon(k)}${g.name}</span>`).join('')}</div>` : ''}
     <div class="vals center need-move">${val('coin', yen(o.cost), okMoney ? 'ok' : 'bad')}${val('star', `${Math.floor(S.rep)}/${o.rep}`, okRep ? 'ok' : 'bad')}</div>
     <button class="big" id="move-go" ${okMoney && okRep ? '' : 'disabled'}>${icon('move')}引っ越し</button>`;
@@ -631,8 +630,9 @@ function promoRow(kind) {
   const cls = `panel ad-row ${ad ? '' : 'pr-row'}`;
   if ((until ?? 0) > Date.now()) {
     const g = ad ? G.adGrade(S) : G.prGrade(S);
-    const cat = ad ? S.adCat : S.prCat;
-    const tag = ad && S.adJob ? `<span class="cat-tag job-tag">${R.JOBS[S.adJob].name}</span>` : cat ? catTag(cat) : '';
+    // 条件の札（多いときは2つまで出して残りは数）
+    const tags = [...(ad ? G.adJobs(S) : []).map((j) => `<span class="cat-tag job-tag">${R.JOBS[j].name}</span>`), ...(ad ? G.adCats(S) : G.prCats(S)).map(catTag)];
+    const tag = tags.slice(0, 2).join('') + (tags.length > 2 ? `<span class="cat-tag job-tag">+${tags.length - 2}</span>` : '');
     return `<div class="${cls} on">${icon(g.icon)}<b>${ad ? '求人広告中' : '宣伝中'}</b><small class="promo-name">${g.name}</small>${tag}<span class="grow"></span>${val('hourglass', `<span data-left="${until}"></span>`)}</div>`;
   }
   const min = ad ? G.adCost(S, 0) : G.prCost(S, 0);
@@ -648,14 +648,20 @@ function openPromo(kind) {
   const cats = G.catsNow(S);
   let grade = R.DEFAULT_AD;
   let mode = 'none';
-  let cat = cats[0];
-  let job = Object.keys(R.JOBS)[0];
+  // 条件はいくつでも選べる（いくつ選んでも費用は同じ）
+  const pickCats = new Set([cats[0]]);
+  const pickJobs = new Set();
+  const toggle = (set, k) => (set.has(k) ? set.delete(k) : set.add(k));
   const dlg = $('#assign');
   const bars = (n) => `<span class="power">${icon(ad ? 'people' : 'task')}${[1, 2, 3, 4].map((i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
   const draw = () => {
-    const cond = mode === 'cat' ? { cat } : mode === 'job' ? { job } : null;
+    const cond = mode === 'cat' ? { cats: [...pickCats] } : mode === 'job' ? { jobs: [...pickJobs] } : null;
+    const empty = cond && !(cond.cats ?? cond.jobs).length; // 何も選んでいないときは出せない
     const cost = costOf(grade, cond);
+    const extra = cost - costOf(grade, null);
     const modes = [['none', 'なし'], ['cat', '種類'], ...(ad ? [['job', '職種']] : [])];
+    // 求人の「種類」では、その種類が得意で来る職種を下に出す
+    const comeJobs = [...new Set([...pickCats].flatMap(G.catJobs))];
     $('#assign-body').innerHTML = `
       <div class="sheet-head"><b>${ad ? '求人広告' : '宣伝'}</b></div>
       <div class="grades">${list
@@ -665,30 +671,30 @@ function openPromo(kind) {
         .join('')}</div>
       <div class="sec">${icon('target')}<b>条件</b></div>
       <div class="seg">${modes
-        .map(([k, n]) => `<button class="${mode === k ? 'active' : ''}" data-mode="${k}">${n}${k !== 'none' ? `<small>+${Math.round((R.COND_COST[k] - 1) * 100)}%</small>` : ''}</button>`)
+        .map(([k, n]) => `<button class="${mode === k ? 'active' : ''}" data-mode="${k}">${n}${k !== 'none' ? `<small>${icon('coin')}+${Math.round((R.COND_COST[k] - 1) * 100)}%</small>` : ''}</button>`)
         .join('')}</div>
       ${
         mode === 'cat'
-          ? `<div class="cond-pick">${cats.map((c) => `<button class="cond cat-${c} ${c === cat ? 'active' : ''}" data-cat="${c}">${R.CAT_NAMES[c]}</button>`).join('')}</div>${
-              ad ? `<div class="cond-jobs">${G.catJobs(cat).map((j) => `<span><img src="assets/jobs/${j}.webp" alt="">${R.JOBS[j].name}</span>`).join('')}</div>` : ''
+          ? `<div class="pchips">${cats.map((c) => `<button class="pchip cat-${c} ${pickCats.has(c) ? 'active' : ''}" data-cat="${c}">${R.CAT_NAMES[c]}</button>`).join('')}</div>${
+              ad && comeJobs.length ? `<div class="come-jobs">${comeJobs.map((j) => `<span><img src="assets/jobs/${j}.webp" alt="">${R.JOBS[j].name}</span>`).join('')}</div>` : ''
             }`
           : ''
       }
       ${
         mode === 'job'
-          ? `<div class="cond-pick jobs">${Object.entries(R.JOBS)
-              .map(([k, j]) => `<button class="cond job ${k === job ? 'active' : ''}" data-job="${k}"><img src="assets/jobs/${k}.webp" alt="">${j.name}</button>`)
+          ? `<div class="pjobs">${Object.entries(R.JOBS)
+              .map(([k, j]) => `<button class="pjob ${pickJobs.has(k) ? 'active' : ''}" data-job="${k}"><img src="assets/jobs/${k}.webp" alt=""><span>${j.name}</span></button>`)
               .join('')}</div>`
           : ''
       }
-      <button class="big" id="promo-go" ${S.money < cost ? 'disabled' : ''}>${icon('coin')}${yen(cost)}</button>`;
+      <button class="big" id="promo-go" ${S.money < cost || empty ? 'disabled' : ''}>${icon('coin')}${yen(cost)}${extra > 0 ? `<small>条件 +${yen(extra)}</small>` : ''}</button>`;
     const b = $('#assign-body');
     b.querySelectorAll('[data-grade]').forEach((x) => (x.onclick = () => ((grade = +x.dataset.grade), draw())));
     b.querySelectorAll('[data-mode]').forEach((x) => (x.onclick = () => ((mode = x.dataset.mode), draw())));
-    b.querySelectorAll('[data-cat]').forEach((x) => (x.onclick = () => ((cat = x.dataset.cat), draw())));
-    b.querySelectorAll('[data-job]').forEach((x) => (x.onclick = () => ((job = x.dataset.job), draw())));
+    b.querySelectorAll('[data-cat]').forEach((x) => (x.onclick = () => (toggle(pickCats, x.dataset.cat), draw())));
+    b.querySelectorAll('[data-job]').forEach((x) => (x.onclick = () => (toggle(pickJobs, x.dataset.job), draw())));
     $('#promo-go').onclick = () => {
-      if ((ad ? G.startAd : G.startPR)(S, Date.now(), grade, cond)) {
+      if (!empty && (ad ? G.startAd : G.startPR)(S, Date.now(), grade, cond)) {
         dlg.close();
         commit();
       }
