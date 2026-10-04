@@ -376,7 +376,10 @@ function initStart() {
   const check = () => Object.entries(need).forEach(([i, sel]) => (steps[i].querySelector('[data-next]').disabled = !$(sel).value.trim()));
   Object.values(need).forEach((sel) => {
     $(sel).oninput = check;
-    $(sel).onkeydown = (e) => e.key === 'Enter' && !e.isComposing && $(sel).value.trim() && goStep(at + 1);
+    // 戻り値を返さない（false を返すと削除キーなどが効かなくなる。予測変換で入れたあと消せなかった）
+    $(sel).onkeydown = (e) => {
+      if (e.key === 'Enter' && !e.isComposing && $(sel).value.trim()) goStep(at + 1);
+    };
   });
   check();
   document.querySelectorAll('#start [data-next]').forEach((b) => (b.onclick = () => goStep(at + 1)));
