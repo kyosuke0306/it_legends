@@ -219,7 +219,12 @@ button.panel:disabled { opacity: 0.45; }
 .hint-meetup .ic { width: 1.4em; height: 1.4em; }
 .ad-row { display: flex; align-items: center; gap: 10px; }
 .ad-row > .ic { width: 1.3em; height: 1.3em; color: var(--accent); }
-.ad-row.on { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
+.ad-row.on { background: linear-gradient(100deg, #36b8f5, var(--accent) 55%, #8b5cf6); color: #fff; animation: adGlow 2.4s ease-in-out infinite; }
+.ad-row.on > .ic, .ad-row.on .val, .ad-row.on .val .ic { color: #fff; }
+.ad-row.on > .ic { animation: adPulse 1.2s ease-in-out infinite; }
+@keyframes adGlow { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); } }
+@keyframes adPulse { 50% { transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) { .ad-row.on, .ad-row.on > .ic { animation: none; } }
 .ad-row:disabled { opacity: 0.5; }
 .sec.interview b { color: var(--text); font-size: 0.95rem; }
 .sec .grow { flex: 1; }

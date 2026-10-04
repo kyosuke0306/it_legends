@@ -575,7 +575,7 @@ function renderOffice() {
 // 宣伝: お金を出すと、期限つきで依頼が届きやすくなる（求人広告と同じ形）
 function prRow() {
   if (G.prActive(S, Date.now()))
-    return `<div class="panel ad-row pr-row on">${icon('ad')}<b>宣伝</b><span class="grow"></span>${val('hourglass', `<span data-left="${S.prUntil}"></span>`)}</div>`;
+    return `<div class="panel ad-row pr-row on">${icon('ad')}<b>宣伝中</b><span class="grow"></span>${val('hourglass', `<span data-left="${S.prUntil}"></span>`)}</div>`;
   const cost = G.prCost(S);
   return `<button class="panel ad-row pr-row" id="pr" ${S.money < cost ? 'disabled' : ''}>${icon('ad')}<b>宣伝</b><span class="grow"></span>${val('clock', dur(R.PR_DAYS * R.DAY))}${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}</button>`;
 }
@@ -851,7 +851,7 @@ function openMember(m, candidate = false) {
 // 求人広告: お金を出すと、期限つきで面接に来る人が増える。出している間は残り時間を出す
 function adRow() {
   if (G.adActive(S, Date.now()))
-    return `<div class="panel ad-row on">${icon('ad')}<b>求人広告</b><span class="grow"></span>${val('hourglass', `<span data-left="${S.adUntil}"></span>`)}</div>`;
+    return `<div class="panel ad-row on">${icon('ad')}<b>求人広告中</b><span class="grow"></span>${val('hourglass', `<span data-left="${S.adUntil}"></span>`)}</div>`;
   const cost = G.adCost(S);
   return `<button class="panel ad-row" id="ad" ${S.money < cost ? 'disabled' : ''}>${icon('ad')}<b>求人広告</b><span class="grow"></span>${val('clock', dur(R.AD_DAYS * R.DAY))}${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}</button>`;
 }
