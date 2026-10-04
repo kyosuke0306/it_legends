@@ -534,11 +534,13 @@ function activityRoll(s, event) {
 }
 
 // 新しい依頼が届くか（1時間ごとに、評判と営業・レジェンドの倍率で決まる確率で。並べる数に上限はない）
-// 宣伝を出している間は確率が R.PR_BOOST 倍
+// 宣伝を出している間は確率が R.PR_BOOST 倍。100% を超えたぶんは同じ1時間に2件目以降が届く（160% なら1件＋60% でもう1件）
 export const offerChance = (s, t = s.time) =>
-  Math.min(1, (R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1)) * companyEffects(s).offers * (prActive(s, t) ? R.PR_BOOST : 1));
+  (R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1)) * companyEffects(s).offers * (prActive(s, t) ? R.PR_BOOST : 1);
 function rollOffer(s, t) {
-  if (rand(s) < offerChance(s, t - R.HOUR)) addOffer(s, t);
+  const c = offerChance(s, t - R.HOUR);
+  const n = Math.floor(c) + (rand(s) < c % 1 ? 1 : 0);
+  for (let i = 0; i < n; i++) addOffer(s, t);
 }
 // ---------- 宣伝（仕事の広告） ----------
 export const prCost = (s) => round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * R.PR_HOURS, 1000);
