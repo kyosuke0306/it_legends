@@ -360,7 +360,12 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 .person .fee .ic { width: 1em; height: 1em; color: var(--gold); }
 .person.temp .pw { margin-left: 10px; }
 .person .pw.good { color: var(--ok); }
-.person .pw .cat-tag { margin-right: 4px; vertical-align: 0; }
+.good-tag { display: inline-block; margin-right: 4px; padding: 1px 6px; border-radius: 6px; background: var(--ok); color: #fff; font-size: 0.68rem; font-weight: 800; }
+.peak-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 6px; font-size: 0.68rem; font-weight: 800; color: #fff; vertical-align: 0.1em; }
+.peak-early { background: #e0903a; }
+.peak-mid { background: #3f86d6; }
+.peak-late { background: #8b5cf6; }
+.offer.fit { box-shadow: inset -4px 0 0 color-mix(in srgb, var(--ok) 75%, transparent), 4px 0 14px -6px color-mix(in srgb, var(--ok) 55%, transparent); }
 .av.temp { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--muted); }
 #assign-go small { font-size: 0.8em; opacity: 0.85; display: inline-flex; align-items: center; gap: 2px; }
 #assign-go small .ic { width: 1em; height: 1em; }

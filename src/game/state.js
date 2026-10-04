@@ -119,9 +119,12 @@ export function statsOf(s, m, ce = companyEffects(s)) {
   return out;
 }
 
-// w（能力の重み）に対する1人の力。cat が職種の得意な仕事の種類なら R.JOB_GOOD 倍
-export const isGood = (m, cat) => !!cat && m.kind !== 'legend' && R.JOBS[m.job]?.good === cat;
-function powerOf(s, m, w, ce, cat) {
+// 依頼の得意な職種（前の記録の依頼は名前から探す）
+const TASK_JOBS = Object.fromEntries(R.TASKS.map((t) => [t.title, t.jobs]));
+export const goodJobs = (o) => o?.jobs ?? TASK_JOBS[o?.title] ?? [];
+export const isGood = (m, jobs) => !!jobs?.length && m.kind !== 'legend' && jobs.includes(m.job);
+// w（能力の重み）に対する1人の力。jobs（依頼の得意な職種）に入っていれば R.JOB_GOOD 倍
+function powerOf(s, m, w, ce, jobs) {
   const st = statsOf(s, m, ce);
   let sum = 0;
   let ws = 0;
@@ -129,11 +132,11 @@ function powerOf(s, m, w, ce, cat) {
     sum += st[k] * w[k];
     ws += w[k];
   }
-  return (sum / ws) * (isGood(m, cat) ? R.JOB_GOOD : 1);
+  return (sum / ws) * (isGood(m, jobs) ? R.JOB_GOOD : 1);
 }
-export function teamPower(s, team, w, cat) {
+export function teamPower(s, team, w, jobs) {
   const ce = companyEffects(s);
-  return team.reduce((a, m) => a + powerOf(s, m, w, ce, cat), 0);
+  return team.reduce((a, m) => a + powerOf(s, m, w, ce, jobs), 0);
 }
 
 const memberById = (s, id) => s.members.find((m) => m.id === id);
@@ -164,6 +167,7 @@ function addOffer(s, now, forceTier, easy = false) {
     tier,
     title: tpl.title,
     cat: tpl.cat,
+    jobs: tpl.jobs,
     w: tpl.w,
     hours,
     diff,
@@ -176,11 +180,10 @@ function addOffer(s, now, forceTier, easy = false) {
 }
 
 // ---------- 要員派遣（仕事の間だけ借りる人） ----------
-// その仕事に一番向いた職種
-function bestJob(w, cat) {
-  const fit = (j) =>
-    (R.STAT_KEYS.reduce((a, k) => a + R.JOBS[j].w[k] * w[k], 0) / R.STAT_KEYS.reduce((a, k) => a + R.JOBS[j].w[k], 0)) * (R.JOBS[j].good === cat ? R.JOB_GOOD : 1);
-  return Object.keys(R.JOBS).reduce((a, b) => (fit(b) > fit(a) ? b : a));
+// その仕事に一番向いた職種（得意な職種の中から）
+function bestJob(w, jobs) {
+  const fit = (j) => R.STAT_KEYS.reduce((a, k) => a + R.JOBS[j].w[k] * w[k], 0) / R.STAT_KEYS.reduce((a, k) => a + R.JOBS[j].w[k], 0);
+  return (jobs.length ? jobs : Object.keys(R.JOBS)).reduce((a, b) => (fit(b) > fit(a) ? b : a));
 }
 // i 人目に来る人。選ぶ前に力を見せるため、記録の乱数は使わず仕事ごとに決まった人が来る
 export function makeTemp(s, offer, i) {
@@ -189,7 +192,7 @@ export function makeTemp(s, offer, i) {
     x = (Math.imul(x, 1103515245) + 12345) & 0x7fffffff;
     return x / 2 ** 31;
   };
-  const job = bestJob(offer.w, offer.cat);
+  const job = bestJob(offer.w, goodJobs(offer));
   const j = R.JOBS[job];
   const p = randomPerson(r);
   const level = R.OFFICES[s.office].temp;
@@ -203,7 +206,7 @@ export const tempFee = (offer) => round(offer.reward * R.TEMP_FEE);
 export function taskPreview(s, offer, ids, temps = offer.temps ?? []) {
   const team = [...ids.map((id) => memberById(s, id)), ...temps];
   const te = teamEffects(team);
-  const power = teamPower(s, team, offer.w, offer.cat);
+  const power = teamPower(s, team, offer.w, goodJobs(offer));
   const chance = te.alwaysSuccess ? 1 : Math.min(0.98, Math.max(0.05, 0.9 * (power / offer.diff) + te.teamSuccess));
   const duration = (offer.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed))) / (1 + R.TEAM_SPEEDUP * (team.length - 1));
   const great = power >= offer.diff * R.REP_GREAT;

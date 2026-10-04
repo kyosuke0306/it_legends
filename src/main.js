@@ -80,6 +80,9 @@ function dur(ms) {
   return h % 24 ? `${Math.floor(h / 24)}日${h % 24}時間` : `${Math.floor(h / 24)}日`;
 }
 // 依頼の種類の札（Web・アプリ・インフラ…）。色は種類ごと（.cat-web など）。レジェンドの出会いの条件と見比べられるように
+// 得意な依頼が多い時期（序盤・中盤・後半）
+const peakTag = (j) => `<span class="peak-tag peak-${j.peak}">${R.PEAK_NAMES[j.peak]}</span>`;
+const goodTag = '<span class="good-tag">得意</span>';
 const catTag = (cat) => `<span class="cat-tag cat-${cat}">${R.CAT_NAMES[cat]}</span>`;
 const val = (name, text, cls = '') => `<span class="val ${cls}">${icon(name)}${text}</span>`;
 const jobShort = (m) => (m.kind === 'legend' ? 'レジェンド' : R.JOBS[m.job].name);
@@ -382,7 +385,7 @@ function initStart() {
     .map(
       ([id, j]) => `<button class="job art-3d" data-job="${id}" style="--c:${hex(j.shirt)}">
         <img src="assets/jobs/${id}.webp" alt="">
-        <b>${j.full}</b><small>${catTag(j.good)}${j.perkText}</small>
+        <b>${j.full}</b><small>${peakTag(j)}${j.perkText}</small>
       </button>`,
     )
     .join('');
@@ -593,7 +596,8 @@ function renderWork() {
   const canWork = G.freeMembers(S).length > 0;
   const offers = S.offers
     .map(
-      (o) => `<button class="panel offer cat-${o.cat}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
+      // 手の空いた人の中に、この依頼が得意な職種の人がいれば右の端を光らせる
+      (o) => `<button class="panel offer cat-${o.cat} ${G.freeMembers(S).some((m) => G.isGood(m, G.goodJobs(o))) ? 'fit' : ''}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
         <span class="offer-top"><b>${o.expiresAt - R.OFFER_LIFE > seenSnap.work ? newTag : ''}${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}"></span></span></span>
         <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
       </button>`,
@@ -649,7 +653,7 @@ function openRunning(taskId) {
   if (!t) return;
   const dlg = $('#assign');
   const team = [...t.members.map((id) => S.members.find((m) => m.id === id)).filter(Boolean), ...(t.temps ?? [])];
-  const power = (m) => Math.round(G.teamPower(S, [m], t.w, t.cat));
+  const power = (m) => Math.round(G.teamPower(S, [m], t.w, G.goodJobs(t)));
   const sum = team.reduce((a, m) => a + power(m), 0);
   const p = G.taskPreview(S, t, t.members.filter((id) => S.members.some((m) => m.id === id)));
   const room = team.length < t.team;
@@ -659,7 +663,7 @@ function openRunning(taskId) {
     <div class="pick">${team
       .map(
         (m) => `<div class="person ${m.kind === 'temp' ? 'temp' : ''} active">
-          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${m.kind === 'temp' ? '・派遣' : ''}</small></span><span class="pw ${G.isGood(m, t.cat) ? 'good' : ''}">${G.isGood(m, t.cat) ? catTag(t.cat) : ''}${icon('bolt')}${power(m)}</span>
+          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${m.kind === 'temp' ? '・派遣' : ''}</small></span><span class="pw ${G.isGood(m, G.goodJobs(t)) ? 'good' : ''}">${G.isGood(m, G.goodJobs(t)) ? goodTag : ''}${icon('bolt')}${power(m)}</span>
         </div>`,
       )
       .join('')}</div>
@@ -690,7 +694,7 @@ function addMembers(taskId) {
     title: t.title,
     max: t.team - base.length,
     w: t.w,
-    cat: t.cat,
+    good: G.goodJobs(t),
     need: t.diff,
     base,
     minOwn: 0,
@@ -710,7 +714,7 @@ function assignTask(offerId) {
     title: o.title,
     max: o.team,
     w: o.w,
-    cat: o.cat,
+    good: G.goodJobs(o),
     need: o.diff,
     // 要員派遣（お金を払って、席の数を超えて仕事の間だけ人を借りる）
     temp: { make: (i) => G.makeTemp(S, o, i), fee: G.tempFee(o) },
@@ -725,14 +729,14 @@ function assignTask(offerId) {
 // 人を選ぶ（仕事・開発で共通）。下から出るシート
 // temp があれば要員派遣の人も選べる（自分の会社から minOwn 人は出す）
 // base は仕事中に人を足すときの、もう働いている人（max は足せる人数）
-function openAssign({ title, max, w, cat = null, need, preview, confirm, temp = null, base = [], minOwn = 1, go = '任せる', extra = '' }) {
+function openAssign({ title, max, w, good = [], need, preview, confirm, temp = null, base = [], minOwn = 1, go = '任せる', extra = '' }) {
   const dlg = $('#assign');
   const chosen = new Set();
   let nTemps = 0;
-  const power = (m) => Math.round(G.teamPower(S, [m], w, cat));
+  const power = (m) => Math.round(G.teamPower(S, [m], w, good));
   const free = G.freeMembers(S).sort((a, b) => power(b) - power(a));
-  // 力。職種の得意な種類の仕事なら、種類の札を添えて光らせる
-  const pw = (m) => `<span class="pw ${G.isGood(m, cat) ? 'good' : ''}">${G.isGood(m, cat) ? catTag(cat) : ''}${icon('bolt')}${power(m)}</span>`;
+  // 力。その依頼が得意な職種の人は「得意」の札を添えて緑に
+  const pw = (m) => `<span class="pw ${G.isGood(m, good) ? 'good' : ''}">${G.isGood(m, good) ? goodTag : ''}${icon('bolt')}${power(m)}</span>`;
   const draw = () => {
     // 席に空きがあるうちは派遣の人を減らし、自分の会社の人を優先する
     nTemps = Math.max(0, Math.min(nTemps, max - Math.max(minOwn, chosen.size)));
@@ -826,7 +830,7 @@ function openMember(m, candidate = false) {
   $('#detail-info').innerHTML = `<h2>${esc(G.displayName(m))}</h2><div class="sub">${j.full}</div>
     <p class="job-desc">${esc(j.desc)}</p>
     <div class="ability">${esc(j.perkText)}</div>
-    <div class="good-row">${catTag(j.good)}${icon('bolt')}×${R.JOB_GOOD}</div>
+    <div class="good-row">${peakTag(j)}${goodTag}${icon('bolt')}×${R.JOB_GOOD}</div>
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
     ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button>` : ''}
