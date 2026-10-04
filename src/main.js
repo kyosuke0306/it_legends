@@ -261,6 +261,12 @@ function goStep(i) {
   steps[at].querySelector('input')?.focus();
 }
 
+// クラウドの記録が届いたときにタイトルを描き直す。記録を選ぶ画面を開いていたら閉じずに中身だけ新しくする
+// （「つづきから」を押した直後に記録が届くと、選ぶ画面が閉じて元に戻ってしまっていた。2026-10-04）
+function refreshTitle() {
+  if (slotsMode) return openSlots(slotsMode);
+  showTitle();
+}
 // タイトル画面。記録があれば「つづきから」を大きく
 function showTitle() {
   $('#start').classList.remove('hidden');
@@ -299,7 +305,9 @@ async function useSlot(n) {
 }
 // タイトルで記録を選ぶ（mode: 'continue' つづきから / 'new' はじめから）
 let newSlot = null; // はじめからで選んだ記録の番号
+let slotsMode = null; // 記録を選ぶ画面を開いているとき 'continue' / 'new'
 function openSlots(mode) {
+  slotsMode = mode;
   const card = (n) => {
     const s = slotData(n);
     const info = s
@@ -331,6 +339,7 @@ function openSlots(mode) {
   );
 }
 function closeSlots() {
+  slotsMode = null;
   $('#title-slots').classList.add('hidden');
   $('#title-buttons').classList.remove('hidden');
 }
@@ -662,12 +671,37 @@ function promoRow(kind) {
     // 条件の札（多いときは2つまで出して残りは数）
     const tags = [...(ad ? G.adJobs(S) : []).map((j) => `<span class="cat-tag job-tag">${R.JOBS[j].name}</span>`), ...(ad ? G.adCats(S) : G.prCats(S)).map(catTag)];
     const tag = tags.slice(0, 2).join('') + (tags.length > 2 ? `<span class="cat-tag job-tag">+${tags.length - 2}</span>` : '');
-    return `<div class="${cls} on">${icon(g.icon)}<b>${ad ? '求人広告中' : '宣伝中'}</b><small class="promo-name">${g.name}</small>${tag}<span class="grow"></span>${val('hourglass', `<span data-left="${until}"></span>`)}</div>`;
+    return `<button class="${cls} on" id="${kind}-on">${icon(g.icon)}<b>${ad ? '求人広告中' : '宣伝中'}</b><small class="promo-name">${g.name}</small>${tag}<span class="grow"></span>${val('hourglass', `<span data-left="${until}"></span>`)}</button>`;
   }
   const min = ad ? G.adCost(S, 0) : G.prCost(S, 0);
   return `<button class="${cls}" id="${kind}" ${S.money < min ? 'disabled' : ''}>${icon('ad')}<b>${ad ? '求人広告' : '宣伝'}</b><span class="grow"></span>${val('coin', `${yen(min)}〜`, S.money >= min ? 'ok' : '')}</button>`;
 }
 const prRow = () => promoRow('pr');
+// 出している宣伝・求人広告のくわしいシート（2026-10-04 ユーザー指示）。種類・効果・条件・残り時間と終わる日時
+function openPromoInfo(kind) {
+  const ad = kind === 'ad';
+  const g = ad ? G.adGrade(S) : G.prGrade(S);
+  const until = ad ? S.adUntil : S.prUntil;
+  const start = until - g.days * R.DAY;
+  const jobs = ad ? G.adJobs(S) : [];
+  const cats = ad ? G.adCats(S) : G.prCats(S);
+  const comeJobs = jobs.length ? jobs : [...new Set(cats.flatMap(G.catJobs))];
+  const end = new Date(until);
+  const row = (ic, name, v) => `<div class="cmp">${icon(ic)}<small>${name}</small><span class="grow"></span><b>${v}</b></div>`;
+  const bars = `<span class="power">${[1, 2, 3, 4].map((i) => `<i class="${i <= g.power ? 'on' : ''}"></i>`).join('')}</span>`;
+  const dlg = $('#assign');
+  $('#assign-body').innerHTML = `
+    <div class="promo-hero">${icon(g.icon)}<b>${g.name}</b><small>${ad ? '求人広告中' : '宣伝中'}</small></div>
+    ${row(ad ? 'people' : 'task', '効果', `${bars} ${ad ? `${Math.round(G.adPerDay(S) * 10) / 10}<small>人/日</small>` : `×${g.boost}`}`)}
+    ${cats.length || jobs.length ? `<div class="cmp">${icon('target')}<small>条件</small><span class="grow"></span><span class="promo-tags">${jobs.map((j) => `<span class="cat-tag job-tag">${R.JOBS[j].name}</span>`).join('')}${cats.map(catTag).join('')}</span></div>` : row('target', '条件', '<small>なし</small>')}
+    ${ad && cats.length ? `<div class="come-jobs">${comeJobs.map((j) => `<span><img src="assets/jobs/${j}.webp" alt="">${R.JOBS[j].name}</span>`).join('')}</div>` : ''}
+    ${row('clock', '終わり', `${end.getMonth() + 1}/${end.getDate()} ${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`)}
+    ${progress(start, until)}
+    <button class="big ghost" id="run-close">OK</button>`;
+  updateTimers();
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
+}
 // 宣伝・求人広告の種類（グレード）と条件を選んで出す（2026-10-04 ユーザー指示）
 // 種類ごとに費用・効果（棒の数）・長さが違う。条件（種類・職種）をつけると高くなる
 function openPromo(kind) {
@@ -765,6 +799,7 @@ function renderWork() {
   $('#view-work').querySelectorAll('[data-run]').forEach((el) => (el.onclick = () => openRunning(+el.dataset.run)));
   $('#open-history').onclick = () => openHistory();
   $('#pr') && ($('#pr').onclick = () => openPromo('pr'));
+  $('#pr-on') && ($('#pr-on').onclick = () => openPromoInfo('pr'));
 }
 
 // これまでの仕事。上に種類ごとの成功した回数（レジェンドの出会いの条件と同じ数）、押すとその種類だけにしぼる。下に最近の仕事
@@ -1081,6 +1116,7 @@ function renderTeam() {
       document.querySelector('.tab[data-view="office"]').click();
     });
   $('#ad') && ($('#ad').onclick = () => openPromo('ad'));
+  $('#ad-on') && ($('#ad-on').onclick = () => openPromoInfo('ad'));
   v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
   v.querySelectorAll('[data-reject]').forEach((b) => (b.onclick = () => confirm('不採用にしますか？') && G.rejectCandidate(S, +b.dataset.reject, Date.now()) && commit()));
   v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('解雇しますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
@@ -1996,7 +2032,7 @@ function applyState(remote) {
   $('#assign').close();
   if ($('#game').classList.contains('hidden')) {
     // タイトル画面にいるときは入らない（「つづきから」を押していれば onSynced で入る）
-    if (!$('#start').classList.contains('hidden') && at === 0) showTitle();
+    if (!$('#start').classList.contains('hidden') && at === 0) refreshTitle();
   } else renderAll();
   void first;
 }
@@ -2018,7 +2054,7 @@ function syncOther(n, remote, fromListen = false) {
     try {
       localStorage.setItem(saveKey(n), JSON.stringify(remote));
     } catch {}
-    if ($('#game').classList.contains('hidden') && at === 0) showTitle();
+    if ($('#game').classList.contains('hidden') && at === 0) refreshTitle();
     return null;
   }
   return fromListen ? null : local;
