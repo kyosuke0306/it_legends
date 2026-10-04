@@ -80,8 +80,6 @@ function dur(ms) {
   return h % 24 ? `${Math.floor(h / 24)}日${h % 24}時間` : `${Math.floor(h / 24)}日`;
 }
 // 依頼の種類の札（Web・アプリ・インフラ…）。色は種類ごと（.cat-web など）。レジェンドの出会いの条件と見比べられるように
-// 得意な依頼が多い時期（序盤・中盤・後半）
-const peakTag = (j) => `<span class="peak-tag peak-${j.peak}">${R.PEAK_NAMES[j.peak]}</span>`;
 const goodTag = '<span class="good-tag">得意</span>';
 const catTag = (cat) => `<span class="cat-tag cat-${cat}">${R.CAT_NAMES[cat]}</span>`;
 const val = (name, text, cls = '') => `<span class="val ${cls}">${icon(name)}${text}</span>`;
@@ -385,7 +383,7 @@ function initStart() {
     .map(
       ([id, j]) => `<button class="job art-3d" data-job="${id}" style="--c:${hex(j.shirt)}">
         <img src="assets/jobs/${id}.webp" alt="">
-        <b>${j.full}</b><small>${peakTag(j)}${j.perkText}</small>
+        <b>${j.full}</b><small>${j.perkText}</small>
       </button>`,
     )
     .join('');
@@ -582,6 +580,11 @@ function prRow() {
   const cost = G.prCost(S);
   return `<button class="panel ad-row pr-row" id="pr" ${S.money < cost ? 'disabled' : ''}>${icon('ad')}<b>宣伝</b><span class="grow"></span>${val('clock', dur(R.PR_DAYS * R.DAY))}${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}</button>`;
 }
+// 手の空いた人の中で、この依頼が得意な職種の人の顔（右下に小さく並べる。3人まで）
+function fitFaces(o) {
+  const good = G.freeMembers(S).filter((m) => G.isGood(m, G.goodJobs(o)));
+  return good.length ? `<span class="avs fit-avs">${good.slice(0, 3).map((m) => avatar(m)).join('')}</span>` : '';
+}
 function renderWork() {
   S.workSeenAt = Date.now(); // 仕事タブを見た（通知の点を消す）
   renderHeader();
@@ -596,10 +599,9 @@ function renderWork() {
   const canWork = G.freeMembers(S).length > 0;
   const offers = S.offers
     .map(
-      // 手の空いた人の中に、この依頼が得意な職種の人がいれば右の端を光らせる
-      (o) => `<button class="panel offer cat-${o.cat} ${G.freeMembers(S).some((m) => G.isGood(m, G.goodJobs(o))) ? 'fit' : ''}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
+      (o) => `<button class="panel offer cat-${o.cat}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
         <span class="offer-top"><b>${o.expiresAt - R.OFFER_LIFE > seenSnap.work ? newTag : ''}${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}"></span></span></span>
-        <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
+        <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}${fitFaces(o)}</span>
       </button>`,
     )
     .join('');
@@ -830,7 +832,6 @@ function openMember(m, candidate = false) {
   $('#detail-info').innerHTML = `<h2>${esc(G.displayName(m))}</h2><div class="sub">${j.full}</div>
     <p class="job-desc">${esc(j.desc)}</p>
     <div class="ability">${esc(j.perkText)}</div>
-    <div class="good-row">${peakTag(j)}${goodTag}${icon('bolt')}×${R.JOB_GOOD}</div>
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
     ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button>` : ''}
