@@ -225,7 +225,6 @@ export const ACTIVITIES = {
   meetup: { name: '勉強会', icon: 'seminar', event: 'walkin', perHour: 1 / 48 }, // 平均2日に1回くらい
 };
 export const DEFAULT_ACTIVITY = 'net';
-export const WALKIN_LIFE = DAY; // 訪ねてきた人が待ってくれる時間
 // 臨時収入（ネットで見つかる）。amount は今の会社の仕事1時間ぶんの報酬の何倍か
 export const LUCKS = [
   { title: '昔作ったアプリの広告収入', amount: [2, 4] },

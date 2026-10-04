@@ -381,6 +381,7 @@ function addCandidate(s, t) {
   m.until = t + between(s, ...R.CANDIDATE_LIFE) * R.DAY;
   m.at = t; // 来た時刻（新着の印に使う）
   s.candidates.push(m);
+  return m;
 }
 // ---------- 求人広告 ----------
 export const adCost = (s) => round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * R.AD_HOURS, 1000);
@@ -399,8 +400,7 @@ function rollAd(s, t) {
   if (!adActive(s, t - R.HOUR) || s.candidates.length >= R.MAX_CANDIDATES || rand(s) >= adPerDay(s) / 24) return;
   addCandidate(s, t);
 }
-// 訪ねてきた人は雇うのにお金がかからない
-export const hireCost = (s, m) => (m.walkin ? 0 : round(m.salary * 5 * (1 - Math.min(0.8, companyEffects(s).hireCost))));
+export const hireCost = (s, m) => (round(m.salary * 5 * (1 - Math.min(0.8, companyEffects(s).hireCost))));
 
 export function hire(s, candId, now) {
   const m = s.candidates.find((c) => c.id === candId);
@@ -570,14 +570,11 @@ function rollLuck(s, t, ev) {
 
 function rollWalkin(s, t, ev) {
   if (!activityRoll(s, 'walkin')) return;
-  s.candidates = s.candidates.filter((c) => !c.walkin); // 訪ねてくるのは1人ずつ
-  const m = makePerson(s, pick(s, Object.keys(R.JOBS)));
-  // 腕のいい人が訪ねてくる（今の会社より少し育っている）
-  growTo(s, m, Math.max(2 + s.office * 2, R.OFFICES[s.office].lv[1]) + Math.floor(rand(s) * 3));
-  m.walkin = true;
-  m.at = t;
-  m.until = t + R.WALKIN_LIFE;
-  s.candidates.unshift(m);
+  // 勉強会は面接に来る人が増えるだけ（腕・雇う費用・待てる時間はふつうの面接の人と同じ）
+  if (s.candidates.length >= R.MAX_CANDIDATES) return;
+  const m = addCandidate(s, t);
+  m.walkin = true; // 3Dでは事務所の前の道で待つ
+  s.candidates = [m, ...s.candidates.filter((c) => c !== m)];
   addLog(s, t, `${m.name}  面接に来た`, 'good');
   ev.push({ type: 'walkin', id: m.id, name: m.name });
 }

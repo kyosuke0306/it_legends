@@ -1193,6 +1193,7 @@ const GUIDE = [
   { sel: '#assign[open] .person[data-id]', text: 'CEO に任せる', tap: true, back: 1 },
   { sel: '#assign[open] .temp-head', text: '派遣<br>お金を払うと、仕事の間だけ<br>人を借りられる', ok: true, sheet: true, back: 1 },
   { sel: '#assign[open] #assign-go:not([disabled])', text: 'スタート', tap: true, back: 2 },
+  { sel: '#view-work.active .pr-row', text: '宣伝<br>お金を払うと<br>依頼が来やすくなる', ok: true },
   { sel: '.tab[data-view="office"]', text: '会社へ', tap: true },
   // 仕事をしている間に、ほかの所を説明する
   { sel: '#rep', text: '評判<br>仕事が成功すると上がる<br>依頼が増え、引っ越しにも必要', ok: true },
