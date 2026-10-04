@@ -105,7 +105,7 @@ export function companyEffects(s) {
 
 // 仕事・開発に参加した人だけに効くもの
 function teamEffects(team) {
-  const e = { teamSpeed: 0, teamReward: 0, teamSuccess: 0, teamQuality: 0, teamXp: 0, alwaysSuccess: 0 };
+  const e = { teamSpeed: 0, teamReward: 0, teamRep: 0, teamSuccess: 0, teamQuality: 0, teamXp: 0, alwaysSuccess: 0 };
   for (const m of team) {
     const p = perksOf(m);
     for (const k of Object.keys(e)) e[k] += p[k] ?? 0;
@@ -208,12 +208,14 @@ export function taskPreview(s, offer, ids, temps = offer.temps ?? []) {
   const duration = (offer.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed))) / (1 + R.TEAM_SPEEDUP * (team.length - 1));
   const great = power >= offer.diff * R.REP_GREAT;
   const early = duration <= offer.hours * R.HOUR * R.REP_EARLY;
-  return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)), rep: taskRep(offer, power, early), great, early };
+  return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)), rep: taskRep(offer, power, early, te.teamRep), teamRep: te.teamRep, great, early };
 }
 // 成功したときの評判（出来と早さで変わる）
-function taskRep(offer, power, early) {
+// bonus はインフラの特技など（評判 +20% なら 0.2。小さな仕事でも +1 は付く）
+function taskRep(offer, power, early, bonus = 0) {
   const q = power >= offer.diff * R.REP_GREAT ? 1.5 : power >= offer.diff ? 1 : 0.7;
-  return Math.max(1, Math.round(offer.rep * q * (early ? 1.5 : 1)));
+  const base = offer.rep * q * (early ? 1.5 : 1);
+  return Math.max(1, Math.round(base)) + (bonus ? Math.max(1, Math.round(base * bonus)) : 0); // 小さな仕事でも上乗せは +1 以上
 }
 
 // nTemps は派遣で借りる人数（自分の会社から1人は出す）
@@ -261,7 +263,7 @@ function finishTask(s, task, t, ev) {
   s.money += money;
   // 早さは実際にかかった時間で決める
   const early = task.endsAt - (task.begunAt ?? task.startAt) <= task.hours * R.HOUR * R.REP_EARLY;
-  const rep = ok ? taskRep(task, pv.power, early) : -Math.min(s.rep, Math.max(1, Math.round(task.rep * R.FAIL_REP)));
+  const rep = ok ? taskRep(task, pv.power, early, pv.teamRep) : -Math.min(s.rep, Math.max(1, Math.round(task.rep * R.FAIL_REP)));
   s.rep += rep;
   if (ok) {
     s.counts.tasks++;

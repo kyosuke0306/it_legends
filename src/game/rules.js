@@ -16,11 +16,11 @@ export const JOB_GOOD = 1.5;
 export const JOBS = {
   se: { name: 'SE', full: 'システムエンジニア', desc: 'お客さんの「こうしたい」を聞いて、システムの設計図を作る', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamSuccess: 0.15 }, perkText: '成功率 +15%', good: 'web', shirt: 0x4a78c2 },
   pg: { name: 'プログラマー', full: 'プログラマー', desc: '設計図をもとにプログラムを書き、動くものを作る', w: { idea: 1, tech: 3.5, plan: 1, talk: 0.5 }, perk: { teamSpeed: 0.15 }, perkText: '速さ +15%', good: 'app', shirt: 0x2f2f3a },
-  infra: { name: 'インフラ', full: 'インフラエンジニア', desc: 'サーバーやネットワークなど、システムが動く土台を作って守る', w: { idea: 0.5, tech: 3, plan: 2, talk: 0.5 }, perk: { teamSuccess: 0.1 }, perkText: '成功率 +10%', good: 'infra', shirt: 0x3f8f6b },
+  infra: { name: 'インフラ', full: 'インフラエンジニア', desc: 'サーバーやネットワークなど、システムが動く土台を作って守る', w: { idea: 0.5, tech: 3, plan: 2, talk: 0.5 }, perk: { teamRep: 0.2 }, perkText: '評判 +20%', good: 'infra', shirt: 0x3f8f6b },
   designer: { name: 'デザイナー', full: 'デザイナー', desc: '画面の見た目と使いやすさを考えて、形にする', w: { idea: 3.5, tech: 1, plan: 1, talk: 1.5 }, perk: { teamQuality: 0.2 }, perkText: '製品の出来 +20%', good: 'web', shirt: 0xe0607e },
   data: { name: 'データ分析', full: 'データサイエンティスト', desc: 'たくさんのデータを分析して、次の流行や打つ手を見つける', w: { idea: 2, tech: 2.5, plan: 1.5, talk: 0.5 }, perk: { nextTrend: 1 }, perkText: '次の流行が見える', good: 'ai', shirt: 0x7a5cc4 },
-  pm: { name: 'PM', full: 'プロジェクトマネージャー', desc: '予定・お金・人をまとめて、期限までに完成させる責任者', w: { idea: 1, tech: 1, plan: 2.5, talk: 2.5 }, perk: { teamSpeed: 0.1, teamSuccess: 0.05 }, perkText: '速さ +10%  成功率 +5%', good: 'space', shirt: 0x2d6ea8 },
-  gm: { name: 'GM', full: 'ゼネラルマネージャー', desc: '部門全体をまとめて人を育て、事業をうまく回す', w: { idea: 2, tech: 1, plan: 2, talk: 2 }, perk: { teamXp: 0.5 }, perkText: 'チームの成長 +50%', good: 'space', shirt: 0x50505a },
+  pm: { name: 'PM', full: 'プロジェクトマネージャー', desc: '予定・お金・人をまとめて、期限までに完成させる責任者', w: { idea: 1, tech: 1, plan: 2.5, talk: 2.5 }, perk: { teamSpeed: 0.1, teamSuccess: 0.05 }, perkText: '速さ +10%  成功率 +5%', good: 'app', shirt: 0x2d6ea8 },
+  gm: { name: 'GM', full: 'ゼネラルマネージャー', desc: '部門全体をまとめて人を育て、事業をうまく回す', w: { idea: 2, tech: 1, plan: 2, talk: 2 }, perk: { teamXp: 0.5 }, perkText: 'チームの成長 +50%', good: 'consult', shirt: 0x50505a },
   consul: { name: 'コンサル', full: 'ITコンサルタント', desc: '会社の困りごとを聞いて、ITでの解決策を提案する', w: { idea: 2, tech: 1, plan: 2, talk: 3 }, perk: { teamReward: 0.2 }, perkText: '報酬 +20%', good: 'consult', shirt: 0x24324a },
   sales: { name: '営業', full: 'IT営業', desc: '製品やサービスを紹介して、仕事の依頼を取ってくる', w: { idea: 1, tech: 0.5, plan: 1, talk: 4 }, perk: { offers: 0.25 }, perkText: '依頼 ×1.25', good: 'consult', shirt: 0xc9822c },
 };
