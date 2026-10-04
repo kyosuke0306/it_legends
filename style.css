@@ -359,6 +359,8 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 .person .fee { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; font-size: 0.85rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 .person .fee .ic { width: 1em; height: 1em; color: var(--gold); }
 .person.temp .pw { margin-left: 10px; }
+.person .pw.good { color: var(--ok); }
+.person .pw .cat-tag { margin-right: 4px; vertical-align: 0; }
 .av.temp { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--muted); }
 #assign-go small { font-size: 0.8em; opacity: 0.85; display: inline-flex; align-items: center; gap: 2px; }
 #assign-go small .ic { width: 1em; height: 1em; }
@@ -459,6 +461,8 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .info summary { cursor: pointer; }
 .scene { color: var(--muted); }
 .ability { margin: 12px 0; padding: 10px 12px; border-radius: 12px; background: #f3ecff; color: #6a3fc0; font-weight: 700; }
+.good-row { display: flex; align-items: center; gap: 2px; margin: -4px 0 12px; font-weight: 800; color: var(--ok); }
+.good-row .ic { width: 1em; height: 1em; color: var(--gold); }
 .lvrow { display: flex; align-items: center; gap: 12px; font-weight: 700; }
 .joined { font-size: 1.4rem; font-weight: 900; color: #ff4d6d; margin: 10px 0; }
 .info .vals { font-size: 1rem; font-weight: 700; gap: 16px; }

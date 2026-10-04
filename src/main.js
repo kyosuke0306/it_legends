@@ -382,7 +382,7 @@ function initStart() {
     .map(
       ([id, j]) => `<button class="job art-3d" data-job="${id}" style="--c:${hex(j.shirt)}">
         <img src="assets/jobs/${id}.webp" alt="">
-        <b>${j.full}</b><small>${j.perkText}</small>
+        <b>${j.full}</b><small>${catTag(j.good)}${j.perkText}</small>
       </button>`,
     )
     .join('');
@@ -649,7 +649,7 @@ function openRunning(taskId) {
   if (!t) return;
   const dlg = $('#assign');
   const team = [...t.members.map((id) => S.members.find((m) => m.id === id)).filter(Boolean), ...(t.temps ?? [])];
-  const power = (m) => Math.round(G.teamPower(S, [m], t.w));
+  const power = (m) => Math.round(G.teamPower(S, [m], t.w, t.cat));
   const sum = team.reduce((a, m) => a + power(m), 0);
   const p = G.taskPreview(S, t, t.members.filter((id) => S.members.some((m) => m.id === id)));
   const room = team.length < t.team;
@@ -659,7 +659,7 @@ function openRunning(taskId) {
     <div class="pick">${team
       .map(
         (m) => `<div class="person ${m.kind === 'temp' ? 'temp' : ''} active">
-          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${m.kind === 'temp' ? '・派遣' : ''}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
+          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${m.kind === 'temp' ? '・派遣' : ''}</small></span><span class="pw ${G.isGood(m, t.cat) ? 'good' : ''}">${G.isGood(m, t.cat) ? catTag(t.cat) : ''}${icon('bolt')}${power(m)}</span>
         </div>`,
       )
       .join('')}</div>
@@ -690,6 +690,7 @@ function addMembers(taskId) {
     title: t.title,
     max: t.team - base.length,
     w: t.w,
+    cat: t.cat,
     need: t.diff,
     base,
     minOwn: 0,
@@ -709,6 +710,7 @@ function assignTask(offerId) {
     title: o.title,
     max: o.team,
     w: o.w,
+    cat: o.cat,
     need: o.diff,
     // 要員派遣（お金を払って、席の数を超えて仕事の間だけ人を借りる）
     temp: { make: (i) => G.makeTemp(S, o, i), fee: G.tempFee(o) },
@@ -723,12 +725,14 @@ function assignTask(offerId) {
 // 人を選ぶ（仕事・開発で共通）。下から出るシート
 // temp があれば要員派遣の人も選べる（自分の会社から minOwn 人は出す）
 // base は仕事中に人を足すときの、もう働いている人（max は足せる人数）
-function openAssign({ title, max, w, need, preview, confirm, temp = null, base = [], minOwn = 1, go = '任せる', extra = '' }) {
+function openAssign({ title, max, w, cat = null, need, preview, confirm, temp = null, base = [], minOwn = 1, go = '任せる', extra = '' }) {
   const dlg = $('#assign');
   const chosen = new Set();
   let nTemps = 0;
-  const power = (m) => Math.round(G.teamPower(S, [m], w));
+  const power = (m) => Math.round(G.teamPower(S, [m], w, cat));
   const free = G.freeMembers(S).sort((a, b) => power(b) - power(a));
+  // 力。職種の得意な種類の仕事なら、種類の札を添えて光らせる
+  const pw = (m) => `<span class="pw ${G.isGood(m, cat) ? 'good' : ''}">${G.isGood(m, cat) ? catTag(cat) : ''}${icon('bolt')}${power(m)}</span>`;
   const draw = () => {
     // 席に空きがあるうちは派遣の人を減らし、自分の会社の人を優先する
     nTemps = Math.max(0, Math.min(nTemps, max - Math.max(minOwn, chosen.size)));
@@ -742,7 +746,7 @@ function openAssign({ title, max, w, need, preview, confirm, temp = null, base =
     const room = temp && Math.max(minOwn, chosen.size) + nTemps < max;
     const canMore = room && S.money >= temp.fee * (nTemps + 1);
     const tempRow = (m, on) => `<button class="person temp ${on ? 'active' : ''}" data-temp="${on ? 'drop' : 'add'}" ${on || canMore ? '' : 'disabled'}>
-        ${avatar(m)}<span class="pname">${esc(m.name)}<small>${R.JOBS[m.job].name} Lv${m.level}</small></span><span class="fee">${icon('coin')}${yen(temp.fee)}</span><span class="pw">${icon('bolt')}${power(m)}</span>
+        ${avatar(m)}<span class="pname">${esc(m.name)}<small>${R.JOBS[m.job].name} Lv${m.level}</small></span><span class="fee">${icon('coin')}${yen(temp.fee)}</span>${pw(m)}
       </button>`;
     const tempHtml = temp ? `<div class="sec temp-head">${icon('plus')}<b>派遣</b></div>${temps.map((m) => tempRow(m, true)).join('')}${room ? tempRow(temp.make(nTemps), false) : ''}` : '';
     $('#assign-body').innerHTML = `
@@ -752,7 +756,7 @@ function openAssign({ title, max, w, need, preview, confirm, temp = null, base =
       <div class="pick">${free
         .map(
           (m) => `<button class="person ${chosen.has(m.id) ? 'active' : ''}" data-id="${m.id}">
-            ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
+            ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>${pw(m)}
           </button>`,
         )
         .join('')}${tempHtml}</div>
@@ -822,6 +826,7 @@ function openMember(m, candidate = false) {
   $('#detail-info').innerHTML = `<h2>${esc(G.displayName(m))}</h2><div class="sub">${j.full}</div>
     <p class="job-desc">${esc(j.desc)}</p>
     <div class="ability">${esc(j.perkText)}</div>
+    <div class="good-row">${catTag(j.good)}${icon('bolt')}×${R.JOB_GOOD}</div>
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
     ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button>` : ''}
