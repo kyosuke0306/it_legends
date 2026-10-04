@@ -477,7 +477,7 @@ export function dismiss(s, id, now) {
   return true;
 }
 
-// 依頼をお断りする・面接に来た人をお見送りする（2026-10-04 ユーザー指示。評判などは減らない）
+// 依頼をお断りする・面接に来た人を不採用にする（2026-10-04 ユーザー指示。評判などは減らない）
 export function declineOffer(s, id, now) {
   const o = s.offers.find((x) => x.id === id);
   if (!o) return false;
@@ -489,7 +489,7 @@ export function rejectCandidate(s, id, now) {
   const m = s.candidates.find((x) => x.id === id);
   if (!m) return false;
   s.candidates = s.candidates.filter((x) => x !== m);
-  addLog(s, now, `${m.name}  お見送り`);
+  addLog(s, now, `${m.name}  不採用`);
   return true;
 }
 

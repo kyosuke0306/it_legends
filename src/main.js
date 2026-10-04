@@ -458,7 +458,7 @@ document.querySelectorAll('.tab').forEach((tab) => {
     view = tab.dataset.view;
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${view}`));
-    scrollTo(0, 0);
+    document.querySelector('main').scrollTop = 0;
     renderAll();
   };
 });
@@ -982,7 +982,7 @@ function memberRow(m, { candidate = false } = {}) {
     const cost = G.hireCost(S, m);
     const can = G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
     const wait = `<span class="muted">${val('clock', `<span data-left="${m.until}"></span>`)}</span>`; // 辞退するまでの時間
-    return `${wait}<span class="cand-btns"><button class="btn ghost reject" data-reject="${m.id}">お見送り</button><button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>採用 ${yen(cost)}</button></span>`;
+    return `${wait}<span class="cand-btns"><button class="btn ghost reject" data-reject="${m.id}">不採用</button><button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>採用 ${yen(cost)}</button></span>`;
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
@@ -1015,11 +1015,11 @@ function openMember(m, candidate = false) {
     <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
-    ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button><button class="decline" id="m-reject">お見送り</button>` : ''}
+    ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button><button class="decline" id="m-reject">不採用</button>` : ''}
     ${!candidate && m.kind === 'staff' ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}`;
   $('#m-reject') &&
     ($('#m-reject').onclick = () => {
-      if (confirm(`${m.name} さんをお見送りしますか？`) && G.rejectCandidate(S, m.id, Date.now())) {
+      if (confirm(`${m.name} さんを不採用にしますか？`) && G.rejectCandidate(S, m.id, Date.now())) {
         $('#detail').close();
         commit();
       }
@@ -1082,7 +1082,7 @@ function renderTeam() {
     });
   $('#ad') && ($('#ad').onclick = () => openPromo('ad'));
   v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
-  v.querySelectorAll('[data-reject]').forEach((b) => (b.onclick = () => confirm('お見送りしますか？') && G.rejectCandidate(S, +b.dataset.reject, Date.now()) && commit()));
+  v.querySelectorAll('[data-reject]').forEach((b) => (b.onclick = () => confirm('不採用にしますか？') && G.rejectCandidate(S, +b.dataset.reject, Date.now()) && commit()));
   v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('解雇しますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));
 }
