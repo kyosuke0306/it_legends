@@ -1865,12 +1865,13 @@ function renderSlots() {
     const s = slotData(n);
     const now = n === slot;
     if (!s)
-      return `<div class="sv-card empty"><span class="slot-no">${n}</span><span class="grow muted">${icon('plus')}</span><button class="btn ghost small" data-sv-new="${n}">はじめから</button></div>`;
-    return `<div class="sv-card ${now ? 'now' : ''}">
+      return `<div class="sv-card empty" data-sv-new="${n}"><span class="slot-no">${n}</span><span class="grow muted sv-new">${icon('plus')}はじめから</span></div>`;
+    // 押すとその記録に切り替わる（ロック・消すのボタンは別。2026-10-04 ユーザー指示）
+    return `<div class="sv-card ${now ? 'now' : 'tap'}" ${now ? '' : `data-sv-use="${n}"`}>
       <span class="slot-no">${n}</span>
       <span class="sv-info"><b>${esc(s.company)}</b><span class="vals">${val('coin', yen(s.money))}${val('star', s.rep)}${val('crown', legendCount(s))}</span></span>
       <span class="sv-btns">
-        ${now ? '<span class="sv-now">プレイ中</span>' : `<button class="btn small" data-sv-use="${n}">切り替え</button>`}
+        ${now ? '<span class="sv-now">プレイ中</span>' : ''}
         <span class="sv-row2">
           <button class="sv-lock ${s.locked ? 'on' : ''}" data-sv-lock="${n}" aria-label="ロック">${icon('lock')}</button>
           <button class="sv-del" data-sv-del="${n}" ${s.locked ? 'disabled' : ''} aria-label="消す">${icon('trash')}</button>
@@ -1885,7 +1886,8 @@ function renderSlots() {
   const b = $('#settings-body');
   b.querySelectorAll('[data-sv-use]').forEach(
     (x) =>
-      (x.onclick = async () => {
+      (x.onclick = async (e) => {
+        if (e.target.closest('.sv-row2')) return; // ロック・消すを押したときは切り替えない
         $('#settings').close();
         await useSlot(+x.dataset.svUse);
         if (S) enterGame();

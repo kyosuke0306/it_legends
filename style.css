@@ -935,3 +935,7 @@ button.chip, .chip-prod { pointer-events: auto; border: 0; font-family: inherit;
 .sv-del { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
 .sv-del:disabled { opacity: 0.3; }
 .slot .slot-lock { flex: none; width: 18px; height: 18px; color: #ffd27a; }
+.sv-card.tap, .sv-card.empty { cursor: pointer; }
+.sv-card.tap:active, .sv-card.empty:active { transform: scale(0.98); }
+.sv-new { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: 0.85rem; }
+.sv-new .ic { width: 1em; height: 1em; }
