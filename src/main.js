@@ -1088,7 +1088,7 @@ function renderProduct() {
     .map(([k, g]) => {
       const locked = S.office < g.office;
       return `<button class="panel genre" data-genre="${k}" ${locked || !canStart || S.money < g.cost ? 'disabled' : ''}>
-        <span class="gname">${locked ? icon('lock') : ''}${g.name}</span>
+        <span class="gname">${prodIcon(k, 'small')}<span>${locked ? icon('lock') : ''}${g.name}</span></span>
         <span class="trend">${trendIcon(G.trendAt(S, k, now))}${seeNext ? `<span class="arrow">→</span>${trendIcon(G.trendAt(S, k, next + 1))}` : ''}</span>
         <span class="vals">${val('coin', yen(g.cost))}${val('clock', dur(g.hours * R.HOUR))}</span>
       </button>`;

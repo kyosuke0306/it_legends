@@ -935,3 +935,10 @@ button.chip { pointer-events: auto; border: 0; font-family: inherit; cursor: poi
 .sv-card.tap:active, .sv-card.empty:active { transform: scale(0.98); }
 .sv-new { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: 0.85rem; }
 .sv-new .ic { width: 1em; height: 1em; }
+
+/* 製品を作る前の選択肢にも、発売した製品と同じアイコン（2026-10-04 ユーザー指示） */
+.genre .gname { gap: 10px; }
+.genre .gname > span { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.prod-ic.small { width: 34px; height: 34px; border-radius: 10px; }
+.prod-ic.small .ic { width: 19px; height: 19px; }
+.genre:disabled .prod-ic.small { filter: grayscale(0.6); }
