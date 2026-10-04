@@ -929,9 +929,35 @@ function assignTask(offerId) {
     },
     confirm: (ids, temps) => G.startTask(S, offerId, ids, Date.now(), temps.length),
     // 受けない依頼はお断りして一覧から消せる
-    decline: { label: 'お断り', run: () => window.confirm('この依頼をお断りしますか？') && G.declineOffer(S, offerId, Date.now()) },
+    decline: {
+      label: 'お断り',
+      run: async () => (await ask({ head: `${catTag(o.cat)}<b>${esc(o.title)}</b>`, text: 'この依頼をお断りしますか？', ok: 'お断り' })) && G.declineOffer(S, offerId, Date.now()),
+    },
   });
 }
+
+// ゲームの見た目の確認（ブラウザの確認の窓の代わり）。はい→true / やめる→false
+// head: 上に出す絵や札（HTML）、text: 一言、ok: はいのボタンの文字
+const askEl = document.createElement('dialog');
+askEl.id = 'ask';
+document.body.append(askEl);
+function ask({ head = '', text, ok }) {
+  askEl.innerHTML = `<div class="ask-head">${head}</div><p class="ask-text">${esc(text)}</p>
+    <div class="ask-btns"><button class="big ghost" data-a="0">やめる</button><button class="big danger" data-a="1">${esc(ok)}</button></div>`;
+  askEl.showModal();
+  return new Promise((done) => {
+    const end = (v) => {
+      askEl.close();
+      done(v);
+    };
+    askEl.querySelectorAll('[data-a]').forEach((b) => (b.onclick = () => end(b.dataset.a === '1')));
+    askEl.oncancel = (e) => {
+      e.preventDefault();
+      end(false);
+    };
+  });
+}
+const askReject = (m) => ask({ head: `${avatar(m)}<b>${esc(m.name)}</b><small>${jobShort(m)} Lv${m.level}</small>`, text: '不採用にしますか？', ok: '不採用' });
 
 // 人を選ぶ（仕事・開発で共通）。下から出るシート
 // temp があれば要員派遣の人も選べる（自分の会社から minOwn 人は出す）
@@ -1001,8 +1027,8 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
         }),
     );
     $('#assign-decline') &&
-      ($('#assign-decline').onclick = () => {
-        if (decline.run()) {
+      ($('#assign-decline').onclick = async () => {
+        if (await decline.run()) {
           dlg.close();
           commit();
         }
@@ -1062,8 +1088,8 @@ function openMember(m, candidate = false) {
     ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button><button class="decline" id="m-reject">不採用</button>` : ''}
     ${!candidate && m.kind === 'staff' ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}`;
   $('#m-reject') &&
-    ($('#m-reject').onclick = () => {
-      if (confirm(`${m.name} さんを不採用にしますか？`) && G.rejectCandidate(S, m.id, Date.now())) {
+    ($('#m-reject').onclick = async () => {
+      if ((await askReject(m)) && G.rejectCandidate(S, m.id, Date.now())) {
         $('#detail').close();
         commit();
       }
@@ -1127,7 +1153,13 @@ function renderTeam() {
   $('#ad') && ($('#ad').onclick = () => openPromo('ad'));
   $('#ad-on') && ($('#ad-on').onclick = () => openPromoInfo('ad'));
   v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
-  v.querySelectorAll('[data-reject]').forEach((b) => (b.onclick = () => confirm('不採用にしますか？') && G.rejectCandidate(S, +b.dataset.reject, Date.now()) && commit()));
+  v.querySelectorAll('[data-reject]').forEach(
+    (b) =>
+      (b.onclick = async () => {
+        const m = S.candidates.find((c) => c.id === +b.dataset.reject);
+        if (m && (await askReject(m)) && G.rejectCandidate(S, m.id, Date.now())) commit();
+      }),
+  );
   v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('解雇しますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));
 }
