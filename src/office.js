@@ -125,7 +125,8 @@ export class Office {
       p.busy = Boolean(m.busy);
       p.hero = m.kind === 'hero';
       p.canSit = m.kind === 'staff'; // 社員は手が空くとクッションに座ってノートPCで働く（レジェンドは座る動きがないので立ったまま）
-      p.label = { ...labelOf(m), work: workOf(state, m)?.title ?? '' }; // 仕事中なら仕事の名前も出す
+      // 仕事中なら仕事の名前も出す。who / busy は札を押したときに詳しい画面を開くため（main.js の onPerson / onWork）
+      p.label = { ...labelOf(m), work: workOf(state, m)?.title ?? '', who: m, busy: m.busy };
       const desk = this.desks[i % this.desks.length];
       p.desk = i < this.desks.length ? desk : desk.clone().add(new THREE.Vector3(0.32 * Math.ceil(i / this.desks.length), 0, 0.15));
     });
@@ -165,7 +166,7 @@ export class Office {
     holder.position.copy(this.spots.door);
     holder.rotation.y = Math.PI; // 事務所のほうを向く
     this.scene.add(holder);
-    this.visitor = { id: c.id, holder, label: { name: c.name, sub: `${JOBS[c.job].full}・面接` } };
+    this.visitor = { id: c.id, holder, label: { name: c.name, sub: `${JOBS[c.job].full}・面接`, who: c, candidate: true } };
     holder.userData.label = this.visitor.label;
     const obj = buildPerson(c.look, c.job);
     obj.scale.setScalar(0.55);
@@ -447,14 +448,22 @@ export class Office {
     this.tagged = best;
     if (!best) return this.tag.classList.remove('show');
     this.tag.innerHTML = `<b></b><small></small>${best.label.work ? '<span class="work"></span>' : ''}`;
-    this.tag.querySelector('b').textContent = best.label.name;
-    this.tag.querySelector('small').textContent = best.label.sub;
-    if (best.label.work) this.tag.querySelector('.work').textContent = best.label.work;
-    this.tag.classList.add('show');
-    this.tagTimer = setTimeout(() => {
+    const L = best.label;
+    this.tag.querySelector('b').textContent = L.name;
+    this.tag.querySelector('small').textContent = L.sub;
+    if (L.work) this.tag.querySelector('.work').textContent = L.work;
+    // 名前を押すとその人の詳しい画面、仕事の名前を押すとその仕事の詳しい画面（2026-10-04 ユーザー指示）
+    const hide = () => {
+      clearTimeout(this.tagTimer);
       this.tagged = null;
       this.tag.classList.remove('show');
-    }, 3000);
+    };
+    const tapName = L.who && L.who.kind !== 'rival' && this.onPerson;
+    this.tag.classList.toggle('tappable', Boolean(tapName));
+    if (tapName) this.tag.querySelector('b').onclick = () => (hide(), this.onPerson(L.who, L.candidate));
+    if (L.work && this.onWork) this.tag.querySelector('.work').onclick = () => (hide(), this.onWork(L.busy));
+    this.tag.classList.add('show');
+    this.tagTimer = setTimeout(hide, 5000); // 押せるように少し長く出す
   }
 
   // 名前の札を、その人の頭の上に合わせる

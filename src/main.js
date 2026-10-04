@@ -24,13 +24,13 @@ document.querySelectorAll('.tab').forEach((t) => t.insertAdjacentHTML('afterbegi
 // iPhone の Safari は2本指で画面ごと拡大できてしまう（描く画面がはみ出す）ので止める。3Dの部屋の2本指は別に動く
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
-// 記録は2つまで。1 はもとからの場所（今までの記録はそのまま 1 になる）、2 は別の場所
+// 記録は3つまで（2026-10-04 ユーザー指示）。1 はもとからの場所（今までの記録はそのまま 1 になる）、2・3 は別の場所
 const SAVE_KEY = 'it_legends.save.v1';
 const SLOT_KEY = 'it_legends.slot'; // いま遊んでいる記録の番号
-const saveKey = (slot) => (slot === 2 ? `${SAVE_KEY}.2` : SAVE_KEY);
+const saveKey = (slot) => (slot === 1 ? SAVE_KEY : `${SAVE_KEY}.${slot}`);
 let slot = 1;
 try {
-  slot = localStorage.getItem(SLOT_KEY) === '2' ? 2 : 1;
+  slot = cloud.SLOTS.includes(+localStorage.getItem(SLOT_KEY)) ? +localStorage.getItem(SLOT_KEY) : 1;
 } catch {}
 let S = null; // ゲームの状態
 let view = 'office';
@@ -268,7 +268,7 @@ function showTitle() {
   $('#title-msg').textContent = '';
   closeSlots();
   titleLegends();
-  const any = Boolean(S || loadLocal(otherSlot()));
+  const any = filledSlots().length > 0;
   $('#btn-continue').classList.toggle('sub', !any);
   $('#btn-new').classList.toggle('sub', any);
   if (any) $('#btn-continue').after($('#btn-new')); // 大きい方を上に
@@ -277,8 +277,8 @@ function showTitle() {
 }
 
 // ----- 記録1・記録2 -----
-const otherSlot = () => (slot === 2 ? 1 : 2);
 const slotData = (n) => (n === slot ? S : loadLocal(n));
+const filledSlots = () => cloud.SLOTS.filter((n) => slotData(n));
 // 遊ぶ記録を切り替える（いまの記録は保存してから）
 async function useSlot(n) {
   if (n === slot) return;
@@ -305,9 +305,11 @@ function openSlots(mode) {
     const info = s
       ? `<b>${esc(s.company)}</b><span class="vals">${val('coin', yen(s.money))}${val('star', s.rep)}${val('crown', legendCount(s))}</span>`
       : `<span class="muted">${icon('plus')}</span>`;
-    return `<button class="slot ${s ? '' : 'empty'}" data-slot="${n}" ${mode === 'continue' && !s ? 'disabled' : ''}><span class="slot-no">${n}</span><span class="slot-info">${info}</span></button>`;
+    // ロックした記録には、はじめからで上書きできない
+    const off = (mode === 'continue' && !s) || (mode === 'new' && s?.locked);
+    return `<button class="slot ${s ? '' : 'empty'}" data-slot="${n}" ${off ? 'disabled' : ''}><span class="slot-no">${n}</span><span class="slot-info">${info}</span>${s?.locked ? icon('lock', 'slot-lock') : ''}</button>`;
   };
-  $('#title-slots').innerHTML = `${card(1)}${card(2)}<button class="slot-back" id="slot-back">${icon('back')}</button>`;
+  $('#title-slots').innerHTML = `${cloud.SLOTS.map(card).join('')}<button class="slot-back" id="slot-back">${icon('back')}</button>`;
   $('#title-slots').classList.remove('hidden');
   $('#title-buttons').classList.add('hidden');
   $('#slot-back').onclick = closeSlots;
@@ -320,7 +322,8 @@ function openSlots(mode) {
           if (S) enterGame();
           return;
         }
-        if (slotData(n) && !confirm(`記録${n} は消えます。はじめからにしますか？`)) return;
+        const old = slotData(n);
+        if (old && !confirm(`記録${n}「${old.company}」は消えます。はじめからにしますか？`)) return;
         newSlot = n;
         closeSlots();
         goStep(1);
@@ -333,11 +336,11 @@ function closeSlots() {
 }
 
 $('#btn-continue').onclick = async () => {
-  const other = loadLocal(otherSlot());
-  if (S && other) return openSlots('continue'); // 記録が2つあるときは選ぶ
+  const filled = filledSlots();
+  if (filled.length > 1) return openSlots('continue'); // 記録が2つ以上あるときは選ぶ
   if (S) return enterGame();
-  if (other) {
-    await useSlot(otherSlot());
+  if (filled.length) {
+    await useSlot(filled[0]);
     return enterGame();
   }
   // この端末に記録がなければ、Google でログインしてクラウドの記録を読む
@@ -348,8 +351,8 @@ $('#btn-continue').onclick = async () => {
 };
 $('#btn-continue').addEventListener('pointerdown', cloud.warmUp, { once: true });
 $('#btn-new').onclick = () => {
-  // 記録があるときは、どちらに作るかを選ぶ（もう片方は消えない）
-  if (S || loadLocal(otherSlot())) return openSlots('new');
+  // 記録があるときは、どこに作るかを選ぶ（ほかの記録は消えない）
+  if (filledSlots().length) return openSlots('new');
   newSlot = slot;
   goStep(1);
 };
@@ -359,7 +362,7 @@ function onSynced() {
   if (!wantContinue) return;
   wantContinue = false;
   if (S) enterGame();
-  else if (loadLocal(otherSlot())) useSlot(otherSlot()).then(enterGame);
+  else if (filledSlots().length) useSlot(filledSlots()[0]).then(enterGame);
   else $('#title-msg').textContent = '記録がありません';
 }
 
@@ -431,6 +434,9 @@ function enterGame() {
   if (!office) {
     office = new Office($('#office-canvas'));
     office.onArt = openArtPad; // 自宅の壁の空いているところをタップすると、落書きを描く
+    // 3Dの人の札：名前を押すとプロフィール、仕事の名前を押すと仕事の詳しいシート
+    office.onPerson = (m, candidate) => (m.kind === 'legend' ? openLegend(m.legend) : openMember(m, candidate));
+    office.onWork = (id) => (S.tasks.some((t) => t.id === id) ? openRunning(id) : S.devs.some((d) => d.id === id) && openDevRunning(id));
   }
   preloadCharacters([...G.ownedLegends(S)]);
   renderAll();
@@ -531,9 +537,12 @@ function renderOffice() {
   office.sync(S);
   const o = R.OFFICES[S.office];
   const floors = S.floors ? `<small>+${S.floors}</small>` : ''; // 増築した回数
-  $('#office-chips').innerHTML = `<span class="chip">${o.name}${floors}</span><span class="chip">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${
-    S.products.length ? `<span class="chip">${icon('box')}+${yen(hourlyIncome())}/時</span>` : ''
+  // オフィスの名前は押すと今のオフィスの詳しいシート（ほかの札と見分けられるよう色つきのボタン）。製品は数と1時間の稼ぎ、押すと一覧
+  $('#office-chips').innerHTML = `<button class="chip chip-office" id="chip-office">${icon('home')}${o.name}${floors}${icon('back', 'flip')}</button><span class="chip">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${
+    S.products.length ? `<button class="chip chip-prod" id="chip-prod">${icon('box')}<b>${S.products.length}</b><span class="ok">+${yen(hourlyIncome())}/時</span></button>` : ''
   }`;
+  $('#chip-office').onclick = openOffice;
+  $('#chip-prod') && ($('#chip-prod').onclick = openProducts);
   const enc = S.encounter;
   $('#encounter').innerHTML = enc
     ? `<button class="encounter" id="go-encounter">${icon('spark', 'spin')}<span>誰かが現れた</span><span class="left" data-left="${enc.until}"></span></button>`
@@ -574,6 +583,46 @@ function renderOffice() {
   }
 }
 
+// 今のオフィスの詳しいシート（2026-10-04 ユーザー指示）。席の埋まり具合・仕事の平均・面接・作れる製品・増築、次のオフィスへ
+function openOffice() {
+  const o = R.OFFICES[S.office];
+  const next = R.OFFICES[S.office + 1];
+  const made = Object.entries(R.GENRES).filter(([, g]) => g.office <= S.office);
+  const row = (ic, name, v) => `<div class="cmp">${icon(ic)}<small>${name}</small><span class="grow"></span><b>${v}</b></div>`;
+  const dlg = $('#assign');
+  $('#assign-body').innerHTML = `
+    <div class="sheet-head"><b>${o.name}${S.floors ? ` <small class="muted">+${S.floors}</small>` : ''}</b></div>
+    <p class="office-about">${o.about}</p>
+    ${row('people', '席', `${G.seatsUsed(S)}/${G.capacity(S)}`)}
+    ${row('task', '仕事の平均', `${yen(Math.round(G.avgRate(S.office) / 1000) * 1000)}<small>/時</small>`)}
+    ${row('people', '面接', `${R.CANDIDATES_PER_DAY[S.office]}<small>人/日</small> Lv${o.lv[0]}〜${o.lv[1]}`)}
+    <div class="cmp prods">${icon('box')}<small>製品</small><span class="grow"></span><span class="new-prods">${made.map(([k]) => prodIcon(k)).join('')}</span></div>
+    ${next ? `<button class="panel upgrade ${S.money >= next.cost && S.rep >= next.rep ? 'ready' : ''}" id="to-next">${icon('move')}<span class="grow"><b>${next.name}</b></span>${icon('lock')}${icon('back', 'flip')}</button>` : ''}
+    <button class="big ghost" id="run-close">OK</button>`;
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
+  $('#to-next') && ($('#to-next').onclick = openNextOffice);
+}
+// 自社製品の一覧（会社の画面の製品の札から）。押すとその製品の詳しいシート
+function openProducts() {
+  const now = Date.now();
+  const ce = G.companyEffects(S);
+  const dlg = $('#assign');
+  $('#assign-body').innerHTML = `
+    <div class="sheet-head"><b>自社製品 <small class="muted">${S.products.length}</small></b><span class="ok-num">+${yen(hourlyIncome())}<small>/時</small></span></div>
+    <div class="pick">${[...S.products]
+      .reverse()
+      .map(
+        (p) => `<button class="panel prod" data-prod="${p.id}">${prodIcon(p.genre)}
+          <span class="prod-main"><b>${esc(p.name)}</b><small>${R.GENRES[p.genre].name}</small>${rating(p.q)}</span>
+          <span class="prod-earn"><b>+${yen(G.productIncome(S, p, now, ce))}<small>/時</small></b><small>${icon('wallet')}${yen(p.earned ?? 0)}</small></span></button>`,
+      )
+      .join('')}</div>
+    <button class="big ghost" id="run-close">OK</button>`;
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
+  $('#assign-body').querySelectorAll('[data-prod]').forEach((b) => (b.onclick = () => openProduct(+b.dataset.prod)));
+}
 // 次のオフィス：3Dの部屋を黒い影（シークレット）で見せ、広さ・仕事・面接に来る人・作れる製品を今と並べる（2026-10-04 ユーザー指示）
 let peek = null; // のぞき見用の3D（1つだけ作って使い回す）
 function openNextOffice() {
@@ -717,7 +766,7 @@ function renderWork() {
   const canWork = G.freeMembers(S).length > 0;
   const offers = S.offers
     .map(
-      (o) => `<button class="panel offer cat-${o.cat}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
+      (o) => `<button class="panel offer cat-${o.cat} ${canWork ? '' : 'off'}" data-offer="${o.id}">
         <span class="offer-top"><b>${o.expiresAt - R.OFFER_LIFE > seenSnap.work ? newTag : ''}${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}"></span></span></span>
         <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
       </button>`,
@@ -833,14 +882,23 @@ function addMembers(taskId) {
 
 function assignTask(offerId) {
   const o = S.offers.find((x) => x.id === offerId);
+  if (!o) return;
+  // 手の空いた人がいないときも、依頼の中身は見られる（2026-10-04 ユーザー指示）
+  const free = G.freeMembers(S).length > 0;
+  const good = G.goodJobs(o)
+    .map((j) => `<span><img src="assets/jobs/${j}.webp" alt="">${R.JOBS[j].name}</span>`)
+    .join('');
   openAssign({
     title: o.title,
+    extra: `<div class="offer-facts">${catTag(o.cat)}${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}<span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}<span data-left="${o.expiresAt}"></span></span></div>
+      ${good ? `<div class="offer-good">${icon('bolt')}${good}</div>` : ''}
+      ${free ? '' : `<div class="all-busy">${icon('people')}全員仕事中</div>`}`,
     max: o.team,
     w: o.w,
     good: G.goodJobs(o),
     need: o.diff,
     // 要員派遣（お金を払って、席の数を超えて仕事の間だけ人を借りる）
-    temp: { make: (i) => G.makeTemp(S, o, i), fee: G.tempFee(o) },
+    temp: free ? { make: (i) => G.makeTemp(S, o, i), fee: G.tempFee(o) } : null,
     preview: (ids, temps) => {
       const p = G.taskPreview(S, o, ids, temps);
       return `${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(p.duration), p.early ? 'ok' : '')}${val('coin', yen(p.reward))}${val('star', `+${p.rep}`, p.great || p.early ? 'ok' : '')}`;
@@ -1790,24 +1848,96 @@ function renderMore() {
     ${u
       ? `<div class="set-row">${icon(SYNC_ICON[syncState.cls])}<span class="grow muted">${esc(u.email ?? '')}</span><button class="btn ghost small" id="logout">ログアウト</button></div>`
       : `<div class="set-row">${icon('cloud')}<span class="grow">Google</span><button class="btn" id="login">ログイン</button></div>`}
-    ${S ? `<div class="set-row">${icon('error')}<span class="grow">最初から</span><button class="btn ghost danger small" id="reset">消す</button></div>` : ''}`;
+    <button class="set-row link-row" id="more-slots">${icon('box')}<span class="grow">記録</span>${icon('back', 'flip')}</button>`;
+  $('#more-slots').onclick = () => setPage('slots');
   $('#set-back').onclick = () => setPage('main');
   if ($('#login')) {
     $('#login').onclick = () => cloud.login();
     cloud.warmUp();
   }
   $('#logout') && ($('#logout').onclick = () => confirm('ログアウトしますか？') && cloud.logout().then(() => setPage('main')));
-  $('#reset') &&
-    ($('#reset').onclick = async () => {
-      if (!confirm(`記録${slot} を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
-      if (!confirm('本当に消しますか？もとに戻せません')) return;
-      S = null;
-      try {
-        localStorage.removeItem(saveKey(slot)); // 消すのはいま遊んでいる記録だけ
-      } catch {}
-      await cloud.clear().catch(() => {});
-      location.reload();
-    });
+}
+// 記録（3つまで）: 切り替え・ロック・消す（2026-10-04 ユーザー指示「タイトルに戻らずに切り替え」「消したくない記録にロック」）
+// ロックした記録は消せず、はじめからで上書きもできない。消すときは会社名を出して2回たしかめる
+function renderSlots() {
+  const card = (n) => {
+    const s = slotData(n);
+    const now = n === slot;
+    if (!s)
+      return `<div class="sv-card empty"><span class="slot-no">${n}</span><span class="grow muted">${icon('plus')}</span><button class="btn ghost small" data-sv-new="${n}">はじめから</button></div>`;
+    return `<div class="sv-card ${now ? 'now' : ''}">
+      <span class="slot-no">${n}</span>
+      <span class="sv-info"><b>${esc(s.company)}</b><span class="vals">${val('coin', yen(s.money))}${val('star', s.rep)}${val('crown', legendCount(s))}</span></span>
+      <span class="sv-btns">
+        ${now ? '<span class="sv-now">プレイ中</span>' : `<button class="btn small" data-sv-use="${n}">切り替え</button>`}
+        <span class="sv-row2">
+          <button class="sv-lock ${s.locked ? 'on' : ''}" data-sv-lock="${n}" aria-label="ロック">${icon('lock')}</button>
+          <button class="sv-del" data-sv-del="${n}" ${s.locked ? 'disabled' : ''} aria-label="消す">${icon('trash')}</button>
+        </span>
+      </span>
+    </div>`;
+  };
+  $('#settings-body').innerHTML = `
+    <button class="set-row link-row" id="set-back">${icon('back')}<span class="grow">記録</span></button>
+    <div class="sv-list">${cloud.SLOTS.map(card).join('')}</div>`;
+  $('#set-back').onclick = () => setPage('main');
+  const b = $('#settings-body');
+  b.querySelectorAll('[data-sv-use]').forEach(
+    (x) =>
+      (x.onclick = async () => {
+        $('#settings').close();
+        await useSlot(+x.dataset.svUse);
+        if (S) enterGame();
+      }),
+  );
+  b.querySelectorAll('[data-sv-new]').forEach(
+    (x) =>
+      (x.onclick = () => {
+        save();
+        $('#settings').close();
+        showTitle();
+        newSlot = +x.dataset.svNew;
+        goStep(1);
+      }),
+  );
+  b.querySelectorAll('[data-sv-lock]').forEach(
+    (x) =>
+      (x.onclick = () => {
+        const n = +x.dataset.svLock;
+        if (n === slot) {
+          S.locked = !S.locked;
+          commit();
+        } else {
+          const st = loadLocal(n);
+          st.locked = !st.locked;
+          st.savedAt = Date.now();
+          try {
+            localStorage.setItem(saveKey(n), JSON.stringify(st));
+          } catch {}
+          cloud.putOther(n, st).catch(() => {});
+        }
+        renderSlots();
+      }),
+  );
+  b.querySelectorAll('[data-sv-del]').forEach(
+    (x) =>
+      (x.onclick = async () => {
+        const n = +x.dataset.svDel;
+        const st = slotData(n);
+        if (!st || st.locked) return;
+        const u = cloud.currentUser();
+        if (!confirm(`記録${n}「${st.company}」を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
+        if (!confirm(`「${st.company}」を本当に消しますか？もとに戻せません`)) return;
+        try {
+          localStorage.removeItem(saveKey(n));
+        } catch {}
+        await cloud.clear(n).catch(() => {});
+        if (n === slot) {
+          S = null;
+          location.reload(); // 遊んでいた記録を消したときはタイトルから
+        } else renderSlots();
+      }),
+  );
 }
 function setPage(p) {
   settingsPage = p;
@@ -1817,15 +1947,18 @@ function setPage(p) {
 function renderSettings() {
   if (settingsPage === 'rename' && S) return renderRename();
   if (settingsPage === 'more') return renderMore();
+  if (settingsPage === 'slots') return renderSlots();
   if (settingsPage === 'face' && S) return renderFace();
   const inGame = S && !$('#game').classList.contains('hidden');
   $('#settings-body').innerHTML = `
     ${inGame ? `<button class="big set-title" id="to-title">${icon('home')}タイトルへ</button>` : ''}
     ${inGame ? `<button class="set-row link-row" id="to-rename">${icon('pen')}<span class="grow">名前を変更</span>${icon('back', 'flip')}</button>` : ''}
     ${inGame ? `<button class="set-row link-row" id="to-face">${icon('face')}<span class="grow">顔を変更</span>${icon('back', 'flip')}</button>` : ''}
+    ${inGame ? `<button class="set-row link-row" id="to-slots">${icon('box')}<span class="grow">記録</span><span class="muted">${slot}</span>${S.locked ? icon('lock') : ''}${icon('back', 'flip')}</button>` : ''}
     <button class="set-row link-row set-more" id="to-more"><span class="grow">アカウントと記録</span>${icon('back', 'flip')}</button>`;
   $('#to-rename') && ($('#to-rename').onclick = () => setPage('rename'));
   $('#to-face') && ($('#to-face').onclick = () => setPage('face'));
+  $('#to-slots') && ($('#to-slots').onclick = () => setPage('slots'));
   $('#to-more') && ($('#to-more').onclick = () => setPage('more'));
   $('#to-title') &&
     ($('#to-title').onclick = () => {

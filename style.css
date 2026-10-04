@@ -306,7 +306,8 @@ button.panel:disabled { opacity: 0.45; }
 .person-tag.show { display: flex; }
 .person-tag b { font-size: 0.85rem; }
 .person-tag small { font-size: 0.7rem; color: var(--muted); }
-.person-tag .work { margin-top: 3px; padding: 2px 8px; border-radius: 99px; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; }
+.person-tag.tappable b { pointer-events: auto; cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent); text-underline-offset: 3px; }
+.person-tag .work { pointer-events: auto; cursor: pointer; margin-top: 3px; padding: 2px 8px; border-radius: 99px; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; }
 .person-tag::after { content: ''; position: absolute; bottom: -5px; left: calc(50% + var(--ax, 0px)); margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: var(--panel); }
 @keyframes bob { 50% { transform: translateY(-3px); } }
 .upgrade { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
@@ -857,3 +858,51 @@ button.prod { color: inherit; }
 .need-move { margin-top: 12px; }
 #move-go { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .office-peek[data-mood='light'] canvas { filter: grayscale(1) brightness(0.42) contrast(1.6) sepia(1) hue-rotate(150deg) saturate(1.8) blur(1.2px) drop-shadow(0 0 6px rgba(95, 230, 255, 0.45)); }
+
+/* 依頼のシートの中身（手の空いた人がいなくても見られる） */
+.offer.off { opacity: 0.5; }
+.offer-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: -4px 0 8px; font-size: 0.85rem; }
+.offer-facts .cat-tag { margin: 0; }
+.offer-facts .expire { margin-left: auto; }
+.offer-good { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 0 10px; color: var(--ok); font-size: 0.8rem; font-weight: 700; }
+.offer-good > .ic { width: 1em; height: 1em; color: var(--gold); }
+.offer-good span { display: inline-flex; align-items: center; gap: 4px; }
+.offer-good img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: var(--panel); }
+.all-busy { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 4px 0 10px; padding: 10px; border-radius: 12px; background: var(--bg); color: var(--muted); font-weight: 700; font-size: 0.88rem; }
+.all-busy .ic { width: 1.1em; height: 1.1em; }
+
+/* 会社の画面の上の札。オフィスと製品は押せるボタン（席の札とは見た目を変える。2026-10-04 ユーザー指示） */
+button.chip { pointer-events: auto; border: 0; color: var(--text); font-family: inherit; cursor: pointer; }
+.chip-office { background: linear-gradient(100deg, #36b8f5, var(--accent)); color: #fff !important; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent); }
+.chip-office .ic { opacity: 1; }
+.chip-office .flip { width: 0.8em; height: 0.8em; margin-left: 1px; opacity: 0.8; }
+.chip-office small { color: #fff; opacity: 0.85; }
+.chip-prod { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ok) 55%, transparent); }
+.chip-prod b { font-size: 0.8rem; }
+.chip-prod .ok { color: var(--ok); margin-left: 4px; }
+.cmp.prods .new-prods { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.cmp.prods .prod-ic { width: 26px; height: 26px; border-radius: 8px; }
+.cmp.prods .prod-ic .ic { width: 16px; height: 16px; }
+#to-next { margin-top: 12px; }
+#to-next .ic { width: 1.1em; height: 1.1em; }
+.sheet-head .ok-num { color: var(--ok); font-weight: 800; }
+.sheet-head .ok-num small { font-size: 0.7rem; }
+
+/* 設定の「記録」（3つまで。切り替え・ロック・消す） */
+.sv-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.sv-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--bg); }
+.sv-card.now { box-shadow: inset 0 0 0 2px var(--accent); }
+.sv-card.empty { border: 2px dashed var(--line); background: none; }
+.sv-card .slot-no { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: linear-gradient(135deg, #22c8ff, #8b5cff); color: #fff; font-size: 0.85rem; }
+.sv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.sv-info b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.95rem; }
+.sv-info .vals { font-size: 0.78rem; gap: 8px; }
+.sv-btns { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.sv-now { font-size: 0.75rem; font-weight: 800; color: var(--accent); padding: 4px 0; }
+.sv-row2 { display: flex; gap: 6px; }
+.sv-lock, .sv-del { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--panel); color: var(--muted); padding: 0; }
+.sv-lock .ic, .sv-del .ic { width: 17px; height: 17px; }
+.sv-lock.on { border-color: var(--gold); background: var(--gold); color: #fff; }
+.sv-del { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+.sv-del:disabled { opacity: 0.3; }
+.slot .slot-lock { flex: none; width: 18px; height: 18px; color: #ffd27a; }

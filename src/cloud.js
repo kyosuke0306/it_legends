@@ -1,6 +1,6 @@
 // Firebase（Google ログイン + Firestore）で記録を保存・同期する（money_manage の sync.js と同じ方式）
 // - 記録は Firestore の users/<ユーザーID> に { data: 記録のJSON, updatedAt, device } で保存
-//   2つ目の記録は同じ場所の data2 / updatedAt2 / device2 に入れる（自分の分だけを書き換え、もう片方は消さない）
+//   2つ目・3つ目の記録は同じ場所の data2 / updatedAt2 / device2、data3 / … に入れる（自分の分だけを書き換え、ほかは消さない）
 // - ほかの端末で保存された内容は onSnapshot で受け取って反映する
 // - Firebase の部品は、画面の表示が終わって落ち着いてから読み込む（ゲームの表示を遅らせない）
 // - 通信を少なくするため、画面が裏に回ったら保存してから通信を切り、戻ったらつなぎ直す（sleep / wake）
@@ -25,8 +25,9 @@ let dirty = false;
 let asleep = false; // 裏に回って通信を切っているか
 const lastSent = {}; // 記録ごとに、最後に保存した中身（同じなら送らない）
 const lastSeen = {}; // 記録ごとに、最後に受け取った中身（同じなら反映しない）
-// 記録の番号ごとの入れ場所（1 はもとからの data。2 は data2）
-const fields = (slot) => (slot === 2 ? { data: 'data2', at: 'updatedAt2', dev: 'device2' } : { data: 'data', at: 'updatedAt', dev: 'device' });
+// 記録は3つまで（2026-10-04 ユーザー指示）。番号ごとの入れ場所（1 はもとからの data。2 は data2、3 は data3）
+export const SLOTS = [1, 2, 3];
+const fields = (slot) => (slot === 1 ? { data: 'data', at: 'updatedAt', dev: 'device' } : { data: `data${slot}`, at: `updatedAt${slot}`, dev: `device${slot}` });
 const slotNow = () => hooks?.slot?.() ?? 1;
 const userRef = () => fb.store.doc(fb.db, 'users', user.uid);
 // 1つの記録だけを書く（merge なので、もう片方の記録は消えない）
@@ -127,14 +128,13 @@ async function onUser(u) {
     const snap = await store.getDoc(userRef());
     const d = snap.exists() ? snap.data() : {};
     // いま遊んでいない方の記録は、この端末の記録と新しい方に合わせる（main.js の syncOther）
-    for (const slot of [1, 2]) {
+    for (const slot of SLOTS) {
       if (slot === slotNow()) continue;
       const other = parse(d[fields(slot).data]);
       const up = await hooks.syncOther?.(slot, other);
       if (up) await put(slot, JSON.stringify(up));
     }
-    lastSeen[1] = d.data;
-    lastSeen[2] = d.data2;
+    for (const n of SLOTS) lastSeen[n] = d[fields(n).data];
     const remote = parse(d[fields(slotNow()).data]);
     // クラウドとこの端末のどちらの記録を使うか（main.js が決める）
     if (remote && (await hooks.decide(remote)) === 'remote') {
@@ -160,7 +160,7 @@ function listen() {
   unsubscribe = fb.store.onSnapshot(userRef(), (s) => {
     if (!s.exists() || s.metadata.hasPendingWrites) return;
     const d = s.data();
-    for (const slot of [1, 2]) {
+    for (const slot of SLOTS) {
       const f = fields(slot);
       if (d[f.dev] === device || d[f.data] === lastSeen[slot]) continue;
       lastSeen[slot] = d[f.data];
@@ -247,6 +247,14 @@ export async function clear(slot = slotNow()) {
   delete lastSent[slot];
   lastSeen[slot] = 'null';
   await put(slot, 'null');
+}
+
+// 遊んでいない記録を書き換えたとき（ロックを付けた・外した）。ログインしていればその記録だけ保存する
+export async function putOther(slot, state) {
+  if (!user) return;
+  const json = JSON.stringify(state);
+  lastSeen[slot] = json;
+  await put(slot, json);
 }
 
 // 遊ぶ記録を切り替える前に呼ぶ：いまの記録をすぐ保存する
