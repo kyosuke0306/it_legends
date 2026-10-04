@@ -541,12 +541,8 @@ function renderOffice() {
   const o = R.OFFICES[S.office];
   const floors = S.floors ? `<small>+${S.floors}</small>` : ''; // 増築した回数
   // オフィスの名前と席の数は1つのボタンにまとめ、押すと今のオフィスの詳しいシート。色や形はオフィスの格ごとに変わる（.o0〜.o9）
-  // 製品は下の行に、形と大きさを変えた小さな札（数と1時間の稼ぎ、押すと一覧）。2026-10-04 ユーザー指示
-  $('#office-chips').innerHTML = `<button class="chip chip-office o${Math.min(S.office, 9)}" id="chip-office">${icon(S.office ? 'building' : 'home')}<span class="o-name">${o.name}${floors}</span><span class="o-seats">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${icon('back', 'flip')}</button>${
-    S.products.length ? `<button class="chip-prod" id="chip-prod">${icon('box')}<b>${S.products.length}</b><span class="ok">+${yen(hourlyIncome())}/時</span></button>` : ''
-  }`;
+  $('#office-chips').innerHTML = `<button class="chip chip-office o${Math.min(S.office, 9)}" id="chip-office">${icon(S.office ? 'building' : 'home')}<span class="o-name">${o.name}${floors}</span><span class="o-seats">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${icon('back', 'flip')}</button>`; // 製品の数と稼ぎは会社の画面には出さない（2026-10-04 ユーザー指示。製品タブで見る）
   $('#chip-office').onclick = openOffice;
-  $('#chip-prod') && ($('#chip-prod').onclick = openProducts);
   const enc = S.encounter;
   $('#encounter').innerHTML = enc
     ? `<button class="encounter" id="go-encounter">${icon('spark', 'spin')}<span>誰かが現れた</span><span class="left" data-left="${enc.until}"></span></button>`
@@ -606,26 +602,6 @@ function openOffice() {
   if (!dlg.open) dlg.showModal();
   $('#run-close').onclick = () => dlg.close();
   $('#to-next') && ($('#to-next').onclick = openNextOffice);
-}
-// 自社製品の一覧（会社の画面の製品の札から）。押すとその製品の詳しいシート
-function openProducts() {
-  const now = Date.now();
-  const ce = G.companyEffects(S);
-  const dlg = $('#assign');
-  $('#assign-body').innerHTML = `
-    <div class="sheet-head"><b>自社製品 <small class="muted">${S.products.length}</small></b><span class="ok-num">+${yen(hourlyIncome())}<small>/時</small></span></div>
-    <div class="pick">${[...S.products]
-      .reverse()
-      .map(
-        (p) => `<button class="panel prod" data-prod="${p.id}">${prodIcon(p.genre)}
-          <span class="prod-main"><b>${esc(p.name)}</b><small>${R.GENRES[p.genre].name}</small>${rating(p.q)}</span>
-          <span class="prod-earn"><b>+${yen(G.productIncome(S, p, now, ce))}<small>/時</small></b><small>${icon('wallet')}${yen(p.earned ?? 0)}</small></span></button>`,
-      )
-      .join('')}</div>
-    <button class="big ghost" id="run-close">OK</button>`;
-  if (!dlg.open) dlg.showModal();
-  $('#run-close').onclick = () => dlg.close();
-  $('#assign-body').querySelectorAll('[data-prod]').forEach((b) => (b.onclick = () => openProduct(+b.dataset.prod)));
 }
 // 次のオフィス：3Dの部屋を黒い影（シークレット）で見せ、広さ・仕事・面接に来る人・作れる製品を今と並べる（2026-10-04 ユーザー指示）
 let peek = null; // のぞき見用の3D（1つだけ作って使い回す）
