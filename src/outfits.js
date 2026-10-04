@@ -33,6 +33,7 @@ function inHand(parts, obj) {
 const DRESS = {
   // ヘッドホン
   pg(root, parts) {
+    if (root.userData.noHeadphones) return; // CEO の顔選びで「ヘッドホンなし」にしたとき
     const band = mesh(new THREE.TorusGeometry(0.6, 0.035, 8, 32, Math.PI), 0x2a2a33);
     for (const side of [-1, 1]) {
       const cup = mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.1, 20), 0x2a2a33, [0.6 * side, 0, 0]);
@@ -104,9 +105,11 @@ export function dress(root, job, { ceo = false } = {}) {
 }
 
 // 社員・CEO・面接に来た人・派遣の人の体（職種の小物つき。データ分析とコンサルはメガネ）
-// look.headphones: CEO の顔を選ぶときのヘッドホン（プログラマーはもともと付けている）
+// look.headphones: CEO の顔を選ぶときのヘッドホン（プログラマーはもともと付けていて、false で外せる）
 export function buildPerson(look, job, { ceo = false } = {}) {
-  const root = dress(buildChibi({ hairStyle: 'short', ...look, glasses: look.glasses || ['data', 'consul'].includes(job) }), job, { ceo });
+  const body = buildChibi({ hairStyle: 'short', ...look, glasses: look.glasses || ['data', 'consul'].includes(job) });
+  body.userData.noHeadphones = look.headphones === false && job === 'pg';
+  const root = dress(body, job, { ceo });
   if (look.headphones && job !== 'pg') DRESS.pg(root, root.userData.parts);
   return root;
 }

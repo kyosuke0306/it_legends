@@ -149,7 +149,7 @@ function faceEditor(box, look, job) {
     <div class="fe-row">${(noGlasses ? [true, 'thick'] : [false, true, 'thick'])
       .map((g) => `<button class="fe-opt ${(look.glasses || (noGlasses && true)) === g ? 'on' : ''}" data-k="glasses" data-v="${g}">${pic({ glasses: g })}</button>`)
       .join('')}</div>
-    ${job === 'pg' ? '' : `<div class="fe-row">${[false, true].map((h) => `<button class="fe-opt ${Boolean(look.headphones) === h ? 'on' : ''}" data-k="headphones" data-v="${h}">${pic({ headphones: h })}</button>`).join('')}</div>`}`;
+    <div class="fe-row">${[false, true].map((h) => `<button class="fe-opt ${(look.headphones ?? job === 'pg') === h ? 'on' : ''}" data-k="headphones" data-v="${h}">${pic({ headphones: h })}</button>`).join('')}</div>`;
   box.onclick = (e) => {
     const b = e.target.closest('[data-k]');
     if (!b) return;

@@ -215,9 +215,9 @@ function addHair(head, style, hair, R) {
       break;
     }
     case 'mekakure': {
-      // 目が隠れるほど長い前髪
+      // 目に少しかかる長い前髪（長すぎるとユーザー指摘で短くした）
       cap(-0.35);
-      const fringe = new THREE.Mesh(new THREE.SphereGeometry(R * 1.09, 32, 16, Math.PI / 2 - 0.95, 1.9, 0, Math.PI * 0.57), hair);
+      const fringe = new THREE.Mesh(new THREE.SphereGeometry(R * 1.09, 32, 16, Math.PI / 2 - 0.95, 1.9, 0, Math.PI * 0.515), hair);
       head.add(fringe);
       break;
     }
