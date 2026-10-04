@@ -1217,6 +1217,16 @@ function startGuide() {
       guideEl.style.display = 'none';
       return;
     }
+    // 「仕事が終わるまで待つ」まで来たら、最初の仕事だけはすぐ（3秒で）終わらせる（ユーザー指示: 待たせない）
+    if (g.auto) {
+      const busy = S.members.find((m) => m.kind === 'hero')?.busy;
+      const w = busy && [...S.tasks, ...S.devs].find((x) => x.id === busy);
+      const soon = Date.now() + 3000;
+      if (w && w.endsAt > soon) {
+        w.endsAt = soon;
+        commit();
+      }
+    }
     // ポップアップ（ダイアログ）の中の場所は、案内もその中に入れないと見えない
     const host = el.closest('dialog') ?? document.body;
     if (guideEl.parentElement !== host) host.append(guideEl);
