@@ -961,3 +961,18 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .promo-tags .cat-tag { margin: 0; }
 .cmp .power { margin-right: 6px; vertical-align: middle; }
 #assign-body > .prog { margin-top: 12px; }
+
+/* 条件を満たしたレジェンド：あとは待つだけ（「気配」と、ゆっくり回る砂時計・脈打つ影） */
+.aura { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: linear-gradient(90deg, rgba(95, 230, 255, 0.18), rgba(139, 92, 255, 0.22)); color: #4fb8e8; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.05em; animation: auraPulse 2.4s ease-in-out infinite; }
+.aura .ic { width: 1em; height: 1em; animation: auraTurn 3s ease-in-out infinite; }
+.aura.cool { color: var(--muted); background: var(--bg); animation: none; }
+.aura.cool .ic { animation: none; }
+@keyframes auraPulse { 50% { box-shadow: 0 0 0 4px rgba(95, 230, 255, 0.15); } }
+@keyframes auraTurn { 0%, 40% { transform: rotate(0); } 60%, 100% { transform: rotate(180deg); } }
+.card.near .aura { margin-top: 6px; }
+.card.near .thumb img { animation: nearGlow 2.4s ease-in-out infinite; }
+.next-legend.near .nl-thumb { animation: nearRing 2.4s ease-in-out infinite; border-radius: 50%; }
+@keyframes nearGlow { 0%, 100% { filter: brightness(0) opacity(0.3) drop-shadow(0 0 0 rgba(95, 230, 255, 0)); } 50% { filter: brightness(0) opacity(0.65) drop-shadow(0 0 6px #5fe6ff); } }
+@keyframes nearRing { 50% { box-shadow: 0 0 0 5px rgba(95, 230, 255, 0.35), 0 0 14px rgba(95, 230, 255, 0.6); } }
+#detail-info > .aura { margin-top: 12px; }
+@media (prefers-reduced-motion: reduce) { .aura, .aura .ic, .card.near .thumb img, .next-legend.near .nl-thumb { animation: none; } }

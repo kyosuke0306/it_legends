@@ -520,10 +520,19 @@ function nextLegend() {
     const conds = G.meetProgress(S, l.id);
     if (!conds.length) continue;
     const avg = conds.reduce((a, c) => a + c.ratio, 0) / conds.length;
-    list.push({ l, conds, avg, key: [-avg, R.LEGEND_RULES[l.id].meet.legends ? 1 : 0, modelIds.has(l.id) ? 0 : 1, order[l.rarity]] });
+    const cool = (S.met[l.id]?.cooldown ?? 0) > Date.now() ? 1 : 0; // 断られて会えない間の人は後回し
+    list.push({ l, conds, avg, key: [-avg, cool, R.LEGEND_RULES[l.id].meet.legends ? 1 : 0, modelIds.has(l.id) ? 0 : 1, order[l.rarity]] });
   }
   list.sort((a, b) => a.key.findIndex((v, i) => v !== b.key[i]) < 0 ? 0 : (([x, y]) => x - y)(a.key.map((v, i) => [v, b.key[i]]).find(([x, y]) => x !== y)));
   return list[0] ?? null;
+}
+// 条件を満たしたレジェンドは、あとは待つだけ。説明の文は置かず「気配」と砂時計で見せる（2026-10-04 ユーザー指示）
+// 断られて会えない間は、会えるまでの残り時間
+function legendWait(id) {
+  if (!G.meetProgress(S, id).every((c) => c.ok)) return '';
+  const cool = S.met[id]?.cooldown ?? 0;
+  if (cool > Date.now()) return `<span class="aura cool">${icon('clock')}<span data-left="${cool}"></span></span>`;
+  return `<span class="aura">${icon('hourglass')}気配</span>`;
 }
 function renderNextLegend(show) {
   const n = show && nextLegend();
@@ -531,9 +540,9 @@ function renderNextLegend(show) {
   if (!n) return (box.innerHTML = '');
   // まだのうちで、いちばん進んでいない条件（次にやること）
   const todo = n.conds.filter((c) => !c.ok).sort((a, b) => a.ratio - b.ratio)[0];
-  box.innerHTML = `<button class="next-legend" id="go-next-legend">
+  box.innerHTML = `<button class="next-legend ${todo ? '' : 'near'}" id="go-next-legend">
     <span class="nl-thumb"><img data-thumb="${n.l.id}" alt=""></span>
-    <span class="nl-main">${todo ? `<small>${esc(todo.label)}</small><i><b style="width:${pct(todo.ratio)}"></b></i>` : `<small>${icon('spark')}</small>`}</span>
+    <span class="nl-main">${todo ? `<small>${esc(todo.label)}</small><i><b style="width:${pct(todo.ratio)}"></b></i>` : legendWait(n.l.id)}</span>
   </button>`;
   fillThumbs(box);
   $('#go-next-legend').onclick = () => {
@@ -1291,9 +1300,10 @@ function renderLegends() {
         : `<div class="conds">${G.meetProgress(S, l.id)
             .map((c) => `<div class="cond ${c.ok ? 'ok' : ''}"><span>${esc(c.label)}</span><i><b style="width:${pct(c.ratio)}"></b></i></div>`)
             .join('')}</div>`;
-      return `<button class="card ${has ? '' : left ? 'left' : 'locked'}" data-id="${l.id}">
+      const wait = has || left ? '' : legendWait(l.id);
+      return `<button class="card ${has ? '' : left ? 'left' : 'locked'} ${wait ? 'near' : ''}" data-id="${l.id}">
         <div class="thumb"><img data-thumb="${l.id}" alt=""></div>
-        ${has ? `<div class="name">${l.name}</div>` : left ? `<div class="name">${l.name}</div><div class="left-tag">${icon('back')}辞任</div>` : conds}
+        ${has ? `<div class="name">${l.name}</div>` : left ? `<div class="name">${l.name}</div><div class="left-tag">${icon('back')}辞任</div>` : conds + wait}
       </button>`;
     })
     .join('');
@@ -1339,7 +1349,9 @@ function openLockedLegend(legend) {
     .join('');
   $('#detail-info').innerHTML = `${legendHead(legend, { secret: true })}
     <div class="ability">${esc(R.LEGEND_RULES[legend.id].abilityText)}</div>
-    <div class="conds">${conds}</div>`;
+    <div class="conds">${conds}</div>
+    ${legendWait(legend.id)}`;
+  updateTimers();
   $('#detail').showModal();
   showSilhouette(legend);
 }
