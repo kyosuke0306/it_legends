@@ -361,6 +361,8 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 .person.temp .pw { margin-left: 10px; }
 .person .pw.good { color: var(--ok); }
 .good-tag { display: inline-block; margin-right: 4px; padding: 1px 6px; border-radius: 6px; background: var(--ok); color: #fff; font-size: 0.68rem; font-weight: 800; }
+.good-line { display: flex; align-items: center; margin: 6px 0 2px; font-size: 0.9rem; font-weight: 700; color: var(--ok); }
+.av-tap { display: inline-flex; cursor: pointer; }
 /* 依頼の右下に、得意な人の顔（緑の縁） */
 .fit-avs { margin-left: auto; padding-left: 6px; }
 .fit-avs .av { width: 24px; height: 24px; box-shadow: 0 0 0 2px var(--ok); }

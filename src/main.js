@@ -664,7 +664,7 @@ function openRunning(taskId) {
     <div class="need ${sum >= t.diff ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / t.diff))}"></i></span><span class="need-num"><b>${sum}</b>/${t.diff}</span></div>
     <div class="pick">${team
       .map(
-        (m) => `<div class="person ${m.kind === 'temp' ? 'temp' : ''} active">
+        (m, i) => `<div class="person ${m.kind === 'temp' ? 'temp' : ''} active" data-prof="${i}">
           ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${m.kind === 'temp' ? '・派遣' : ''}</small></span><span class="pw ${G.isGood(m, G.goodJobs(t)) ? 'good' : ''}">${G.isGood(m, G.goodJobs(t)) ? goodTag : ''}${icon('bolt')}${power(m)}</span>
         </div>`,
       )
@@ -674,6 +674,7 @@ function openRunning(taskId) {
     ${room ? `<button class="big" id="run-add">${icon('plus')}${icon('people')}</button>` : `<button class="big ghost" id="run-close">OK</button>`}`;
   fillThumbs($('#assign-body'));
   updateTimers();
+  $('#assign-body').querySelectorAll('[data-prof]').forEach((el) => (el.onclick = () => openProfile(team[+el.dataset.prof])));
   if (!dlg.open) dlg.showModal();
   if (room)
     $('#run-add').onclick = () => {
@@ -751,8 +752,10 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
     // 派遣：借りている人（押すと帰す）と、もう1人借りるボタン
     const room = temp && Math.max(minOwn, chosen.size) + nTemps < max;
     const canMore = room && S.money >= temp.fee * (nTemps + 1);
+    const profs = []; // 顔を押すとその人の詳しい画面
+    const face = (m) => `<span class="av-tap" data-prof="${profs.push(m) - 1}">${avatar(m)}</span>`;
     const tempRow = (m, on) => `<button class="person temp ${on ? 'active' : ''}" data-temp="${on ? 'drop' : 'add'}" ${on || canMore ? '' : 'disabled'}>
-        ${avatar(m)}<span class="pname">${esc(m.name)}<small>${R.JOBS[m.job].name} Lv${m.level}</small></span><span class="fee">${icon('coin')}${yen(temp.fee)}</span>${pw(m)}
+        ${face(m)}<span class="pname">${esc(m.name)}<small>${R.JOBS[m.job].name} Lv${m.level}</small></span><span class="fee">${icon('coin')}${yen(temp.fee)}</span>${pw(m)}
       </button>`;
     const tempHtml = temp ? `<div class="sec temp-head">${icon('plus')}<b>派遣</b></div>${temps.map((m) => tempRow(m, true)).join('')}${room ? tempRow(temp.make(nTemps), false) : ''}` : '';
     $('#assign-body').innerHTML = `
@@ -762,13 +765,20 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
       <div class="pick">${free
         .map(
           (m) => `<button class="person ${chosen.has(m.id) ? 'active' : ''}" data-id="${m.id}">
-            ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>${pw(m)}
+            ${face(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>${pw(m)}
           </button>`,
         )
         .join('')}${tempHtml}</div>
       <div class="preview">${ready ? preview(ids, temps) : '&nbsp;'}</div>
       <button class="big" id="assign-go" ${ready ? '' : 'disabled'}>${go}${nTemps ? ` <small>${icon('coin')}-${yen(temp.fee * nTemps)}</small>` : ''}</button>`;
     fillThumbs($('#assign-body'));
+    $('#assign-body').querySelectorAll('[data-prof]').forEach(
+      (el) =>
+        (el.onclick = (e) => {
+          e.stopPropagation(); // 選ぶ・外すにはしない
+          openProfile(profs[+el.dataset.prof]);
+        }),
+    );
     $('#assign-body').querySelectorAll('.person[data-id]').forEach(
       (b) =>
         (b.onclick = () => {
@@ -823,6 +833,8 @@ function memberRow(m, { candidate = false } = {}) {
   </div>`;
 }
 // 仲間（CEO・社員）や面接に来た人のくわしい画面。目的は、その職種がどんな仕事かがわかること
+// 人の詳しい画面（レジェンドはレジェンドの画面）。人選びのシートの上からも開ける
+const openProfile = (m) => (m.kind === 'legend' ? openLegend(m.legend) : openMember(m));
 function openMember(m, candidate = false) {
   if (!m) return;
   const j = R.JOBS[m.job];
@@ -830,6 +842,7 @@ function openMember(m, candidate = false) {
   const cost = candidate ? G.hireCost(S, m) : 0;
   const canHire = candidate && G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
   $('#detail-info').innerHTML = `<h2>${esc(G.displayName(m))}</h2><div class="sub">${j.full}</div>
+    <div class="good-line">${esc(j.goodText)}の依頼が得意</div>
     <p class="job-desc">${esc(j.desc)}</p>
     <div class="ability">${esc(j.perkText)}</div>
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
