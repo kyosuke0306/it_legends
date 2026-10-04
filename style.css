@@ -637,7 +637,7 @@ p.small .ic { width: 1em; height: 1em; }
 .hist-cat b { margin-left: auto; font-variant-numeric: tabular-nums; }
 .hist-cat.on { border-color: var(--c); }
 .hist-list { display: flex; flex-direction: column; gap: 6px; max-height: 45vh; overflow-y: auto; margin-bottom: 12px; }
-.hist-row { flex: none; display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 12px; padding: 8px 10px 8px 0; overflow: hidden; }
+.hist-row { flex: none; width: 100%; border: 0; color: inherit; text-align: left; font: inherit; cursor: pointer; display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 12px; padding: 8px 10px 8px 0; overflow: hidden; }
 .hist-row > i { width: 4px; align-self: stretch; background: var(--c); }
 .hist-row.ng { opacity: 0.7; }
 .hist-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -989,3 +989,12 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .ask-btns { display: flex; gap: 8px; }
 .ask-btns .big { flex: 1; margin: 0; padding: 12px 0; font-size: 0.95rem; }
 .big.danger { background: var(--bad); color: #fff; }
+
+/* 終わった依頼のくわしいシート */
+.done-head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 2px 0 10px; }
+.done-head .cat-tag { margin: 0; }
+.done-head b { font-size: 1.05rem; line-height: 1.4; }
+.done-head .res-tag { padding: 2px 10px; border-radius: 99px; color: #fff; font-weight: 800; font-size: 0.75rem; background: var(--ok); }
+.done-head.bad .res-tag { background: var(--bad); }
+.result[data-done] { cursor: pointer; }
+#done-back { flex: 0 0 64px; display: grid; place-items: center; }

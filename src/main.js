@@ -826,12 +826,12 @@ function openHistory(cat = null) {
         ? list
             .slice(0, 50)
             .map(
-              (h) => `<div class="hist-row cat-${h.cat} ${h.ok ? '' : 'ng'}"><i></i>
+              (h, i) => `<button class="hist-row cat-${h.cat} ${h.ok ? '' : 'ng'}" data-h="${i}"><i></i>
                 <span class="hist-main"><b>${esc(h.title)}</b><small>${[...h.who, `${ago(h.t)}前`].map(esc).join('・')}</small></span>
                 <span class="hist-vals">${h.ok ? icon('check', 'ok') : icon('error', 'bad')}${h.great ? icon('bolt', 'res-great') : ''}${h.early ? icon('clock', 'res-early') : ''}<b>${h.money == null ? '—' : yen(h.money)}</b>${
                   h.rep == null ? '' : `<small class="${h.rep < 0 ? 'bad' : ''}">${icon('star')}${h.rep > 0 ? '+' : ''}${h.rep}</small>`
                 }</span>
-              </div>`,
+              </button>`,
             )
             .join('')
         : `<p class="empty">${icon('task')}</p>`
@@ -840,6 +840,31 @@ function openHistory(cat = null) {
   if (!dlg.open) dlg.showModal();
   $('#assign-body').querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => openHistory(cat === b.dataset.cat ? null : b.dataset.cat)));
   $('#hist-close').onclick = () => dlg.close();
+  $('#assign-body').querySelectorAll('[data-h]').forEach((b) => (b.onclick = () => openDone(list[+b.dataset.h], () => openHistory(cat))));
+}
+// 終わった依頼のくわしいシート（2026-10-04 ユーザー指示）。back があれば「戻る」で一覧へ
+// 担当・力・成功率・かかった時間はこの機能のあとに終わった依頼だけ（前のものは出せる分だけ）
+function openDone(h, back = null) {
+  if (!h) return;
+  const dlg = $('#assign');
+  const row = (ic, name, v) => `<div class="cmp">${icon(ic)}<small>${name}</small><span class="grow"></span><b>${v}</b></div>`;
+  const when = new Date(h.t);
+  const team = (h.ids ?? []).map((id) => S.members.find((m) => m.id === id)).filter(Boolean);
+  $('#assign-body').innerHTML = `
+    <div class="done-head ${h.ok ? 'ok' : 'bad'}">${catTag(h.cat)}<b>${esc(h.title)}</b><span class="res-tag">${h.ok ? '成功' : '失敗'}</span></div>
+    ${h.money == null ? '' : `<div class="preview">${val('coin', `+${yen(h.money)}`, h.ok ? 'ok' : '')}${h.rep == null ? '' : val('star', `${h.rep > 0 ? '+' : ''}${h.rep}`, h.rep < 0 ? 'bad' : '')}${h.great ? icon('bolt', 'res-great') : ''}${h.early ? icon('clock', 'res-early') : ''}</div>`}
+    ${h.power != null ? `<div class="need ${h.power >= h.diff ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, h.power / h.diff))}"></i></span><span class="need-num"><b>${h.power}</b>/${h.diff}</span></div>` : ''}
+    ${h.chance != null ? row('target', '成功率', pct(h.chance)) : ''}
+    ${h.took != null ? row('clock', '時間', `${dur(Math.max(0, h.took))}<small> / ${dur(h.hours * R.HOUR)}</small>`) : ''}
+    ${h.who?.length ? `<div class="cmp">${icon('people')}<small>${h.who.length + (h.temps ?? 0)}</small><span class="grow"></span>${
+      team.length ? `<span class="avs">${team.map((m) => avatar(m)).join('')}</span>` : `<span class="muted">${h.who.map(esc).join('・')}</span>`
+    }${h.temps ? `<span class="muted">+${h.temps}</span>` : ''}</div>` : ''}
+    ${row('check', '完了', `${when.getMonth() + 1}/${when.getDate()} ${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')}`)}
+    <div class="sheet-btns">${back ? `<button class="big ghost" id="done-back">${icon('back')}</button>` : ''}<button class="big ghost" id="run-close">OK</button></div>`;
+  fillThumbs($('#assign-body'));
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
+  $('#done-back') && ($('#done-back').onclick = back);
 }
 
 // 仕事中の仕事の詳しいシート：担当している人と力、見込み（成功率・かかる時間・報酬・評判）、進み具合。空きがあれば人を足せる
@@ -1458,6 +1483,10 @@ function notice(html) {
         openLegend(b.dataset.legend);
       }),
   );
+  // 完了した依頼の行を押すと、その依頼のくわしいシート
+  $('#notice-body').querySelectorAll('[data-done]').forEach(
+    (r) => (r.onclick = () => openDone((S.history ?? []).find((h) => h.t === +r.dataset.done))),
+  );
   if (!$('#notice').open) $('#notice').showModal();
 }
 
@@ -1752,7 +1781,7 @@ function resultsHtml(ev, { head = true } = {}) {
   if (!tasks.length && !prods.length && !levels.length) return '';
   const rows = [
     ...tasks.slice(0, 5).map(
-      (t) => `<div class="result ${t.ok ? 'ok' : 'bad'}">${icon(t.ok ? 'check' : 'error')}<b>${esc(t.title)}<span class="res-tag">${t.ok ? '成功' : '失敗'}</span></b>
+      (t) => `<div class="result ${t.ok ? 'ok' : 'bad'}" ${t.t ? `data-done="${t.t}"` : ''}>${icon(t.ok ? 'check' : 'error')}<b>${esc(t.title)}<span class="res-tag">${t.ok ? '成功' : '失敗'}</span></b>
         <span class="vals">${t.great ? icon('bolt', 'res-great') : ''}${t.early ? icon('clock', 'res-early') : ''}${val('coin', `+${yen(t.money)}`, t.ok ? 'ok' : '')}${t.rep ? val('star', `${t.rep > 0 ? '+' : ''}${t.rep}`, t.rep < 0 ? 'bad' : '') : ''}</span></div>`,
     ),
     tasks.length > 5 ? `<div class="muted">+${tasks.length - 5}</div>` : '',

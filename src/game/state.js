@@ -280,9 +280,14 @@ function finishTask(s, task, t, ev) {
   for (const m of team) m.busy = null;
   s.tasks = s.tasks.filter((x) => x !== task);
   addLog(s, t, ok ? `${task.title}  成功` : `${task.title}  失敗`, ok ? 'good' : 'bad');
-  ev.push({ type: 'task', ok, money, rep, great: ok && pv.great, early: ok && early, title: task.title });
+  ev.push({ type: 'task', t, ok, money, rep, great: ok && pv.great, early: ok && early, title: task.title });
   // これまでの仕事（仕事タブの「実績」で見る）。新しい順に最大 HISTORY_MAX 件
-  (s.history ??= []).unshift({ t, title: task.title, cat: task.cat, ok, money, rep, great: ok && pv.great, early: ok && early, who: team.map((m) => m.name) });
+  // 押すと詳しく見られるよう、担当・力・成功率・かかった時間も残す（2026-10-04 ユーザー指示。前の記録には無い）
+  (s.history ??= []).unshift({
+    t, title: task.title, cat: task.cat, ok, money, rep, great: ok && pv.great, early: ok && early, who: team.map((m) => m.name),
+    ids: team.map((m) => m.id), temps: (task.temps ?? []).length, hours: task.hours, took: task.endsAt - (task.begunAt ?? task.startAt),
+    power: Math.round(pv.power), diff: task.diff, chance: pv.chance,
+  });
   s.history.length = Math.min(s.history.length, HISTORY_MAX);
 }
 
