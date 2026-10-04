@@ -572,6 +572,13 @@ function renderOffice() {
 }
 
 // ----- 仕事 -----
+// 宣伝: お金を出すと、期限つきで依頼が届きやすくなる（求人広告と同じ形）
+function prRow() {
+  if (G.prActive(S, Date.now()))
+    return `<div class="panel ad-row pr-row on">${icon('ad')}<b>宣伝</b><span class="grow"></span>${val('hourglass', `<span data-left="${S.prUntil}"></span>`)}</div>`;
+  const cost = G.prCost(S);
+  return `<button class="panel ad-row pr-row" id="pr" ${S.money < cost ? 'disabled' : ''}>${icon('ad')}<b>宣伝</b><span class="grow"></span>${val('clock', dur(R.PR_DAYS * R.DAY))}${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}</button>`;
+}
 function renderWork() {
   S.workSeenAt = Date.now(); // 仕事タブを見た（通知の点を消す）
   renderHeader();
@@ -596,11 +603,13 @@ function renderWork() {
   $('#view-work').innerHTML = `
     <div class="work-top"><button class="hist-btn" id="open-history">${icon('check')}${S.counts.tasks}</button></div>
     ${running}
+    ${prRow()}
     ${offers || `<p class="empty">${icon('task')}</p>`}`;
   fillThumbs($('#view-work'));
   $('#view-work').querySelectorAll('[data-offer]').forEach((b) => (b.onclick = () => assignTask(+b.dataset.offer)));
   $('#view-work').querySelectorAll('[data-run]').forEach((el) => (el.onclick = () => openRunning(+el.dataset.run)));
   $('#open-history').onclick = () => openHistory();
+  $('#pr') && ($('#pr').onclick = () => G.startPR(S, Date.now()) && commit());
 }
 
 // これまでの仕事。上に種類ごとの成功した回数（レジェンドの出会いの条件と同じ数）、押すとその種類だけにしぼる。下に最近の仕事

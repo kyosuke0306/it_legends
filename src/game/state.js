@@ -534,9 +534,22 @@ function activityRoll(s, event) {
 }
 
 // 新しい依頼が届くか（1時間ごとに、評判と営業・レジェンドの倍率で決まる確率で。並べる数に上限はない）
-export const offerChance = (s) => Math.min(1, (R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1)) * companyEffects(s).offers);
+// 宣伝を出している間は確率が R.PR_BOOST 倍
+export const offerChance = (s, t = s.time) =>
+  Math.min(1, (R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1)) * companyEffects(s).offers * (prActive(s, t) ? R.PR_BOOST : 1));
 function rollOffer(s, t) {
-  if (rand(s) < offerChance(s)) addOffer(s, t);
+  if (rand(s) < offerChance(s, t - R.HOUR)) addOffer(s, t);
+}
+// ---------- 宣伝（仕事の広告） ----------
+export const prCost = (s) => round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * R.PR_HOURS, 1000);
+export const prActive = (s, t) => (s.prUntil ?? 0) > t;
+export function startPR(s, now) {
+  const cost = prCost(s);
+  if (prActive(s, now) || s.money < cost) return false;
+  s.money -= cost;
+  s.prUntil = now + R.PR_DAYS * R.DAY;
+  addLog(s, now, `宣伝  -${cost.toLocaleString('ja-JP')}円`);
+  return true;
 }
 
 // 散歩：仕事の相談を受ける（ふつうの依頼とは別に届く）

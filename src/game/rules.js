@@ -208,6 +208,11 @@ export const CANDIDATES_PER_DAY = [0.25, 1, 2, 3, 3, 3, 4, 4, 5, 5];
 export const AD_DAYS = 3;
 export const AD_PER_DAY = 2;
 export const AD_HOURS = 6;
+// 宣伝（仕事の求人広告にあたるもの）。お金を出すと PR_DAYS 日のあいだ、依頼の届く確率が PR_BOOST 倍（最大100%）
+// 費用は今の会社の仕事 PR_HOURS 時間ぶんの報酬。出している間は出し直せない
+export const PR_DAYS = 3;
+export const PR_BOOST = 2;
+export const PR_HOURS = 8;
 export const ENCOUNTER_PER_HOUR = 1 / 110; // 条件を満たした偉人と出会う確率（1時間あたり。平均4〜5日に1回）
 export const ENCOUNTER_LIFE = DAY; // 出会いのチャンスが続く時間
 export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会えるまで
