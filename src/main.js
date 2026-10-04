@@ -884,13 +884,15 @@ function assignTask(offerId) {
       return `${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(p.duration), p.early ? 'ok' : '')}${val('coin', yen(p.reward))}${val('star', `+${p.rep}`, p.great || p.early ? 'ok' : '')}`;
     },
     confirm: (ids, temps) => G.startTask(S, offerId, ids, Date.now(), temps.length),
+    // 受けない依頼はお断りして一覧から消せる
+    decline: { label: 'お断り', run: () => window.confirm('この依頼をお断りしますか？') && G.declineOffer(S, offerId, Date.now()) },
   });
 }
 
 // 人を選ぶ（仕事・開発で共通）。下から出るシート
 // temp があれば要員派遣の人も選べる（自分の会社から minOwn 人は出す）
 // base は仕事中に人を足すときの、もう働いている人（max は足せる人数）
-function openAssign({ title, max, w, good = [], need, preview, confirm, temp = null, base = [], minOwn = 1, go = '任せる', extra = '' }) {
+function openAssign({ title, max, w, good = [], need, preview, confirm, temp = null, base = [], minOwn = 1, go = '任せる', extra = '', decline = null }) {
   const dlg = $('#assign');
   const chosen = new Set();
   let nTemps = 0;
@@ -928,7 +930,8 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
         )
         .join('')}${tempHtml}</div>
       <div class="preview">${ready ? preview(ids, temps) : '&nbsp;'}</div>
-      <button class="big" id="assign-go" ${ready ? '' : 'disabled'}>${go}${nTemps ? ` <small>${icon('coin')}-${yen(temp.fee * nTemps)}</small>` : ''}</button>`;
+      <button class="big" id="assign-go" ${ready ? '' : 'disabled'}>${go}${nTemps ? ` <small>${icon('coin')}-${yen(temp.fee * nTemps)}</small>` : ''}</button>
+      ${decline ? `<button class="decline" id="assign-decline">${decline.label}</button>` : ''}`;
     fillThumbs($('#assign-body'));
     $('#assign-body').querySelectorAll('[data-prof]').forEach(
       (el) =>
@@ -953,6 +956,13 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
           draw();
         }),
     );
+    $('#assign-decline') &&
+      ($('#assign-decline').onclick = () => {
+        if (decline.run()) {
+          dlg.close();
+          commit();
+        }
+      });
     $('#assign-go').onclick = () => {
       if (confirm([...chosen], temps)) {
         dlg.close();
@@ -972,7 +982,7 @@ function memberRow(m, { candidate = false } = {}) {
     const cost = G.hireCost(S, m);
     const can = G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
     const wait = `<span class="muted">${val('clock', `<span data-left="${m.until}"></span>`)}</span>`; // 辞退するまでの時間
-    return `${wait}<button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>採用 ${yen(cost)}</button>`;
+    return `${wait}<span class="cand-btns"><button class="btn ghost reject" data-reject="${m.id}">お見送り</button><button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>採用 ${yen(cost)}</button></span>`;
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
@@ -1005,8 +1015,15 @@ function openMember(m, candidate = false) {
     <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
-    ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button>` : ''}
+    ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button><button class="decline" id="m-reject">お見送り</button>` : ''}
     ${!candidate && m.kind === 'staff' ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}`;
+  $('#m-reject') &&
+    ($('#m-reject').onclick = () => {
+      if (confirm(`${m.name} さんをお見送りしますか？`) && G.rejectCandidate(S, m.id, Date.now())) {
+        $('#detail').close();
+        commit();
+      }
+    });
   $('#m-hire') &&
     ($('#m-hire').onclick = () => {
       if (G.hire(S, m.id, Date.now())) {
@@ -1048,7 +1065,7 @@ function renderTeam() {
   v.querySelectorAll('[data-open]').forEach(
     (b) =>
       (b.onclick = (e) => {
-        if (e.target.closest('[data-hire]')) return;
+        if (e.target.closest('[data-hire], [data-reject]')) return;
         const id = +b.dataset.open;
         const m = S.members.find((x) => x.id === id);
         if (m?.kind === 'legend') return openLegend(m.legend);
@@ -1065,6 +1082,7 @@ function renderTeam() {
     });
   $('#ad') && ($('#ad').onclick = () => openPromo('ad'));
   v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
+  v.querySelectorAll('[data-reject]').forEach((b) => (b.onclick = () => confirm('お見送りしますか？') && G.rejectCandidate(S, +b.dataset.reject, Date.now()) && commit()));
   v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('解雇しますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));
 }

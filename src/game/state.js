@@ -477,6 +477,22 @@ export function dismiss(s, id, now) {
   return true;
 }
 
+// 依頼をお断りする・面接に来た人をお見送りする（2026-10-04 ユーザー指示。評判などは減らない）
+export function declineOffer(s, id, now) {
+  const o = s.offers.find((x) => x.id === id);
+  if (!o) return false;
+  s.offers = s.offers.filter((x) => x !== o);
+  addLog(s, now, `${o.title}  お断り`);
+  return true;
+}
+export function rejectCandidate(s, id, now) {
+  const m = s.candidates.find((x) => x.id === id);
+  if (!m) return false;
+  s.candidates = s.candidates.filter((x) => x !== m);
+  addLog(s, now, `${m.name}  お見送り`);
+  return true;
+}
+
 // ---------- 会社を広げる ----------
 export function upgradeOffice(s, now) {
   const next = R.OFFICES[s.office + 1];

@@ -942,3 +942,9 @@ button.chip { pointer-events: auto; border: 0; font-family: inherit; cursor: poi
 .prod-ic.small { width: 34px; height: 34px; border-radius: 10px; }
 .prod-ic.small .ic { width: 19px; height: 19px; }
 .genre:disabled .prod-ic.small { filter: grayscale(0.6); }
+
+/* 依頼のお断り・面接のお見送り（目立たない文字のボタン） */
+.decline { display: block; margin: 10px auto 0; padding: 8px 18px; border: 0; background: none; color: var(--muted); font-weight: 700; font-size: 0.85rem; text-decoration: underline; text-underline-offset: 3px; }
+.cand-btns { display: flex; gap: 6px; margin-left: auto; }
+.cand-btns .hire { margin-left: 0; }
+.btn.reject { color: var(--muted); border-color: var(--line); }
