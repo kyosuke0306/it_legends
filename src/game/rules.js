@@ -29,19 +29,20 @@ export const JOBS = {
 
 // 会社の広さ。cap は入れる人数（自分も含む）、tier は受けられる仕事の大きさ
 // lv は面接に来る人のレベルの幅、temp は派遣で来る人のレベル（大きな会社ほど育った人が来る）
+// about: 次のオフィスを押したときに出す一言（中は影だけ見せるので、どんな所かの手がかり）
 // 見た目（床・壁・窓・机・飾り）は office-decor.js の THEMES
 // 本社ビルのあと（2026-10-01 ユーザー指示「終わりが見えないくらいやり込めるように」）: 高層タワー → … → 宇宙ステーション
 export const OFFICES = [
-  { name: '自宅の部屋', cap: 2, cost: 0, rep: 0, lv: [1, 2], temp: 1 }, // 古くて薄汚れた部屋
-  { name: 'ガレージ', cap: 4, cost: 300_000, rep: 30, lv: [1, 3], temp: 3 },
-  { name: '小さな事務所', cap: 7, cost: 2_000_000, rep: 150, lv: [1, 5], temp: 5 },
-  { name: 'オフィスビル', cap: 12, cost: 15_000_000, rep: 600, lv: [1, 7], temp: 7 },
-  { name: '本社ビル', cap: 20, cost: 100_000_000, rep: 2000, lv: [1, 8], temp: 9 },
-  { name: '高層タワー', cap: 28, cost: 300_000_000, rep: 6000, lv: [6, 16], temp: 14 },
-  { name: 'テックキャンパス', cap: 38, cost: 1_200_000_000, rep: 15000, lv: [12, 26], temp: 22 },
-  { name: '世界本社', cap: 50, cost: 5_000_000_000, rep: 40000, lv: [20, 36], temp: 30 },
-  { name: 'スマートシティ', cap: 64, cost: 20_000_000_000, rep: 100000, lv: [28, 48], temp: 40 },
-  { name: '宇宙ステーション', cap: 80, cost: 100_000_000_000, rep: 250000, lv: [38, 62], temp: 52 },
+  { name: '自宅の部屋', cap: 2, cost: 0, rep: 0, lv: [1, 2], about: '散らかった、ひとりの部屋', temp: 1 }, // 古くて薄汚れた部屋
+  { name: 'ガレージ', cap: 4, cost: 300_000, rep: 30, lv: [1, 3], about: 'シャッターの奥の、仲間の秘密基地', temp: 3 },
+  { name: '小さな事務所', cap: 7, cost: 2_000_000, rep: 150, lv: [1, 5], about: '付箋とフィギュアの、はじめての事務所', temp: 5 },
+  { name: 'オフィスビル', cap: 12, cost: 15_000_000, rep: 600, lv: [1, 7], about: '仕切りと会議室の、ふつうの会社', temp: 7 },
+  { name: '本社ビル', cap: 20, cost: 100_000_000, rep: 2000, lv: [1, 8], about: 'ガラスの会議室とラウンジの本社', temp: 9 },
+  { name: '高層タワー', cap: 28, cost: 300_000_000, rep: 6000, lv: [6, 16], about: '空に近い、ガラス張りのフロア', temp: 14 },
+  { name: 'テックキャンパス', cap: 38, cost: 1_200_000_000, rep: 15000, lv: [12, 26], about: '緑に囲まれた、自由なキャンパス', temp: 22 },
+  { name: '世界本社', cap: 50, cost: 5_000_000_000, rep: 40000, lv: [20, 36], about: '世界をつなぐ、光の大画面', temp: 30 },
+  { name: 'スマートシティ', cap: 64, cost: 20_000_000_000, rep: 100000, lv: [28, 48], about: '夜のネオンと、浮かぶ光の画面', temp: 40 },
+  { name: '宇宙ステーション', cap: 80, cost: 100_000_000_000, rep: 250000, lv: [38, 62], about: '地球を見下ろす、宇宙の会社', temp: 52 },
 ];
 // いちばん上の会社のあとは、いくらでも増築できる（1回ごとに席 +FLOOR_CAP。費用は FLOOR_COST から FLOOR_GROW 倍ずつ上がる）
 export const FLOOR_CAP = 8;
@@ -207,16 +208,27 @@ export const CANDIDATE_LIFE = [1, 2.5];
 export const MAX_CANDIDATES = 5; // 採用候補が入れ替わる間隔
 // 1日に面接に来る人の数（会社の広さごとの平均）。小さいうちはなかなか来ないので、勉強会で人を呼ぶ
 export const CANDIDATES_PER_DAY = [0.25, 1, 2, 3, 3, 3, 4, 4, 5, 5];
-// 求人広告（お金を出して期限つきで出す）。出している間は、ふだんとは別に1日平均 AD_PER_DAY 人（ふだんが多い会社ではその人数）が面接に来る
-// 費用は今の会社の仕事 AD_HOURS 時間ぶんの報酬。出している間は出し直せない
-export const AD_DAYS = 3;
-export const AD_PER_DAY = 2;
-export const AD_HOURS = 6;
-// 宣伝（仕事の求人広告にあたるもの）。お金を出すと PR_DAYS 日のあいだ、依頼の届く確率が PR_BOOST 倍（最大100%）
-// 費用は今の会社の仕事 PR_HOURS 時間ぶんの報酬。出している間は出し直せない
-export const PR_DAYS = 3;
-export const PR_BOOST = 2;
-export const PR_HOURS = 8;
+// 求人広告（お金を出して期限つきで出す）。出している間は、ふだんとは別に面接に来る人が増える。出している間は出し直せない
+// 種類（グレード）ごとに費用・効果・長さが違う（2026-10-04 ユーザー指示「ビラ配り・SNS など。値段や効果、長さもグレードで」）
+//   hours: 費用（今の会社の仕事 何時間ぶんの報酬か） / days: 出している日数 / per: 1日に来る人（平均。ふだんの人数が多い会社では per×ふだんの人数÷2）
+//   power: 画面に出す効果の強さ（棒の数）
+export const ADS = [
+  { name: '張り紙', icon: 'paper', hours: 2, days: 2, per: 1, power: 1 },
+  { name: '求人サイト', icon: 'globe', hours: 6, days: 3, per: 2, power: 2 },
+  { name: 'SNSで募集', icon: 'bubble', hours: 14, days: 5, per: 3, power: 3 },
+  { name: '転職エージェント', icon: 'people', hours: 40, days: 7, per: 4.5, power: 4 },
+];
+// 宣伝（仕事の求人広告にあたるもの）。出している間は依頼の届く確率が boost 倍
+export const PRS = [
+  { name: 'ビラ配り', icon: 'paper', hours: 3, days: 2, boost: 1.5, power: 1 },
+  { name: 'ネット広告', icon: 'globe', hours: 8, days: 3, boost: 2, power: 2 },
+  { name: 'SNSで宣伝', icon: 'bubble', hours: 20, days: 5, boost: 2.5, power: 3 },
+  { name: 'テレビCM', icon: 'tv', hours: 60, days: 7, boost: 3.5, power: 4 },
+];
+// 条件をつける（お金を足すと、来る人・依頼をしぼれる。2026-10-04 ユーザー指示「Web系の募集、デザイナーの募集など」）
+//   cat: 種類（求人は、その種類の依頼が得意な職種の人だけ来る。宣伝は、増えたぶんの依頼がその種類になる） / job: 職種（求人だけ）
+export const COND_COST = { cat: 1.3, job: 1.6 };
+export const DEFAULT_AD = 1; // 種類を選べるようになる前に出した広告は「求人サイト」「ネット広告」
 export const ENCOUNTER_PER_HOUR = 1 / 110; // 条件を満たした偉人と出会う確率（1時間あたり。平均4〜5日に1回）
 export const ENCOUNTER_LIFE = DAY; // 出会いのチャンスが続く時間
 export const RETRY_COOLDOWN = 3 * DAY; // 断られた偉人に次に会えるまで

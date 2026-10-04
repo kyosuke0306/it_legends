@@ -148,15 +148,18 @@ export const seatsUsed = (s) => s.members.filter((m) => m.kind !== 'legend').len
 
 // ---------- 依頼（受託の仕事） ----------
 // easy: 最初の仕事の時間（時間。0 や false ならふつうの仕事）
-function addOffer(s, now, forceTier, easy = false) {
+function addOffer(s, now, forceTier, easy = false, cat = null) {
   const maxTier = Math.min(s.office, R.TIERS.length - 1);
   let tier = forceTier;
   if (tier == null) {
     const r = rand(s);
     tier = r < 0.55 ? maxTier : r < 0.85 ? Math.max(0, maxTier - 1) : Math.floor(rand(s) * (maxTier + 1));
   }
+  // 種類が決まっているとき（宣伝の条件）は、その種類がある大きさの仕事にする（AI・宇宙はオフィスビルから）
+  if (cat) while (tier < maxTier && !R.TASKS.some((t) => t.tier === tier && t.cat === cat)) tier++;
   // いま並んでいる依頼と同じ名前はなるべく出さない（全部並んでいるときだけ重なる）
-  const pool = R.TASKS.filter((t) => t.tier === tier);
+  const all = R.TASKS.filter((t) => t.tier === tier);
+  const pool = cat && all.some((t) => t.cat === cat) ? all.filter((t) => t.cat === cat) : all;
   const fresh = pool.filter((t) => !s.offers.some((o) => o.title === t.title));
   const tpl = pick(s, fresh.length ? fresh : pool);
   const T = R.TIERS[tier];
@@ -341,7 +344,8 @@ function finishDev(s, dev, t, ev) {
   const team = dev.members.map((id) => memberById(s, id)).filter(Boolean);
   const pv = devPreview(s, dev.genre, team.map((m) => m.id));
   const q = Math.min(3, pv.quality * between(s, 0.6, 1.4));
-  const product = { id: newId(s), genre: dev.genre, name: productName(dev.genre, () => rand(s)), q, launchedAt: t, earned: 0 };
+  // by: 作った人（製品の詳しい画面に顔を出す）
+  const product = { id: newId(s), genre: dev.genre, name: productName(dev.genre, () => rand(s)), q, launchedAt: t, earned: 0, by: dev.members };
   s.products.push(product);
   s.counts.products++;
   s.rep += Math.round(5 * q * (g.office + 1));
@@ -380,8 +384,8 @@ function refreshCandidates(s, t = 0) {
   const count = Math.min(Math.floor(n) + (rand(s) < n % 1 ? 1 : 0), R.MAX_CANDIDATES - s.candidates.length);
   for (let i = 0; i < count; i++) addCandidate(s, t);
 }
-function addCandidate(s, t) {
-  const m = makePerson(s, pick(s, Object.keys(R.JOBS)));
+function addCandidate(s, t, job = pick(s, Object.keys(R.JOBS))) {
+  const m = makePerson(s, job);
   // 会社が大きくなると、育った人も応募してくる
   const [lo, hi] = R.OFFICES[s.office].lv;
   growTo(s, m, lo + Math.floor(rand(s) * (hi - lo + 1)));
@@ -390,22 +394,44 @@ function addCandidate(s, t) {
   s.candidates.push(m);
   return m;
 }
+// ---------- 求人広告・宣伝の種類と条件 ----------
+const rateNow = (s) => R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate;
+// いまの会社で届く依頼の種類（宣伝・求人広告の条件に選べるもの）
+export const catsNow = (s) => Object.keys(R.CAT_NAMES).filter((c) => R.TASKS.some((t) => t.cat === c && t.tier <= Math.min(s.office, R.TIERS.length - 1)));
+// その種類の依頼が得意な職種（依頼の jobs に多く出てくる順に3つ）
+export function catJobs(cat) {
+  const n = {};
+  for (const t of R.TASKS) if (t.cat === cat) for (const j of t.jobs) n[j] = (n[j] ?? 0) + 1;
+  return Object.keys(n).sort((a, b) => n[b] - n[a]).slice(0, 3);
+}
+// cond: { cat } か { job }、なしは null
+const condCost = (cond) => (cond?.job ? R.COND_COST.job : cond?.cat ? R.COND_COST.cat : 1);
+
 // ---------- 求人広告 ----------
-export const adCost = (s) => round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * R.AD_HOURS, 1000);
-export const adPerDay = (s) => Math.max(R.AD_PER_DAY, R.CANDIDATES_PER_DAY[s.office] ?? 3);
+export const adCost = (s, grade = R.DEFAULT_AD, cond = null) => round(rateNow(s) * R.ADS[grade].hours * condCost(cond), 1000);
+export const adGrade = (s) => R.ADS[s.adGrade ?? R.DEFAULT_AD];
+export const adPerDay = (s, grade = s.adGrade ?? R.DEFAULT_AD) => {
+  const g = R.ADS[grade];
+  return Math.max(g.per, (g.per * (R.CANDIDATES_PER_DAY[s.office] ?? 3)) / 2);
+};
 export const adActive = (s, t) => (s.adUntil ?? 0) > t;
-export function startAd(s, now) {
-  const cost = adCost(s);
-  if (adActive(s, now) || s.money < cost) return false;
+export function startAd(s, now, grade = R.DEFAULT_AD, cond = null) {
+  const g = R.ADS[grade];
+  const cost = adCost(s, grade, cond);
+  if (!g || adActive(s, now) || s.money < cost) return false;
   s.money -= cost;
-  s.adUntil = now + R.AD_DAYS * R.DAY;
-  addLog(s, now, `求人広告  -${cost.toLocaleString('ja-JP')}円`);
+  s.adUntil = now + g.days * R.DAY;
+  s.adGrade = grade;
+  s.adCat = cond?.cat ?? null;
+  s.adJob = cond?.job ?? null;
+  addLog(s, now, `${g.name}  -${cost.toLocaleString('ja-JP')}円`);
   return true;
 }
-// 広告を出している間は、1時間ごとに確率で1人ずつ面接に来る
+// 広告を出している間は、1時間ごとに確率で1人ずつ面接に来る（条件があれば、その職種の人）
 function rollAd(s, t) {
   if (!adActive(s, t - R.HOUR) || s.candidates.length >= R.MAX_CANDIDATES || rand(s) >= adPerDay(s) / 24) return;
-  addCandidate(s, t);
+  const job = s.adJob ?? (s.adCat ? pick(s, catJobs(s.adCat)) : undefined);
+  addCandidate(s, t, job);
 }
 export const hireCost = (s, m) => (round(m.salary * 5 * (1 - Math.min(0.8, companyEffects(s).hireCost))));
 
@@ -541,23 +567,29 @@ function activityRoll(s, event) {
 }
 
 // 新しい依頼が届くか（1時間ごとに、評判と営業・レジェンドの倍率で決まる確率で。並べる数に上限はない）
-// 宣伝を出している間は確率が R.PR_BOOST 倍。100% を超えたぶんは同じ1時間に2件目以降が届く（160% なら1件＋60% でもう1件）
+// 宣伝を出している間は確率が宣伝の種類の boost 倍。100% を超えたぶんは同じ1時間に2件目以降が届く（160% なら1件＋60% でもう1件）
 export const offerChance = (s, t = s.time) =>
-  (R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1)) * companyEffects(s).offers * (prActive(s, t) ? R.PR_BOOST : 1);
+  (R.OFFER_BASE + R.OFFER_PER_DIGIT * Math.log10(Math.max(0, s.rep) + 1)) * companyEffects(s).offers * (prActive(s, t) ? prGrade(s).boost : 1);
 function rollOffer(s, t) {
   const c = offerChance(s, t - R.HOUR);
   const n = Math.floor(c) + (rand(s) < c % 1 ? 1 : 0);
-  for (let i = 0; i < n; i++) addOffer(s, t);
+  // 種類をしぼった宣伝なら、宣伝で増えたぶん（boost-1 / boost）はその種類の依頼になる
+  const pr = prActive(s, t - R.HOUR) && s.prCat ? (prGrade(s).boost - 1) / prGrade(s).boost : 0;
+  for (let i = 0; i < n; i++) addOffer(s, t, undefined, false, rand(s) < pr ? s.prCat : null);
 }
 // ---------- 宣伝（仕事の広告） ----------
-export const prCost = (s) => round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * R.PR_HOURS, 1000);
+export const prCost = (s, grade = R.DEFAULT_AD, cond = null) => round(rateNow(s) * R.PRS[grade].hours * condCost(cond), 1000);
+export const prGrade = (s) => R.PRS[s.prGrade ?? R.DEFAULT_AD];
 export const prActive = (s, t) => (s.prUntil ?? 0) > t;
-export function startPR(s, now) {
-  const cost = prCost(s);
-  if (prActive(s, now) || s.money < cost) return false;
+export function startPR(s, now, grade = R.DEFAULT_AD, cond = null) {
+  const g = R.PRS[grade];
+  const cost = prCost(s, grade, cond);
+  if (!g || prActive(s, now) || s.money < cost) return false;
   s.money -= cost;
-  s.prUntil = now + R.PR_DAYS * R.DAY;
-  addLog(s, now, `宣伝  -${cost.toLocaleString('ja-JP')}円`);
+  s.prUntil = now + g.days * R.DAY;
+  s.prGrade = grade;
+  s.prCat = cond?.cat ?? null;
+  addLog(s, now, `${g.name}  -${cost.toLocaleString('ja-JP')}円`);
   return true;
 }
 

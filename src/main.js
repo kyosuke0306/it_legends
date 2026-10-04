@@ -6,6 +6,7 @@ import { createCharacter, preloadCharacters, thumbnailUrl } from './character.js
 import { Stage, renderThumbnail } from './stage.js';
 import { buildPerson } from './outfits.js';
 import { Office } from './office.js';
+import { themeOf } from './office-decor.js';
 import { VERSION } from './version.js';
 import { icon } from './icons.js';
 import * as G from './game/state.js';
@@ -557,11 +558,12 @@ function renderOffice() {
   if (next) {
     const okMoney = S.money >= next.cost;
     const okRep = S.rep >= next.rep;
-    $('#office-info').innerHTML = `<button class="panel upgrade" id="upgrade" ${okMoney && okRep ? '' : 'disabled'}>
+    // 押すと次のオフィスの影（シークレット）と概要が出る。引っ越しはそこから（openNextOffice）
+    $('#office-info').innerHTML = `<button class="panel upgrade ${okMoney && okRep ? 'ready' : ''}" id="upgrade">
         ${icon('move')}<span class="grow"><b>${next.name}</b> ${val('people', next.cap)}</span>
         ${val('coin', yen(next.cost), okMoney ? 'ok' : '')}${val('star', next.rep, okRep ? 'ok' : '')}
       </button>`;
-    $('#upgrade').onclick = () => G.upgradeOffice(S, Date.now()) && commit();
+    $('#upgrade').onclick = openNextOffice;
   } else {
     // いちばん上の会社のあとは、いくらでも増築（席が増える）
     const cost = G.expandCost(S);
@@ -572,18 +574,128 @@ function renderOffice() {
   }
 }
 
-// ----- 仕事 -----
-// 宣伝: お金を出すと、期限つきで依頼が届きやすくなる（求人広告と同じ形）
-function prRow() {
-  if (G.prActive(S, Date.now()))
-    return `<div class="panel ad-row pr-row on">${icon('ad')}<b>宣伝中</b><span class="grow"></span>${val('hourglass', `<span data-left="${S.prUntil}"></span>`)}</div>`;
-  const cost = G.prCost(S);
-  return `<button class="panel ad-row pr-row" id="pr" ${S.money < cost ? 'disabled' : ''}>${icon('ad')}<b>宣伝</b><span class="grow"></span>${val('clock', dur(R.PR_DAYS * R.DAY))}${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}</button>`;
+// 次のオフィス：3Dの部屋を黒い影（シークレット）で見せ、広さ・仕事・面接に来る人・作れる製品を今と並べる（2026-10-04 ユーザー指示）
+let peek = null; // のぞき見用の3D（1つだけ作って使い回す）
+function openNextOffice() {
+  const lv = S.office + 1;
+  const o = R.OFFICES[lv];
+  if (!o) return;
+  const now = R.OFFICES[S.office];
+  const tier = (i) => R.TIERS[Math.min(i, R.TIERS.length - 1)];
+  const okMoney = S.money >= o.cost;
+  const okRep = S.rep >= o.rep;
+  const fresh = Object.entries(R.GENRES).filter(([, g]) => g.office === lv);
+  const row = (ic, name, a, b) => `<div class="cmp">${icon(ic)}<small>${name}</small><span class="grow"></span><span class="was">${a}</span><span class="arrow">→</span><b>${b}</b></div>`;
+  const dlg = $('#assign');
+  $('#assign-body').innerHTML = `
+    <div class="sheet-head"><b>${o.name}</b><span class="muted">${icon('lock')}</span></div>
+    <div id="peek-slot"></div>
+    <p class="office-about">${o.about}</p>
+    ${row('people', '席', G.capacity(S), o.cap)}
+    ${row('task', '仕事', `${yen(tier(S.office).rate)}`, `${yen(tier(lv).rate)}<small>/時</small>`)}
+    ${row('people', '面接', `${R.CANDIDATES_PER_DAY[S.office]}`, `${R.CANDIDATES_PER_DAY[lv]}<small>人/日</small>`)}
+    ${row('level', '来る人', `Lv${now.lv[0]}〜${now.lv[1]}`, `Lv${o.lv[0]}〜${o.lv[1]}`)}
+    ${fresh.length ? `<div class="cmp">${icon('box')}<small>製品</small><span class="grow"></span>${fresh.map(([k, g]) => `<span class="new-prod">${prodIcon(k)}${g.name}</span>`).join('')}</div>` : ''}
+    <div class="vals center need-move">${val('coin', yen(o.cost), okMoney ? 'ok' : 'bad')}${val('star', `${Math.floor(S.rep)}/${o.rep}`, okRep ? 'ok' : 'bad')}</div>
+    <button class="big" id="move-go" ${okMoney && okRep ? '' : 'disabled'}>${icon('move')}引っ越し</button>`;
+  if (!peek) {
+    const wrap = document.createElement('div');
+    wrap.className = 'office-peek';
+    const canvas = document.createElement('canvas');
+    wrap.append(canvas);
+    $('#assign-body').append(wrap); // 大きさが決まってから作る
+    peek = { wrap, office: new Office(canvas), level: -1 };
+  }
+  $('#peek-slot').replaceWith(peek.wrap);
+  if (peek.level !== lv) {
+    peek.office.buildRoom(lv);
+    peek.level = lv;
+  }
+  // 暗い部屋は明るめに、明るい部屋は暗めに影を作る（どちらも同じくらいの青い影に見えるように）
+  const mood = themeOf(lv).mood;
+  peek.wrap.dataset.mood = mood === 'night' || mood === 'neon' ? 'dark' : 'light';
+  if (!dlg.open) dlg.showModal();
+  $('#move-go').onclick = () => {
+    if (G.upgradeOffice(S, Date.now())) {
+      dlg.close();
+      commit();
+    }
+  };
 }
-// 手の空いた人の中で、この依頼が得意な職種の人の顔（右下に小さく並べる。3人まで）
-function fitFaces(o) {
-  const good = G.freeMembers(S).filter((m) => G.isGood(m, G.goodJobs(o)));
-  return good.length ? `<span class="avs fit-avs">${good.slice(0, 3).map((m) => avatar(m)).join('')}</span>` : '';
+
+// ----- 仕事 -----
+// 宣伝・求人広告の行。出していないときは押すと種類と条件を選ぶシート（openPromo）、出している間は種類・条件と残り時間
+function promoRow(kind) {
+  const ad = kind === 'ad';
+  const until = ad ? S.adUntil : S.prUntil;
+  const cls = `panel ad-row ${ad ? '' : 'pr-row'}`;
+  if ((until ?? 0) > Date.now()) {
+    const g = ad ? G.adGrade(S) : G.prGrade(S);
+    const cat = ad ? S.adCat : S.prCat;
+    const tag = ad && S.adJob ? `<span class="cat-tag job-tag">${R.JOBS[S.adJob].name}</span>` : cat ? catTag(cat) : '';
+    return `<div class="${cls} on">${icon(g.icon)}<b>${ad ? '求人広告中' : '宣伝中'}</b><small class="promo-name">${g.name}</small>${tag}<span class="grow"></span>${val('hourglass', `<span data-left="${until}"></span>`)}</div>`;
+  }
+  const min = ad ? G.adCost(S, 0) : G.prCost(S, 0);
+  return `<button class="${cls}" id="${kind}" ${S.money < min ? 'disabled' : ''}>${icon('ad')}<b>${ad ? '求人広告' : '宣伝'}</b><span class="grow"></span>${val('coin', `${yen(min)}〜`, S.money >= min ? 'ok' : '')}</button>`;
+}
+const prRow = () => promoRow('pr');
+// 宣伝・求人広告の種類（グレード）と条件を選んで出す（2026-10-04 ユーザー指示）
+// 種類ごとに費用・効果（棒の数）・長さが違う。条件（種類・職種）をつけると高くなる
+function openPromo(kind) {
+  const ad = kind === 'ad';
+  const list = ad ? R.ADS : R.PRS;
+  const costOf = (i, c) => (ad ? G.adCost(S, i, c) : G.prCost(S, i, c));
+  const cats = G.catsNow(S);
+  let grade = R.DEFAULT_AD;
+  let mode = 'none';
+  let cat = cats[0];
+  let job = Object.keys(R.JOBS)[0];
+  const dlg = $('#assign');
+  const bars = (n) => `<span class="power">${icon(ad ? 'people' : 'task')}${[1, 2, 3, 4].map((i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+  const draw = () => {
+    const cond = mode === 'cat' ? { cat } : mode === 'job' ? { job } : null;
+    const cost = costOf(grade, cond);
+    const modes = [['none', 'なし'], ['cat', '種類'], ...(ad ? [['job', '職種']] : [])];
+    $('#assign-body').innerHTML = `
+      <div class="sheet-head"><b>${ad ? '求人広告' : '宣伝'}</b></div>
+      <div class="grades">${list
+        .map(
+          (g, i) => `<button class="grade ${i === grade ? 'active' : ''}" data-grade="${i}">${icon(g.icon, 'g-ic')}<span class="gname">${g.name}</span>${bars(g.power)}${val('clock', dur(g.days * R.DAY))}${val('coin', yen(costOf(i, null)))}</button>`,
+        )
+        .join('')}</div>
+      <div class="sec">${icon('target')}<b>条件</b></div>
+      <div class="seg">${modes
+        .map(([k, n]) => `<button class="${mode === k ? 'active' : ''}" data-mode="${k}">${n}${k !== 'none' ? `<small>+${Math.round((R.COND_COST[k] - 1) * 100)}%</small>` : ''}</button>`)
+        .join('')}</div>
+      ${
+        mode === 'cat'
+          ? `<div class="cond-pick">${cats.map((c) => `<button class="cond cat-${c} ${c === cat ? 'active' : ''}" data-cat="${c}">${R.CAT_NAMES[c]}</button>`).join('')}</div>${
+              ad ? `<div class="cond-jobs">${G.catJobs(cat).map((j) => `<span><img src="assets/jobs/${j}.webp" alt="">${R.JOBS[j].name}</span>`).join('')}</div>` : ''
+            }`
+          : ''
+      }
+      ${
+        mode === 'job'
+          ? `<div class="cond-pick jobs">${Object.entries(R.JOBS)
+              .map(([k, j]) => `<button class="cond job ${k === job ? 'active' : ''}" data-job="${k}"><img src="assets/jobs/${k}.webp" alt="">${j.name}</button>`)
+              .join('')}</div>`
+          : ''
+      }
+      <button class="big" id="promo-go" ${S.money < cost ? 'disabled' : ''}>${icon('coin')}${yen(cost)}</button>`;
+    const b = $('#assign-body');
+    b.querySelectorAll('[data-grade]').forEach((x) => (x.onclick = () => ((grade = +x.dataset.grade), draw())));
+    b.querySelectorAll('[data-mode]').forEach((x) => (x.onclick = () => ((mode = x.dataset.mode), draw())));
+    b.querySelectorAll('[data-cat]').forEach((x) => (x.onclick = () => ((cat = x.dataset.cat), draw())));
+    b.querySelectorAll('[data-job]').forEach((x) => (x.onclick = () => ((job = x.dataset.job), draw())));
+    $('#promo-go').onclick = () => {
+      if ((ad ? G.startAd : G.startPR)(S, Date.now(), grade, cond)) {
+        dlg.close();
+        commit();
+      }
+    };
+  };
+  draw();
+  dlg.showModal();
 }
 function renderWork() {
   S.workSeenAt = Date.now(); // 仕事タブを見た（通知の点を消す）
@@ -601,21 +713,23 @@ function renderWork() {
     .map(
       (o) => `<button class="panel offer cat-${o.cat}" data-offer="${o.id}" ${canWork ? '' : 'disabled'}>
         <span class="offer-top"><b>${o.expiresAt - R.OFFER_LIFE > seenSnap.work ? newTag : ''}${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}"></span></span></span>
-        <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}${fitFaces(o)}</span>
+        <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
       </button>`,
     )
     .join('');
   // これまでの仕事：成功した数だけ出し、押すと下からくわしく出る（openHistory）
+  // 仕事中と、受けているだけの依頼は分けて出す（2026-10-04 ユーザー指示「分けてわかりやすく」）
   $('#view-work').innerHTML = `
     <div class="work-top"><button class="hist-btn" id="open-history">${icon('check')}${S.counts.tasks}</button></div>
-    ${running}
+    ${S.tasks.length ? `<div class="work-box running"><div class="sec work-sec">${icon('task')}<b>仕事中</b><span class="count">${S.tasks.length}</span></div>${running}</div>` : ''}
+    <div class="sec work-sec">${icon('paper')}<b>依頼</b><span class="count">${S.offers.length}</span></div>
     ${prRow()}
     ${offers || `<p class="empty">${icon('task')}</p>`}`;
   fillThumbs($('#view-work'));
   $('#view-work').querySelectorAll('[data-offer]').forEach((b) => (b.onclick = () => assignTask(+b.dataset.offer)));
   $('#view-work').querySelectorAll('[data-run]').forEach((el) => (el.onclick = () => openRunning(+el.dataset.run)));
   $('#open-history').onclick = () => openHistory();
-  $('#pr') && ($('#pr').onclick = () => G.startPR(S, Date.now()) && commit());
+  $('#pr') && ($('#pr').onclick = () => openPromo('pr'));
 }
 
 // これまでの仕事。上に種類ごとの成功した回数（レジェンドの出会いの条件と同じ数）、押すとその種類だけにしぼる。下に最近の仕事
@@ -871,13 +985,8 @@ function openMember(m, candidate = false) {
   detailStage.setCharacter(body);
   body.scale.setScalar(0.88); // CEO の頭の上の印が切れないよう少し小さく
 }
-// 求人広告: お金を出すと、期限つきで面接に来る人が増える。出している間は残り時間を出す
-function adRow() {
-  if (G.adActive(S, Date.now()))
-    return `<div class="panel ad-row on">${icon('ad')}<b>求人広告中</b><span class="grow"></span>${val('hourglass', `<span data-left="${S.adUntil}"></span>`)}</div>`;
-  const cost = G.adCost(S);
-  return `<button class="panel ad-row" id="ad" ${S.money < cost ? 'disabled' : ''}>${icon('ad')}<b>求人広告</b><span class="grow"></span>${val('clock', dur(R.AD_DAYS * R.DAY))}${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}</button>`;
-}
+// 求人広告: お金を出すと、期限つきで面接に来る人が増える（種類と条件は openPromo で選ぶ）
+const adRow = () => promoRow('ad');
 function renderTeam() {
   S.teamSeenAt = Date.now(); // 仲間タブを見た（通知の点を消す）
   renderHeader();
@@ -910,7 +1019,7 @@ function renderTeam() {
       save();
       document.querySelector('.tab[data-view="office"]').click();
     });
-  $('#ad') && ($('#ad').onclick = () => G.startAd(S, Date.now()) && commit());
+  $('#ad') && ($('#ad').onclick = () => openPromo('ad'));
   v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
   v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('解雇しますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));
@@ -955,12 +1064,11 @@ function renderProduct() {
   const products = [...S.products]
     .reverse()
     .map(
-      (p) => `<div class="panel prod">
+      (p) => `<button class="panel prod" data-prod="${p.id}">
         ${prodIcon(p.genre)}
         <span class="prod-main"><b>${esc(p.name)}</b><small>${R.GENRES[p.genre].name}</small>${rating(p.q)}</span>
         <span class="prod-earn"><b>+${yen(G.productIncome(S, p, now, ce))}<small>/時</small></b><small>${icon('wallet')}${yen(p.earned ?? 0)}</small></span>
-        <button class="x" data-stop="${p.id}" aria-label="販売終了">×</button>
-      </div>`,
+      </button>`,
     )
     .join('');
   $('#view-product').innerHTML = `
@@ -972,7 +1080,7 @@ function renderProduct() {
   v.querySelectorAll('[data-genre]').forEach((b) => (b.onclick = () => assignDev(b.dataset.genre)));
   fillThumbs(v);
   v.querySelectorAll('[data-dev]').forEach((el) => (el.onclick = () => openDevRunning(+el.dataset.dev)));
-  v.querySelectorAll('[data-stop]').forEach((b) => (b.onclick = () => confirm('販売をやめますか？') && (G.stopProduct(S, +b.dataset.stop), commit())));
+  v.querySelectorAll('[data-prod]').forEach((b) => (b.onclick = () => openProduct(+b.dataset.prod)));
 }
 
 function assignDev(genre) {
@@ -989,6 +1097,47 @@ function assignDev(genre) {
     },
     confirm: (ids) => G.startDev(S, genre, ids, Date.now()),
   });
+}
+
+// 発売した製品のくわしい画面（2026-10-04 ユーザー指示）。稼ぎ・開発費をどれだけ取り戻したか・発売からの稼ぎの移り変わり・作った人
+// 販売終了もここから（一覧の × は押し間違えやすいのでやめた）
+function openProduct(id) {
+  const p = S.products.find((x) => x.id === id);
+  if (!p) return;
+  const g = R.GENRES[p.genre];
+  const now = Date.now();
+  const ce = G.companyEffects(S);
+  const by = (p.by ?? []).map((i) => S.members.find((m) => m.id === i)).filter(Boolean);
+  // 発売から今までの1時間の稼ぎ（流行の変わり目で上下し、だんだん減っていく）
+  const N = 60;
+  const age = Math.max(1, now - p.launchedAt);
+  const pts = Array.from({ length: N + 1 }, (_, i) => G.productIncome(S, p, p.launchedAt + (age * i) / N, ce));
+  const top = Math.max(...pts) || 1;
+  const xy = pts.map((v, i) => `${((i / N) * 300).toFixed(1)},${(76 - (v / top) * 70).toFixed(1)}`).join(' ');
+  const back = (p.earned ?? 0) / g.cost; // 開発費を取り戻した割合
+  const dlg = $('#assign');
+  $('#assign-body').innerHTML = `
+    <div class="prod-hero">${prodIcon(p.genre, 'big')}<b>${esc(p.name)}</b><small>${g.name}</small>${rating(p.q)}</div>
+    <div class="facts">
+      <div><small>1時間</small><b class="ok">+${yen(G.productIncome(S, p, now, ce))}</b></div>
+      <div><small>これまで</small><b>${yen(p.earned ?? 0)}</b></div>
+      <div><small>開発費</small><b>${yen(g.cost)}</b></div>
+      <div><small>回収</small><b class="${back >= 1 ? 'ok' : ''}">${pct(back)}</b></div>
+      <div><small>発売から</small><b>${dur(age)}</b></div>
+      <div><small>流行</small><b>${trendIcon(G.trendAt(S, p.genre, now))}</b></div>
+    </div>
+    <div class="spark"><svg viewBox="0 0 300 80" preserveAspectRatio="none"><polygon points="0,80 ${xy} 300,80"/><polyline points="${xy}"/></svg></div>
+    ${by.length ? `<div class="by">${icon('people')}<span class="avs">${by.map((m) => avatar(m)).join('')}</span></div>` : ''}
+    <div class="sheet-btns"><button class="btn fire" id="prod-stop">販売終了</button><button class="big ghost" id="run-close">OK</button></div>`;
+  fillThumbs($('#assign-body'));
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
+  $('#prod-stop').onclick = () => {
+    if (!confirm('販売をやめますか？')) return;
+    G.stopProduct(S, id);
+    dlg.close();
+    commit();
+  };
 }
 
 // 開発中の製品のくわしい様子（担当者と力・ゲージ・出来の見込み・1時間の稼ぎの見込み・残り時間）

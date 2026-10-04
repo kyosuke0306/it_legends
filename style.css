@@ -310,7 +310,7 @@ button.panel:disabled { opacity: 0.45; }
 .person-tag::after { content: ''; position: absolute; bottom: -5px; left: calc(50% + var(--ax, 0px)); margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: var(--panel); }
 @keyframes bob { 50% { transform: translateY(-3px); } }
 .upgrade { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-.upgrade:not(:disabled) { box-shadow: inset 0 0 0 2px var(--accent); }
+.upgrade.ready { box-shadow: inset 0 0 0 2px var(--accent); }
 .upgrade .val { font-size: 0.85rem; }
 
 /* ---------- 仕事 ---------- */
@@ -365,8 +365,6 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 .good-line .ic { width: 1.1em; height: 1.1em; color: var(--gold); flex: none; }
 .av-tap { display: inline-flex; cursor: pointer; }
 /* 依頼の右下に、得意な人の顔（緑の縁） */
-.fit-avs { margin-left: auto; padding-left: 6px; }
-.fit-avs .av { width: 24px; height: 24px; box-shadow: 0 0 0 2px var(--ok); }
 .av.temp { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--muted); }
 #assign-go small { font-size: 0.8em; opacity: 0.85; display: inline-flex; align-items: center; gap: 2px; }
 #assign-go small .ic { width: 1em; height: 1em; }
@@ -411,7 +409,6 @@ dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius
 .prod-earn b small { font-size: 0.72rem; margin-left: 1px; }
 .prod-earn > small { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); font-size: 0.74rem; white-space: nowrap; }
 .prod-earn > small .ic { width: 1em; height: 1em; }
-.prod .x { position: absolute; top: 6px; right: 6px; }
 .prod-head b { color: var(--text); font-size: 0.95rem; }
 /* 発売のお知らせ：光る絵と大きな名前 */
 .launch { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 22px 12px 18px; border-radius: 18px; overflow: hidden; text-align: center;
@@ -768,3 +765,85 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 #detail-info .btn.fire { margin-top: 14px; }
 #detail-info .vals { margin-top: 10px; }
 #detail-info .cond { font-size: 0.8rem; }
+
+/* ---------- 宣伝・求人広告の種類と条件（2026-10-04） ---------- */
+.ad-row .promo-name { opacity: 0.85; font-size: 0.75rem; }
+.ad-row.on .cat-tag { margin: 0; background: rgba(255, 255, 255, 0.25); }
+.job-tag { background: #50505a; }
+.grades { display: flex; flex-direction: column; gap: 6px; }
+.grade { display: flex; align-items: center; gap: 10px; border: 2px solid transparent; border-radius: 14px; background: var(--bg); padding: 10px 12px; color: var(--text); text-align: left; }
+.grade.active { border-color: var(--accent); }
+.grade .g-ic { width: 1.4em; height: 1.4em; color: var(--accent); flex: none; }
+.grade .gname { flex: 1; min-width: 0; font-weight: 700; font-size: 0.92rem; }
+.grade .val { font-size: 0.8rem; min-width: 3.4em; justify-content: flex-end; }
+.grade .val:last-child { min-width: 5.6em; }
+.grade .power { margin-right: 4px; }
+.power { display: inline-flex; align-items: flex-end; gap: 2px; color: var(--muted); }
+.power .ic { width: 0.95em; height: 0.95em; margin-right: 2px; }
+.power i { display: block; width: 4px; border-radius: 2px; background: var(--line); }
+.power i:nth-of-type(1) { height: 6px; } .power i:nth-of-type(2) { height: 9px; } .power i:nth-of-type(3) { height: 12px; } .power i:nth-of-type(4) { height: 15px; }
+.power i.on { background: var(--accent); }
+.seg { display: flex; gap: 6px; }
+.seg button { flex: 1; border: 2px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); padding: 8px 4px; font-weight: 700; font-size: 0.88rem; }
+.seg button small { margin-left: 4px; color: var(--muted); font-size: 0.7rem; font-weight: 600; }
+.seg button.active { border-color: var(--accent); color: var(--accent); }
+.cond-pick { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.cond { border: 2px solid transparent; border-radius: 999px; padding: 5px 12px; background: var(--c, var(--bg)); color: #fff; font-weight: 800; font-size: 0.8rem; opacity: 0.55; }
+.cond.active { opacity: 1; border-color: var(--text); }
+.cond.job { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); color: var(--text); padding: 3px 10px 3px 3px; opacity: 1; }
+.cond.job.active { border-color: var(--accent); color: var(--accent); }
+.cond img, .cond-jobs img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: var(--panel); }
+.cond-pick.jobs { max-height: 30vh; overflow-y: auto; }
+.cond-jobs { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0; color: var(--muted); font-size: 0.78rem; }
+.cond-jobs span { display: inline-flex; align-items: center; gap: 4px; }
+#promo-go { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+#promo-go .ic { width: 1.1em; height: 1.1em; }
+
+/* 仕事中と依頼を分ける */
+.work-sec b { color: var(--text); font-size: 0.95rem; }
+.work-sec .count { min-width: 1.6em; padding: 0 6px; border-radius: 99px; background: var(--line); color: var(--text); font-weight: 800; text-align: center; font-size: 0.75rem; }
+.work-sec .ic { width: 1.1em; height: 1.1em; }
+.work-box.running { margin: 0 -4px 6px; padding: 2px 8px 2px; border-radius: 18px; background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
+.work-box.running .work-sec { margin-top: 10px; color: var(--accent); }
+.work-box.running .work-sec .count { background: var(--accent); color: #fff; }
+
+/* 製品のくわしい画面 */
+.prod-hero { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 6px 0 14px; text-align: center; }
+.prod-hero > b { font-size: 1.15rem; margin-top: 6px; }
+.prod-hero > small { color: var(--muted); font-size: 0.8rem; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.facts > div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 12px; background: var(--bg); }
+.facts small { color: var(--muted); font-size: 0.7rem; }
+.facts b { font-size: 0.9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.facts b.ok { color: var(--ok); }
+.facts .t { width: 1.3em; height: 1.3em; }
+.spark { position: relative; margin: 10px 0; padding: 8px; border-radius: 12px; background: var(--bg); }
+.spark svg { display: block; width: 100%; height: 70px; }
+.spark polyline { fill: none; stroke: var(--ok); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.spark polygon { fill: color-mix(in srgb, var(--ok) 15%, transparent); stroke: none; }
+.by { display: flex; align-items: center; gap: 12px; margin: 6px 4px 10px; color: var(--muted); }
+.by > .ic { width: 1.1em; height: 1.1em; }
+.by .avs .av { width: 32px; height: 32px; }
+.sheet-btns { display: flex; align-items: center; gap: 10px; }
+.sheet-btns .big { flex: 1; }
+.sheet-btns .btn.fire { margin: 0; padding: 12px 14px; }
+button.prod { color: inherit; }
+
+/* 次のオフィス（シークレット：部屋は黒い影に水色の縁） */
+.office-peek { position: relative; height: 34vh; max-height: 260px; border-radius: 16px; overflow: hidden; background: radial-gradient(ellipse at 50% 60%, #1b2440, #070a14) !important; }
+.office-peek canvas { width: 100%; height: 100%; display: block; filter: grayscale(1) brightness(1.7) contrast(1.15) sepia(1) hue-rotate(150deg) saturate(1.8) brightness(0.8) blur(1.2px) drop-shadow(0 0 6px rgba(95, 230, 255, 0.45)); }
+.office-peek .person-tag { display: none; }
+.office-about { margin: 10px 2px 8px; color: var(--muted); font-size: 0.85rem; text-align: center; }
+.cmp { display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+.cmp > .ic { width: 1.1em; height: 1.1em; color: var(--accent); }
+.cmp > small { color: var(--muted); }
+.cmp .was { color: var(--muted); font-variant-numeric: tabular-nums; }
+.cmp .arrow { color: var(--muted); }
+.cmp b { font-variant-numeric: tabular-nums; }
+.cmp b small { font-size: 0.7rem; color: var(--muted); margin-left: 2px; }
+.new-prod { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: 0.82rem; }
+.new-prod .prod-ic { width: 26px; height: 26px; border-radius: 8px; }
+.new-prod .prod-ic .ic { width: 16px; height: 16px; }
+.need-move { margin-top: 12px; }
+#move-go { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.office-peek[data-mood='light'] canvas { filter: grayscale(1) brightness(0.42) contrast(1.6) sepia(1) hue-rotate(150deg) saturate(1.8) blur(1.2px) drop-shadow(0 0 6px rgba(95, 230, 255, 0.45)); }
