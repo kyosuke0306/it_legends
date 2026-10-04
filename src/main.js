@@ -537,9 +537,10 @@ function renderOffice() {
   office.sync(S);
   const o = R.OFFICES[S.office];
   const floors = S.floors ? `<small>+${S.floors}</small>` : ''; // 増築した回数
-  // オフィスの名前は押すと今のオフィスの詳しいシート（ほかの札と見分けられるよう色つきのボタン）。製品は数と1時間の稼ぎ、押すと一覧
-  $('#office-chips').innerHTML = `<button class="chip chip-office" id="chip-office">${icon('home')}${o.name}${floors}${icon('back', 'flip')}</button><span class="chip">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${
-    S.products.length ? `<button class="chip chip-prod" id="chip-prod">${icon('box')}<b>${S.products.length}</b><span class="ok">+${yen(hourlyIncome())}/時</span></button>` : ''
+  // オフィスの名前と席の数は1つのボタンにまとめ、押すと今のオフィスの詳しいシート。色や形はオフィスの格ごとに変わる（.o0〜.o9）
+  // 製品は下の行に、形と大きさを変えた小さな札（数と1時間の稼ぎ、押すと一覧）。2026-10-04 ユーザー指示
+  $('#office-chips').innerHTML = `<button class="chip chip-office o${Math.min(S.office, 9)}" id="chip-office">${icon(S.office ? 'building' : 'home')}<span class="o-name">${o.name}${floors}</span><span class="o-seats">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${icon('back', 'flip')}</button>${
+    S.products.length ? `<button class="chip-prod" id="chip-prod">${icon('box')}<b>${S.products.length}</b><span class="ok">+${yen(hourlyIncome())}/時</span></button>` : ''
   }`;
   $('#chip-office').onclick = openOffice;
   $('#chip-prod') && ($('#chip-prod').onclick = openProducts);

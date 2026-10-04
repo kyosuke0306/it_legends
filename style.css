@@ -871,15 +871,44 @@ button.prod { color: inherit; }
 .all-busy { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 4px 0 10px; padding: 10px; border-radius: 12px; background: var(--bg); color: var(--muted); font-weight: 700; font-size: 0.88rem; }
 .all-busy .ic { width: 1.1em; height: 1.1em; }
 
-/* 会社の画面の上の札。オフィスと製品は押せるボタン（席の札とは見た目を変える。2026-10-04 ユーザー指示） */
-button.chip { pointer-events: auto; border: 0; color: var(--text); font-family: inherit; cursor: pointer; }
-.chip-office { background: linear-gradient(100deg, #36b8f5, var(--accent)); color: #fff !important; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent); }
+/* 会社の画面の上の札（2026-10-04 ユーザー指示）
+   1行目＝オフィスの名前と席をまとめたボタン。色・形はオフィスの格で変わる（前半は手作り感、後半は光る最先端）
+   2行目＝製品の小さな札（角の丸い四角・ガラス風で、オフィスとは別の形） */
+.chips { flex-direction: column; align-items: flex-start; }
+button.chip, .chip-prod { pointer-events: auto; border: 0; font-family: inherit; cursor: pointer; }
+.chip-office { gap: 6px; padding: 6px 12px; font-size: 0.82rem; color: #fff; --c1: #6b6258; --c2: #4f473f; background: linear-gradient(100deg, var(--c1), var(--c2)); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); }
 .chip-office .ic { opacity: 1; }
-.chip-office .flip { width: 0.8em; height: 0.8em; margin-left: 1px; opacity: 0.8; }
-.chip-office small { color: #fff; opacity: 0.85; }
-.chip-prod { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ok) 55%, transparent); }
-.chip-prod b { font-size: 0.8rem; }
-.chip-prod .ok { color: var(--ok); margin-left: 4px; }
+.chip-office .o-seats { display: inline-flex; align-items: center; gap: 3px; padding-left: 8px; border-left: 1px solid rgba(255, 255, 255, 0.35); font-weight: 700; }
+.chip-office .o-seats .ic { width: 0.95em; height: 0.95em; opacity: 0.85; }
+.chip-office .flip { width: 0.8em; height: 0.8em; opacity: 0.75; }
+.chip-office small { color: inherit; opacity: 0.85; }
+/* 自宅：くすんだ茶色、角ばった紙っぽい札 */
+.chip-office.o0 { border-radius: 6px; --c1: #7a6a58; --c2: #5c4f42; border: 1px dashed rgba(255, 255, 255, 0.35); }
+/* ガレージ：鉄のシャッターの灰色、角ばって黄色い線 */
+.chip-office.o1 { border-radius: 4px; --c1: #5a5f66; --c2: #3c4046; box-shadow: inset 0 -3px 0 #e8b931, 0 2px 10px rgba(0, 0, 0, 0.3); }
+/* 小さな事務所：夜の紫のネオン */
+.chip-office.o2 { border-radius: 10px; background: #1a1430; border: 1.5px solid #b06bff; box-shadow: 0 0 10px rgba(176, 107, 255, 0.6); }
+/* オフィスビル：きちんとした青 */
+.chip-office.o3 { border-radius: 10px; --c1: #3f7fd6; --c2: #2b5ea8; }
+/* 本社ビル：紺に金の縁 */
+.chip-office.o4 { border-radius: 12px; --c1: #23335a; --c2: #172340; border: 1.5px solid #e2b64c; color: #ffe7a8; }
+/* 高層タワー：銀のガラス */
+.chip-office.o5 { border-radius: 999px; --c1: #f4f6fa; --c2: #c9d1dc; color: #2a3140; box-shadow: 0 2px 12px rgba(160, 180, 210, 0.6), inset 0 1px 0 #fff; }
+.chip-office.o5 .o-seats { border-left-color: rgba(42, 49, 64, 0.25); }
+/* テックキャンパス：明るい緑と木 */
+.chip-office.o6 { border-radius: 999px; --c1: #5fd08a; --c2: #2f9e6a; }
+/* 世界本社：金 */
+.chip-office.o7 { border-radius: 999px; --c1: #ffd86b; --c2: #e0a422; color: #4a3200; box-shadow: 0 2px 14px rgba(240, 185, 58, 0.6); }
+.chip-office.o7 .o-seats { border-left-color: rgba(74, 50, 0, 0.3); }
+/* スマートシティ：ネオンの水色〜桃色、光る */
+.chip-office.o8 { border-radius: 999px; --c1: #22d3ff; --c2: #ff4fd8; box-shadow: 0 0 14px rgba(34, 211, 255, 0.7), 0 0 22px rgba(255, 79, 216, 0.45); animation: oGlow 2.6s ease-in-out infinite; }
+/* 宇宙ステーション：宇宙の紺に星の白い光 */
+.chip-office.o9 { border-radius: 999px; background: radial-gradient(circle at 20% 30%, #fff 0 1px, transparent 2px), radial-gradient(circle at 70% 60%, #fff 0 1px, transparent 2px), linear-gradient(100deg, #0b1230, #3a2a7a 60%, #6a4bd6); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 0 16px rgba(160, 150, 255, 0.8); animation: oGlow 3s ease-in-out infinite; }
+@keyframes oGlow { 50% { filter: brightness(1.18); } }
+@media (prefers-reduced-motion: reduce) { .chip-office.o8, .chip-office.o9 { animation: none; } }
+.chip-prod { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; color: #e9fbe9; background: rgba(12, 20, 16, 0.55); backdrop-filter: blur(4px); border: 1px solid rgba(80, 220, 140, 0.45); }
+.chip-prod .ic { width: 0.95em; height: 0.95em; color: #6fe3a0; }
+.chip-prod .ok { color: #6fe3a0; margin-left: 2px; }
 .cmp.prods .new-prods { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .cmp.prods .prod-ic { width: 26px; height: 26px; border-radius: 8px; }
 .cmp.prods .prod-ic .ic { width: 16px; height: 16px; }
