@@ -842,9 +842,9 @@ function openMember(m, candidate = false) {
   const cost = candidate ? G.hireCost(S, m) : 0;
   const canHire = candidate && G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
   $('#detail-info').innerHTML = `<h2>${esc(G.displayName(m))}</h2><div class="sub">${j.full}</div>
-    <div class="good-line">${esc(j.goodText)}の依頼が得意</div>
     <p class="job-desc">${esc(j.desc)}</p>
     <div class="ability">${esc(j.perkText)}</div>
+    <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
     ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button>` : ''}
