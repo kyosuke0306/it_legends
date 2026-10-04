@@ -778,10 +778,8 @@ function openAssign({ title, max, w, need, preview, confirm, temp = null, base =
 }
 
 // ----- 仲間 -----
-const opened = new Set();
 function memberRow(m, { candidate = false } = {}) {
   const st = candidate ? m.stats : G.statsOf(S, m);
-  const open = opened.has(m.id);
   const status = candidate ? '' : `<i class="st-dot ${m.busy ? 'busy' : 'free'}"></i>`;
   const hireBtn = () => {
     const cost = G.hireCost(S, m);
@@ -789,13 +787,13 @@ function memberRow(m, { candidate = false } = {}) {
     const wait = `<span class="muted">${val('clock', `<span data-left="${m.until}"></span>`)}</span>`; // 辞退するまでの時間
     return `${wait}<button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>採用 ${yen(cost)}</button>`;
   };
-  return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''} ${open ? 'open' : ''}">
+  return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
       <span class="pname">${candidate && (m.at ?? 0) > seenSnap.team ? newTag : ''}${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>
       ${statBars(st)}
     </button>
     ${
-      open || candidate
+      candidate
         ? `<div class="more"><span class="perk">${esc(perkText(m))}</span>${
             m.salary ? `<span class="muted">${val('wallet', `${yen(m.salary)}/日`)}</span>` : ''
           }${!candidate && m.kind === 'staff' ? `<button class="btn fire" data-dismiss="${m.id}" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}${
@@ -804,6 +802,42 @@ function memberRow(m, { candidate = false } = {}) {
         : ''
     }
   </div>`;
+}
+// 仲間（CEO・社員）や面接に来た人のくわしい画面。目的は、その職種がどんな仕事かがわかること
+function openMember(m, candidate = false) {
+  if (!m) return;
+  const j = R.JOBS[m.job];
+  const st = candidate ? m.stats : G.statsOf(S, m);
+  const cost = candidate ? G.hireCost(S, m) : 0;
+  const canHire = candidate && G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
+  $('#detail-info').innerHTML = `<h2>${esc(G.displayName(m))}</h2><div class="sub">${j.full}</div>
+    <p class="job-desc">${esc(j.desc)}</p>
+    <div class="ability">${esc(j.perkText)}</div>
+    <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
+    ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
+    ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button>` : ''}
+    ${!candidate && m.kind === 'staff' ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}`;
+  $('#m-hire') &&
+    ($('#m-hire').onclick = () => {
+      if (G.hire(S, m.id, Date.now())) {
+        $('#detail').close();
+        commit();
+      }
+    });
+  $('#m-fire') &&
+    ($('#m-fire').onclick = () => {
+      if (confirm('解雇しますか？') && G.dismiss(S, m.id, Date.now())) {
+        $('#detail').close();
+        commit();
+      }
+    });
+  detailStage ??= new Stage($('#detail-canvas'));
+  detailToken = {};
+  $('#detail-canvas').parentElement.querySelector('.silhouette')?.remove();
+  $('#detail').showModal();
+  const body = buildPerson(m.look, m.job, { ceo: m.kind === 'hero' });
+  detailStage.setCharacter(body);
+  body.scale.setScalar(0.88); // CEO の頭の上の印が切れないよう少し小さく
 }
 // 求人広告: お金を出すと、期限つきで面接に来る人が増える。出している間は残り時間を出す
 function adRow() {
@@ -831,8 +865,10 @@ function renderTeam() {
       (b.onclick = (e) => {
         if (e.target.closest('[data-hire]')) return;
         const id = +b.dataset.open;
-        opened.has(id) ? opened.delete(id) : opened.add(id);
-        renderTeam();
+        const m = S.members.find((x) => x.id === id);
+        if (m?.kind === 'legend') return openLegend(m.legend);
+        // 仲間・面接に来た人は、レジェンドのように詳しい画面で（3Dの姿・職種の仕事・力）
+        openMember(m ?? S.candidates.find((x) => x.id === id), !m);
       }),
   );
   // 面接に来る人がいないときは、勉強会へ（会社タブに移って勉強会を選ぶ）

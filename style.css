@@ -751,4 +751,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .st-foot .dots i.on { background: #3ef0ff; }
 .st-foot .big { margin: 0; width: 100%; background: linear-gradient(90deg, #22c8e8, #8b5cff); color: #fff; }
 #detail-info .conds { gap: 8px; margin: 12px 0 4px; }
+#detail-info .job-desc { margin: 10px 0 0; line-height: 1.6; font-size: 0.92rem; }
+#detail-info .btn.fire { margin-top: 14px; }
+#detail-info .vals { margin-top: 10px; }
 #detail-info .cond { font-size: 0.8rem; }

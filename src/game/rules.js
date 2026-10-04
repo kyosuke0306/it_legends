@@ -10,16 +10,17 @@ export const DAY = 24 * HOUR;
 // perk の種類（state.js の effects で使う）
 //   teamSpeed / teamReward / teamSuccess / teamQuality / teamXp … その人が参加した仕事・開発だけに効く
 //   income / offers / nextTrend … 会社にいるだけで効く
+// desc: 仲間を押したときの詳しい画面に出す、その職種がどんな仕事か（2026-10-04 ユーザー指示）
 export const JOBS = {
-  se: { name: 'SE', full: 'システムエンジニア', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamSuccess: 0.15 }, perkText: '成功率 +15%', shirt: 0x4a78c2 },
-  pg: { name: 'プログラマー', full: 'プログラマー', w: { idea: 1, tech: 3.5, plan: 1, talk: 0.5 }, perk: { teamSpeed: 0.15 }, perkText: '速さ +15%', shirt: 0x2f2f3a },
-  infra: { name: 'インフラ', full: 'インフラエンジニア', w: { idea: 0.5, tech: 3, plan: 2, talk: 0.5 }, perk: { teamSuccess: 0.1 }, perkText: '成功率 +10%', shirt: 0x3f8f6b },
-  designer: { name: 'デザイナー', full: 'デザイナー', w: { idea: 3.5, tech: 1, plan: 1, talk: 1.5 }, perk: { teamQuality: 0.2 }, perkText: '製品の出来 +20%', shirt: 0xe0607e },
-  data: { name: 'データ分析', full: 'データサイエンティスト', w: { idea: 2, tech: 2.5, plan: 1.5, talk: 0.5 }, perk: { nextTrend: 1 }, perkText: '次の流行が見える', shirt: 0x7a5cc4 },
-  pm: { name: 'PM', full: 'プロジェクトマネージャー', w: { idea: 1, tech: 1, plan: 2.5, talk: 2.5 }, perk: { teamSpeed: 0.1, teamSuccess: 0.05 }, perkText: '速さ +10%  成功率 +5%', shirt: 0x2d6ea8 },
-  gm: { name: 'GM', full: 'ゼネラルマネージャー', w: { idea: 2, tech: 1, plan: 2, talk: 2 }, perk: { teamXp: 0.5 }, perkText: 'チームの成長 +50%', shirt: 0x50505a },
-  consul: { name: 'コンサル', full: 'ITコンサルタント', w: { idea: 2, tech: 1, plan: 2, talk: 3 }, perk: { teamReward: 0.2 }, perkText: '報酬 +20%', shirt: 0x24324a },
-  sales: { name: '営業', full: 'IT営業', w: { idea: 1, tech: 0.5, plan: 1, talk: 4 }, perk: { offers: 0.25 }, perkText: '依頼 ×1.25', shirt: 0xc9822c },
+  se: { name: 'SE', full: 'システムエンジニア', desc: 'お客さんの「こうしたい」を聞いて、システムの設計図を作る', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamSuccess: 0.15 }, perkText: '成功率 +15%', shirt: 0x4a78c2 },
+  pg: { name: 'プログラマー', full: 'プログラマー', desc: '設計図をもとにプログラムを書き、動くものを作る', w: { idea: 1, tech: 3.5, plan: 1, talk: 0.5 }, perk: { teamSpeed: 0.15 }, perkText: '速さ +15%', shirt: 0x2f2f3a },
+  infra: { name: 'インフラ', full: 'インフラエンジニア', desc: 'サーバーやネットワークなど、システムが動く土台を作って守る', w: { idea: 0.5, tech: 3, plan: 2, talk: 0.5 }, perk: { teamSuccess: 0.1 }, perkText: '成功率 +10%', shirt: 0x3f8f6b },
+  designer: { name: 'デザイナー', full: 'デザイナー', desc: '画面の見た目と使いやすさを考えて、形にする', w: { idea: 3.5, tech: 1, plan: 1, talk: 1.5 }, perk: { teamQuality: 0.2 }, perkText: '製品の出来 +20%', shirt: 0xe0607e },
+  data: { name: 'データ分析', full: 'データサイエンティスト', desc: 'たくさんのデータを分析して、次の流行や打つ手を見つける', w: { idea: 2, tech: 2.5, plan: 1.5, talk: 0.5 }, perk: { nextTrend: 1 }, perkText: '次の流行が見える', shirt: 0x7a5cc4 },
+  pm: { name: 'PM', full: 'プロジェクトマネージャー', desc: '予定・お金・人をまとめて、期限までに完成させる責任者', w: { idea: 1, tech: 1, plan: 2.5, talk: 2.5 }, perk: { teamSpeed: 0.1, teamSuccess: 0.05 }, perkText: '速さ +10%  成功率 +5%', shirt: 0x2d6ea8 },
+  gm: { name: 'GM', full: 'ゼネラルマネージャー', desc: '部門全体をまとめて人を育て、事業をうまく回す', w: { idea: 2, tech: 1, plan: 2, talk: 2 }, perk: { teamXp: 0.5 }, perkText: 'チームの成長 +50%', shirt: 0x50505a },
+  consul: { name: 'コンサル', full: 'ITコンサルタント', desc: '会社の困りごとを聞いて、ITでの解決策を提案する', w: { idea: 2, tech: 1, plan: 2, talk: 3 }, perk: { teamReward: 0.2 }, perkText: '報酬 +20%', shirt: 0x24324a },
+  sales: { name: '営業', full: 'IT営業', desc: '製品やサービスを紹介して、仕事の依頼を取ってくる', w: { idea: 1, tech: 0.5, plan: 1, talk: 4 }, perk: { offers: 0.25 }, perkText: '依頼 ×1.25', shirt: 0xc9822c },
 };
 
 // 会社の広さ。cap は入れる人数（自分も含む）、tier は受けられる仕事の大きさ
