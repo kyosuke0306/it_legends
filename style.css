@@ -325,7 +325,7 @@ button.panel:disabled { opacity: 0.45; }
 .expire { display: inline-flex; align-items: center; gap: 3px; flex: none; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .expire .ic { width: 13px; height: 13px; }
 .expire.soon { color: var(--bad); font-weight: 700; animation: expire-blink 1.4s ease-in-out infinite; }
-@keyframes expire-blink { 50% { opacity: 0.45; } }
+@keyframes expire-blink { 50% { color: rgba(229, 72, 77, 0.45); } }
 .cat-web { --c: #4a90e2; }
 .cat-app { --c: #e0607e; }
 .cat-infra { --c: #3f9f72; }
@@ -998,3 +998,6 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .done-head.bad .res-tag { background: var(--bad); }
 .result[data-done] { cursor: pointer; }
 #done-back { flex: 0 0 64px; display: grid; place-items: center; }
+.ask-text { white-space: pre-line; }
+.ask-head .slot-no { width: 44px; height: 44px; font-size: 1.1rem; }
+.ask-head .prod-ic { width: 64px; height: 64px; }

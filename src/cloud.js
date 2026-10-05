@@ -17,7 +17,7 @@ const flag = {
 // この端末の印（自分が書いた変更を、自分で読み込み直さないため）
 const device = Math.random().toString(36).slice(2);
 let fb = null;
-let hooks = null; // { getState, applyState, decide, onStatus }
+let hooks = null; // { getState, applyState, decide, onStatus, alert }
 let user = null;
 let unsubscribe = null;
 let timer = null;
@@ -208,7 +208,8 @@ export const warmUp = () => load().catch(() => {});
 function showError(e) {
   console.error(e);
   status('ログインできません', 'error');
-  alert(`ログインできませんでした（${e.code || e.message}）`);
+  const msg = `ログインできませんでした（${e.code || e.message}）`;
+  hooks?.alert ? hooks.alert(msg) : alert(msg);
 }
 
 export async function login() {

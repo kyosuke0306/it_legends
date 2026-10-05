@@ -194,7 +194,7 @@ function prodIcon(genre, cls = '') {
   return `<span class="prod-ic ${cls}" style="--g1:${a};--g2:${b}">${icon(ic)}</span>`;
 }
 function progress(start, end) {
-  return `<div class="prog"><div class="bar" data-start="${start}" data-ends="${end}"><i></i></div><span class="left" data-left="${end}"></span></div>`;
+  return `<div class="prog"><div class="bar" data-start="${start}" data-ends="${end}"><i></i></div><span class="left" data-left="${end}">${dur(end - Date.now())}</span></div>`;
 }
 // 偉人の小さな絵をあとから差し込む
 function fillThumbs(root) {
@@ -331,7 +331,7 @@ function openSlots(mode) {
           return;
         }
         const old = slotData(n);
-        if (old && !confirm(`記録${n}「${old.company}」は消えます。はじめからにしますか？`)) return;
+        if (old && !(await ask({ head: askSlot(n, old), text: 'この記録は消えます。はじめからにしますか？', ok: 'はじめから' }))) return;
         newSlot = n;
         closeSlots();
         goStep(1);
@@ -531,7 +531,7 @@ function nextLegend() {
 function legendWait(id) {
   if (!G.meetProgress(S, id).every((c) => c.ok)) return '';
   const cool = S.met[id]?.cooldown ?? 0;
-  if (cool > Date.now()) return `<span class="aura cool">${icon('clock')}<span data-left="${cool}"></span></span>`;
+  if (cool > Date.now()) return `<span class="aura cool">${icon('clock')}<span data-left="${cool}">${dur(cool - Date.now())}</span></span>`;
   return `<span class="aura">${icon('hourglass')}気配</span>`;
 }
 function renderNextLegend(show) {
@@ -563,7 +563,7 @@ function renderOffice() {
   $('#chip-office').onclick = openOffice;
   const enc = S.encounter;
   $('#encounter').innerHTML = enc
-    ? `<button class="encounter" id="go-encounter">${icon('spark', 'spin')}<span>誰かが現れた</span><span class="left" data-left="${enc.until}"></span></button>`
+    ? `<button class="encounter" id="go-encounter">${icon('spark', 'spin')}<span>誰かが現れた</span><span class="left" data-left="${enc.until}">${dur(enc.until - Date.now())}</span></button>`
     : '';
   if (enc) $('#go-encounter').onclick = openEncounter;
   renderNextLegend(!enc);
@@ -579,7 +579,7 @@ function renderOffice() {
         ${icon(a.icon, 'act-ic')}<span>${a.name}</span>${icon(EVENT_ICON[a.event], `act-ev ev-${a.event}`)}${a.offerPerHour ? icon('task', 'act-ev act-ev2 ev-offer') : ''}
       </button>`,
     )
-    .join('') + (busyUntil ? `<div class="act-lock"><span class="pill">${icon('task')}<span class="what">仕事中</span><span class="left" data-left="${busyUntil}"></span></span></div>` : '');
+    .join('') + (busyUntil ? `<div class="act-lock"><span class="pill">${icon('task')}<span class="what">仕事中</span><span class="left" data-left="${busyUntil}">${dur(busyUntil - Date.now())}</span></span></div>` : '');
   $('#activity').querySelectorAll('[data-act]').forEach((b) => (b.onclick = () => G.setActivity(S, b.dataset.act) && commit()));
   const next = R.OFFICES[S.office + 1];
   if (next) {
@@ -680,7 +680,7 @@ function promoRow(kind) {
     // 条件の札（多いときは2つまで出して残りは数）
     const tags = [...(ad ? G.adJobs(S) : []).map((j) => `<span class="cat-tag job-tag">${R.JOBS[j].name}</span>`), ...(ad ? G.adCats(S) : G.prCats(S)).map(catTag)];
     const tag = tags.slice(0, 2).join('') + (tags.length > 2 ? `<span class="cat-tag job-tag">+${tags.length - 2}</span>` : '');
-    return `<button class="${cls} on" id="${kind}-on">${icon(g.icon)}<b>${ad ? '求人広告中' : '宣伝中'}</b><small class="promo-name">${g.name}</small>${tag}<span class="grow"></span>${val('hourglass', `<span data-left="${until}"></span>`)}</button>`;
+    return `<button class="${cls} on" id="${kind}-on">${icon(g.icon)}<b>${ad ? '求人広告中' : '宣伝中'}</b><small class="promo-name">${g.name}</small>${tag}<span class="grow"></span>${val('hourglass', `<span data-left="${until}">${dur(until - Date.now())}</span>`)}</button>`;
   }
   const min = ad ? G.adCost(S, 0) : G.prCost(S, 0);
   return `<button class="${cls}" id="${kind}" ${S.money < min ? 'disabled' : ''}>${icon('ad')}<b>${ad ? '求人広告' : '宣伝'}</b><span class="grow"></span>${val('coin', `${yen(min)}〜`, S.money >= min ? 'ok' : '')}</button>`;
@@ -790,7 +790,7 @@ function renderWork() {
   const offers = S.offers
     .map(
       (o) => `<button class="panel offer cat-${o.cat} ${canWork ? '' : 'off'}" data-offer="${o.id}">
-        <span class="offer-top"><b>${o.expiresAt - R.OFFER_LIFE > seenSnap.work ? newTag : ''}${catTag(o.cat)}${esc(o.title)}</b><span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}"></span></span></span>
+        <span class="offer-top"><b>${o.expiresAt - R.OFFER_LIFE > seenSnap.work ? newTag : ''}${catTag(o.cat)}${esc(o.title)}</b><span class="expire ${o.expiresAt - Date.now() < R.OFFER_SOON ? 'soon' : ''}" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}">${dur(o.expiresAt - Date.now())}</span></span></span>
         <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
       </button>`,
     )
@@ -939,7 +939,7 @@ function assignTask(offerId) {
     .join('');
   openAssign({
     title: o.title,
-    extra: `<div class="offer-facts">${catTag(o.cat)}${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}<span class="expire" data-expire="${o.expiresAt}">${icon('hourglass')}<span data-left="${o.expiresAt}"></span></span></div>
+    extra: `<div class="offer-facts">${catTag(o.cat)}${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}<span class="expire ${o.expiresAt - Date.now() < R.OFFER_SOON ? 'soon' : ''}" data-expire="${o.expiresAt}">${icon('hourglass')}<span data-left="${o.expiresAt}">${dur(o.expiresAt - Date.now())}</span></span></div>
       ${good ? `<div class="offer-good">${icon('bolt')}${good}</div>` : ''}
       ${free ? '' : `<div class="all-busy">${icon('people')}全員仕事中</div>`}`,
     max: o.team,
@@ -966,15 +966,20 @@ function assignTask(offerId) {
 const askEl = document.createElement('dialog');
 askEl.id = 'ask';
 document.body.append(askEl);
-function ask({ head = '', text, ok }) {
-  askEl.innerHTML = `<div class="ask-head">${head}</div><p class="ask-text">${esc(text)}</p>
-    <div class="ask-btns"><button class="big ghost" data-a="0">やめる</button><button class="big danger" data-a="1">${esc(ok)}</button></div>`;
-  askEl.showModal();
+// ゲームの見た目の確認（ブラウザの窓の代わり）。cancel が null ならボタン1つ、safe なら赤くしない
+let askEnd = null;
+function ask({ head = '', text, ok, cancel = 'やめる', safe = false }) {
+  askEl.innerHTML = `${head ? `<div class="ask-head">${head}</div>` : ''}<p class="ask-text">${esc(text)}</p>
+    <div class="ask-btns">${cancel == null ? '' : `<button class="big ghost" data-a="0">${esc(cancel)}</button>`}<button class="big ${safe ? '' : 'danger'}" data-a="1">${esc(ok)}</button></div>`;
+  askEnd?.(false); // 前の確認が開いていたら「やめる」扱いで閉じる
+  if (!askEl.open) askEl.showModal();
   return new Promise((done) => {
     const end = (v) => {
+      askEnd = null;
       askEl.close();
       done(v);
     };
+    askEnd = end;
     askEl.querySelectorAll('[data-a]').forEach((b) => (b.onclick = () => end(b.dataset.a === '1')));
     askEl.oncancel = (e) => {
       e.preventDefault();
@@ -982,7 +987,9 @@ function ask({ head = '', text, ok }) {
     };
   });
 }
-const askReject = (m) => ask({ head: `${avatar(m)}<b>${esc(m.name)}</b><small>${jobShort(m)} Lv${m.level}</small>`, text: '不採用にしますか？', ok: '不採用' });
+const personHead = (m) => `${avatar(m)}<b>${esc(m.name)}</b><small>${jobShort(m)} Lv${m.level}</small>`;
+const askSlot = (n, st) => `<span class="slot-no">${n}</span><b>${esc(st.company)}</b>`;
+const askReject = (m) => ask({ head: personHead(m), text: '不採用にしますか？', ok: '不採用' });
 
 // 人を選ぶ（仕事・開発で共通）。下から出るシート
 // temp があれば要員派遣の人も選べる（自分の会社から minOwn 人は出す）
@@ -1076,7 +1083,7 @@ function memberRow(m, { candidate = false } = {}) {
   const hireBtn = () => {
     const cost = G.hireCost(S, m);
     const can = G.seatsUsed(S) < G.capacity(S) && S.money >= cost;
-    const wait = `<span class="muted">${val('clock', `<span data-left="${m.until}"></span>`)}</span>`; // 辞退するまでの時間
+    const wait = `<span class="muted">${val('clock', `<span data-left="${m.until}">${dur(m.until - Date.now())}</span>`)}</span>`; // 辞退するまでの時間
     return `${wait}<span class="cand-btns"><button class="btn ghost reject" data-reject="${m.id}">不採用</button><button class="btn hire" data-hire="${m.id}" ${can ? '' : 'disabled'}>採用 ${yen(cost)}</button></span>`;
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''}">
@@ -1127,8 +1134,8 @@ function openMember(m, candidate = false) {
       }
     });
   $('#m-fire') &&
-    ($('#m-fire').onclick = () => {
-      if (confirm('解雇しますか？') && G.dismiss(S, m.id, Date.now())) {
+    ($('#m-fire').onclick = async () => {
+      if ((await ask({ head: personHead(m), text: '解雇しますか？', ok: '解雇' })) && G.dismiss(S, m.id, Date.now())) {
         $('#detail').close();
         commit();
       }
@@ -1149,7 +1156,7 @@ function renderTeam() {
   const v = $('#view-team');
   v.innerHTML = `
     <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
-    <div class="sec interview">${icon('people')}<b>面接</b><span class="grow"></span>${val('home', `${G.seatsUsed(S)}/${G.capacity(S)}`)}${val('clock', `<span data-left="${S.candAt + R.CANDIDATE_EVERY}"></span>`)}</div>
+    <div class="sec interview">${icon('people')}<b>面接</b><span class="grow"></span>${val('home', `${G.seatsUsed(S)}/${G.capacity(S)}`)}${val('clock', `<span data-left="${S.candAt + R.CANDIDATE_EVERY}">${dur(S.candAt + R.CANDIDATE_EVERY - Date.now())}</span>`)}</div>
     ${adRow()}
     <div class="list">${
       S.candidates.length
@@ -1185,7 +1192,13 @@ function renderTeam() {
         if (m && (await askReject(m)) && G.rejectCandidate(S, m.id, Date.now())) commit();
       }),
   );
-  v.querySelectorAll('[data-dismiss]').forEach((b) => (b.onclick = () => confirm('解雇しますか？') && G.dismiss(S, +b.dataset.dismiss, Date.now()) && commit()));
+  v.querySelectorAll('[data-dismiss]').forEach(
+    (b) =>
+      (b.onclick = async () => {
+        const m = S.members.find((x) => x.id === +b.dataset.dismiss);
+        if (m && (await ask({ head: personHead(m), text: '解雇しますか？', ok: '解雇' })) && G.dismiss(S, m.id, Date.now())) commit();
+      }),
+  );
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));
 }
 
@@ -1236,7 +1249,7 @@ function renderProduct() {
     )
     .join('');
   $('#view-product').innerHTML = `
-    <div class="sec">${icon('clock')}<span data-left="${next}"></span></div>
+    <div class="sec">${icon('clock')}<span data-left="${next}">${dur(next - Date.now())}</span></div>
     <div class="genres">${genres}</div>
     ${devs}
     ${S.products.length ? `<div class="sec prod-head">${icon('box')}<b>自社製品</b><span class="grow"></span>${val('coin', `+${yen(hourlyIncome())}/時`, 'ok')}</div>${products}` : ''}`;
@@ -1296,8 +1309,8 @@ function openProduct(id) {
   fillThumbs($('#assign-body'));
   if (!dlg.open) dlg.showModal();
   $('#run-close').onclick = () => dlg.close();
-  $('#prod-stop').onclick = () => {
-    if (!confirm('販売をやめますか？')) return;
+  $('#prod-stop').onclick = async () => {
+    if (!(await ask({ head: `${prodIcon(p.genre)}<b>${esc(p.name)}</b>`, text: '販売をやめますか？', ok: '販売終了' }))) return;
     G.stopProduct(S, id);
     dlg.close();
     commit();
@@ -1444,7 +1457,7 @@ function openEncounter() {
   $('#detail-info').innerHTML = `${legendHead(legend, { secret: true })}
     <p class="scene">${esc(rule.scene)}</p>
     <div class="ability">${esc(rule.abilityText)}</div>
-    <div class="vals">${val('target', pct(G.scoutChance(S, e.id)))}${val('clock', `<span data-left="${e.until}"></span>`)}</div>
+    <div class="vals">${val('target', pct(G.scoutChance(S, e.id)))}${val('clock', `<span data-left="${e.until}">${dur(e.until - Date.now())}</span>`)}</div>
     <button class="big" id="scout">仲間に誘う</button>`;
   updateTimers();
   $('#detail').showModal();
@@ -1962,7 +1975,7 @@ function renderMore() {
     $('#login').onclick = () => cloud.login();
     cloud.warmUp();
   }
-  $('#logout') && ($('#logout').onclick = () => confirm('ログアウトしますか？') && cloud.logout().then(() => setPage('main')));
+  $('#logout') && ($('#logout').onclick = async () => (await ask({ text: 'ログアウトしますか？', ok: 'ログアウト' })) && cloud.logout().then(() => setPage('main')));
 }
 // 記録（3つまで）: 切り替え・ロック・消す（2026-10-04 ユーザー指示「タイトルに戻らずに切り替え」「消したくない記録にロック」）
 // ロックした記録は消せず、はじめからで上書きもできない。消すときは会社名を出して2回たしかめる
@@ -2035,8 +2048,8 @@ function renderSlots() {
         const st = slotData(n);
         if (!st || st.locked) return;
         const u = cloud.currentUser();
-        if (!confirm(`記録${n}「${st.company}」を消しますか？${u ? '\n（クラウドの記録も消えます）' : ''}`)) return;
-        if (!confirm(`「${st.company}」を本当に消しますか？もとに戻せません`)) return;
+        if (!(await ask({ head: askSlot(n, st), text: `この記録を消しますか？${u ? '\nクラウドの記録も消えます' : ''}`, ok: '消す' }))) return;
+        if (!(await ask({ head: askSlot(n, st), text: '本当に消しますか？\nもとに戻せません', ok: '消す' }))) return;
         try {
           localStorage.removeItem(saveKey(n));
         } catch {}
@@ -2090,7 +2103,7 @@ async function decide(remote) {
   if (!S) return 'remote';
   if (remote.seed === S.seed) return (remote.savedAt ?? 0) >= (S.savedAt ?? 0) ? 'remote' : 'local';
   const desc = (s) => `${s.company}  ${yen(s.money)}  レジェンド${legendCount(s)}`;
-  return confirm(`クラウドの記録を使いますか？\n\nクラウド：${desc(remote)}\nこの端末：${desc(S)}`) ? 'remote' : 'local';
+  return (await ask({ text: `どちらの記録を使いますか？\n\nクラウド：${desc(remote)}\nこの端末：${desc(S)}`, ok: 'クラウド', cancel: 'この端末', safe: true })) ? 'remote' : 'local';
 }
 
 // クラウドの記録（ログイン時・ほかの端末で保存されたとき）を反映する
@@ -2133,4 +2146,4 @@ function syncOther(n, remote, fromListen = false) {
   return fromListen ? null : local;
 }
 
-cloud.init({ getState: () => S, applyState, decide, onStatus: showSync, onSynced, syncOther, slot: () => slot });
+cloud.init({ getState: () => S, applyState, decide, onStatus: showSync, onSynced, syncOther, slot: () => slot, alert: (text) => ask({ text, ok: 'OK', cancel: null, safe: true }) });
