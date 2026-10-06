@@ -1001,3 +1001,19 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .ask-text { white-space: pre-line; }
 .ask-head .slot-no { width: 44px; height: 44px; font-size: 1.1rem; }
 .ask-head .prod-ic { width: 64px; height: 64px; }
+/* 派遣（期間を決めて借りる人）。紹介予定派遣は緑 */
+.haken-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 0.66rem; font-weight: 800; color: #fff; background: #5b7bd6; vertical-align: 1px; white-space: nowrap; }
+.haken-tag.intro { background: #2e9e6a; }
+.vals .haken-tag { margin-left: 0; }
+.haken-left { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.haken-left .ic { width: 1em; height: 1em; }
+.haken-who { display: flex; align-items: center; gap: 10px; margin: 10px 0 6px; padding: 10px 12px; border-radius: 14px; background: var(--bg); }
+.haken-who .pname { flex: 1; min-width: 0; display: flex; flex-direction: column; font-weight: 700; }
+.haken-kind { margin-top: 8px; }
+.intro-line { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 10px 0 0; font-size: 0.85rem; color: #2e9e6a; font-weight: 700; }
+.intro-line .ic { width: 1.1em; height: 1.1em; }
+.intro-line s { color: var(--muted); font-weight: 400; font-size: 0.78rem; }
+.haken-info { margin-top: 8px; }
+.haken-info .seg button { display: flex; flex-direction: column; align-items: center; }
+.haken-info .seg button small { margin: 0; }
+.haken-info .big { margin-top: 10px; }

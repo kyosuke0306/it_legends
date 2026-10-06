@@ -15,7 +15,8 @@ const SPEED = 0.45;
 // タップしたときに出す名前と職種
 function labelOf(m) {
   if (m.kind === 'legend') return { name: m.name, sub: LEGEND_BY_ID[m.legend].title };
-  if (m.kind === 'temp') return { name: m.name, sub: `${JOBS[m.job].full}・派遣` };
+  if (m.kind === 'temp') return { name: m.name, sub: `${JOBS[m.job].full}・SES` };
+  if (m.haken) return { name: m.name, sub: `${JOBS[m.job].full}・${m.haken.intro ? '紹介予定派遣' : '派遣'}` };
   if (m.kind === 'rival') return { name: m.name, sub: '冷やかし' };
   return { name: displayName(m), sub: JOBS[m.job].full };
 }
@@ -84,7 +85,7 @@ export class Office {
       this.buildRoom(state.office, capacity(state));
       this.level = key;
     }
-    // 派遣の人は仕事の間だけ事務所にいる（席が足りないときは机の横に立つ）
+    // SES の人は仕事の間だけ事務所にいる（席が足りないときは机の横に立つ）
     const people = [...state.members, ...state.tasks.flatMap((x) => x.temps ?? [])];
     // 冷やかしに来たレジェンド（まだ仲間でない）。しばらく事務所をうろうろして帰る
     if (state.rival && state.rival.until > Date.now()) people.push({ id: `rival-${state.rival.id}`, kind: 'rival', legend: state.rival.id, name: LEGEND_BY_ID[state.rival.id].name, busy: null });

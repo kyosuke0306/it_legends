@@ -84,6 +84,9 @@ function dur(ms) {
 const goodTag = '<span class="good-tag">得意</span>';
 const catTag = (cat) => `<span class="cat-tag cat-${cat}">${R.CAT_NAMES[cat]}</span>`;
 const val = (name, text, cls = '') => `<span class="val ${cls}">${icon(name)}${text}</span>`;
+// 派遣の人・紹介予定派遣で来ていた面接の人の札
+const hakenTag = (m) =>
+  m.haken ? `<span class="haken-tag ${m.haken.intro ? 'intro' : ''}">${m.haken.intro ? '紹介予定派遣' : '派遣'}</span>` : m.intro ? '<span class="haken-tag intro">紹介予定派遣</span>' : '';
 const jobShort = (m) => (m.kind === 'legend' ? 'レジェンド' : R.JOBS[m.job].name);
 const perkText = (m) => (m.kind === 'legend' ? R.LEGEND_RULES[m.legend].abilityText : R.JOBS[m.job].perkText);
 const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
@@ -883,7 +886,7 @@ function openRunning(taskId) {
     <div class="pick">${team
       .map(
         (m, i) => `<div class="person ${m.kind === 'temp' ? 'temp' : ''} active" data-prof="${i}">
-          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${m.kind === 'temp' ? '・派遣' : ''}</small></span><span class="pw ${G.isGood(m, G.goodJobs(t)) ? 'good' : ''}">${G.isGood(m, G.goodJobs(t)) ? goodTag : ''}${icon('bolt')}${power(m)}</span>
+          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${m.kind === 'temp' ? '・SES' : ''}${hakenTag(m)}</small></span><span class="pw ${G.isGood(m, G.goodJobs(t)) ? 'good' : ''}">${G.isGood(m, G.goodJobs(t)) ? goodTag : ''}${icon('bolt')}${power(m)}</span>
         </div>`,
       )
       .join('')}</div>
@@ -1019,7 +1022,7 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
     const tempRow = (m, on) => `<button class="person temp ${on ? 'active' : ''}" data-temp="${on ? 'drop' : 'add'}" ${on || canMore ? '' : 'disabled'}>
         ${face(m)}<span class="pname">${esc(m.name)}<small>${R.JOBS[m.job].name} Lv${m.level}</small></span><span class="fee">${icon('coin')}${yen(temp.fee)}</span>${pw(m)}
       </button>`;
-    const tempHtml = temp ? `<div class="sec temp-head">${icon('plus')}<b>派遣</b></div>${temps.map((m) => tempRow(m, true)).join('')}${room ? tempRow(temp.make(nTemps), false) : ''}` : '';
+    const tempHtml = temp ? `<div class="sec temp-head">${icon('plus')}<b>SES</b></div>${temps.map((m) => tempRow(m, true)).join('')}${room ? tempRow(temp.make(nTemps), false) : ''}` : '';
     $('#assign-body').innerHTML = `
       <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${icon('people')}${size}/${max > 20 ? free.length : base.length + max}</span></div>
       ${extra}
@@ -1027,7 +1030,7 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
       <div class="pick">${free
         .map(
           (m) => `<button class="person ${chosen.has(m.id) ? 'active' : ''}" data-id="${m.id}">
-            ${face(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>${pw(m)}
+            ${face(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${hakenTag(m)}</small></span>${pw(m)}
           </button>`,
         )
         .join('')}${tempHtml}</div>
@@ -1088,7 +1091,9 @@ function memberRow(m, { candidate = false } = {}) {
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
-      <span class="pname">${candidate && (m.at ?? 0) > seenSnap.team ? newTag : ''}${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>
+      <span class="pname">${candidate && (m.at ?? 0) > seenSnap.team ? newTag : ''}${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${hakenTag(m)}${
+        m.haken ? `<span class="haken-left">${icon('hourglass')}<span data-left="${m.haken.until}">${dur(m.haken.until - Date.now())}</span></span>` : ''
+      }</small></span>
       ${statBars(st)}
     </button>
     ${
@@ -1105,6 +1110,17 @@ function memberRow(m, { candidate = false } = {}) {
 // 仲間（CEO・社員）や面接に来た人のくわしい画面。目的は、その職種がどんな仕事かがわかること
 // 人の詳しい画面（レジェンドはレジェンドの画面）。人選びのシートの上からも開ける
 const openProfile = (m) => (m.kind === 'legend' ? openLegend(m.legend) : openMember(m));
+// 派遣の人の契約（残り・1日の料金・更新・紹介予定派遣なら社員にする）
+function hakenInfo(m) {
+  const h = m.haken;
+  const cost = G.hireCost(S, { ...m, salary: m.wage, intro: true });
+  return `<div class="haken-info">
+    <div class="vals">${hakenTag(m)}${val('hourglass', `<span data-left="${h.until}">${dur(h.until - Date.now())}</span>`)}${val('wallet', `${yen(h.daily)}/日`)}</div>
+    <div class="sec">${icon('back', 'flip')}<b>更新</b></div>
+    <div class="seg">${R.HAKEN_DAYS.map((d) => `<button data-renew="${d}" ${S.money >= h.daily * d ? '' : 'disabled'}>${d}日<small>${yen(h.daily * d)}</small></button>`).join('')}</div>
+    ${h.intro ? `<button class="big" id="m-intro" ${S.money >= cost ? '' : 'disabled'}>${icon('people')}社員にする ${yen(cost)}</button>` : ''}
+  </div>`;
+}
 function openMember(m, candidate = false) {
   if (!m) return;
   const j = R.JOBS[m.job];
@@ -1117,8 +1133,9 @@ function openMember(m, candidate = false) {
     <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
-    ${candidate ? `<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button><button class="decline" id="m-reject">不採用</button>` : ''}
-    ${!candidate && m.kind === 'staff' ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}`;
+    ${m.haken ? hakenInfo(m) : ''}
+    ${candidate ? `${hakenTag(m) ? `<div class="vals">${hakenTag(m)}</div>` : ''}<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button><button class="decline" id="m-reject">不採用</button>` : ''}
+    ${!candidate && m.kind === 'staff' && !m.haken ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}`;
   $('#m-reject') &&
     ($('#m-reject').onclick = async () => {
       if ((await askReject(m)) && G.rejectCandidate(S, m.id, Date.now())) {
@@ -1131,6 +1148,24 @@ function openMember(m, candidate = false) {
       if (G.hire(S, m.id, Date.now())) {
         $('#detail').close();
         commit();
+      }
+    });
+  $('#detail-info')
+    .querySelectorAll('[data-renew]')
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          if (G.renewHaken(S, m.id, +b.dataset.renew, Date.now())) {
+            commit();
+            openMember(m);
+          }
+        }),
+    );
+  $('#m-intro') &&
+    ($('#m-intro').onclick = () => {
+      if (G.hireHaken(S, m.id, Date.now())) {
+        commit();
+        openMember(m);
       }
     });
   $('#m-fire') &&
@@ -1148,6 +1183,52 @@ function openMember(m, candidate = false) {
   detailStage.setCharacter(body);
   body.scale.setScalar(0.88); // CEO の頭の上の印が切れないよう少し小さく
 }
+// 派遣: 期間を決めて人を借りる（2026-10-06 ユーザー指示）。席を使い、どの仕事にも回せる。紹介予定派遣なら安く社員にできる
+function hakenRow() {
+  const min = Math.min(...Object.keys(R.JOBS).map((j) => G.hakenDaily(G.hakenPerson(S, j), false) * R.HAKEN_DAYS[0]));
+  const can = G.seatsUsed(S) < G.capacity(S) && S.money >= min;
+  return `<button class="panel ad-row haken-row" id="haken" ${can ? '' : 'disabled'}>${icon('people')}<b>派遣</b><span class="grow"></span>${val('coin', `${yen(min)}〜`, can ? 'ok' : '')}</button>`;
+}
+function openHaken() {
+  let job = Object.keys(R.JOBS)[0];
+  let days = R.HAKEN_DAYS[1];
+  let intro = false;
+  const dlg = $('#assign');
+  const draw = () => {
+    const m = G.hakenPerson(S, job);
+    const daily = G.hakenDaily(m, intro);
+    const cost = daily * days;
+    const seat = G.seatsUsed(S) < G.capacity(S);
+    $('#assign-body').innerHTML = `
+      <div class="sheet-head"><b>派遣</b><span class="muted">${val('home', `${G.seatsUsed(S)}/${G.capacity(S)}`)}</span></div>
+      <div class="pjobs">${Object.entries(R.JOBS)
+        .map(([k, j]) => `<button class="pjob ${k === job ? 'active' : ''}" data-job="${k}"><img src="assets/jobs/${k}.webp" alt=""><span>${j.name}</span></button>`)
+        .join('')}</div>
+      <div class="haken-who">${avatar(m)}<span class="pname">${esc(m.name)}<small>${jobShort(m)} Lv${m.level}</small></span>${statBars(m.stats)}</div>
+      <div class="sec">${icon('clock')}<b>期間</b></div>
+      <div class="seg">${R.HAKEN_DAYS.map((d) => `<button class="${d === days ? 'active' : ''}" data-days="${d}">${d}日</button>`).join('')}</div>
+      <div class="seg haken-kind">
+        <button class="${intro ? '' : 'active'}" data-intro="0">派遣</button>
+        <button class="${intro ? 'active' : ''}" data-intro="1">紹介予定派遣<small>${icon('coin')}+${Math.round((R.HAKEN_INTRO - 1) * 100)}%</small></button>
+      </div>
+      ${intro ? `<div class="intro-line">${icon('people')}社員に<b>${yen(G.hireCost(S, { ...m, salary: m.wage, intro: true }))}</b><s>${yen(G.hireCost(S, { ...m, salary: m.wage }))}</s></div>` : ''}
+      <div class="vals center">${val('wallet', `${yen(daily)}/日`)}</div>
+      <button class="big" id="haken-go" ${seat && S.money >= cost ? '' : 'disabled'}>${icon('coin')}${yen(cost)}</button>`;
+    fillThumbs($('#assign-body'));
+    const b = $('#assign-body');
+    b.querySelectorAll('[data-job]').forEach((x) => (x.onclick = () => ((job = x.dataset.job), draw())));
+    b.querySelectorAll('[data-days]').forEach((x) => (x.onclick = () => ((days = +x.dataset.days), draw())));
+    b.querySelectorAll('[data-intro]').forEach((x) => (x.onclick = () => ((intro = x.dataset.intro === '1'), draw())));
+    $('#haken-go').onclick = () => {
+      if (G.startHaken(S, job, days, intro, Date.now())) {
+        dlg.close();
+        commit();
+      }
+    };
+  };
+  draw();
+  dlg.showModal();
+}
 // 求人広告: お金を出すと、期限つきで面接に来る人が増える（種類と条件は openPromo で選ぶ）
 const adRow = () => promoRow('ad');
 function renderTeam() {
@@ -1158,6 +1239,7 @@ function renderTeam() {
     <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
     <div class="sec interview">${icon('people')}<b>面接</b><span class="grow"></span>${val('home', `${G.seatsUsed(S)}/${G.capacity(S)}`)}${val('clock', `<span data-left="${S.candAt + R.CANDIDATE_EVERY}">${dur(S.candAt + R.CANDIDATE_EVERY - Date.now())}</span>`)}</div>
     ${adRow()}
+    ${hakenRow()}
     <div class="list">${
       S.candidates.length
         ? S.candidates.map((c) => memberRow(c, { candidate: true })).join('')
@@ -1183,6 +1265,7 @@ function renderTeam() {
       document.querySelector('.tab[data-view="office"]').click();
     });
   $('#ad') && ($('#ad').onclick = () => openPromo('ad'));
+  $('#haken') && ($('#haken').onclick = () => openHaken());
   $('#ad-on') && ($('#ad-on').onclick = () => openPromoInfo('ad'));
   v.querySelectorAll('[data-hire]').forEach((b) => (b.onclick = () => G.hire(S, +b.dataset.hire, Date.now()) && commit()));
   v.querySelectorAll('[data-reject]').forEach(
@@ -1336,7 +1419,7 @@ function openDevRunning(devId) {
     <div class="pick">${team
       .map(
         (m) => `<div class="person active">
-          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
+          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${hakenTag(m)}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
         </div>`,
       )
       .join('')}</div>
@@ -1496,6 +1579,14 @@ function notice(html) {
         openLegend(b.dataset.legend);
       }),
   );
+  // 契約が終わった紹介予定派遣の人を押すと、仲間タブ（面接の一覧で社員にできる）
+  $('#notice-body').querySelectorAll('[data-go-team]').forEach(
+    (b) =>
+      (b.onclick = () => {
+        $('#notice').close();
+        document.querySelector('.tab[data-view="team"]').click();
+      }),
+  );
   // 完了した依頼の行を押すと、その依頼のくわしいシート
   $('#notice-body').querySelectorAll('[data-done]').forEach(
     (r) => (r.onclick = () => openDone((S.history ?? []).find((h) => h.t === +r.dataset.done))),
@@ -1547,7 +1638,7 @@ const GUIDE = [
   { sel: '.tab[data-view="work"]', text: '仕事を受ける', tap: true },
   { sel: '#view-work.active [data-offer]', text: '依頼を選ぶ', tap: true, back: 0 },
   { sel: '#assign[open] .person[data-id]', text: 'CEO に任せる', tap: true, back: 1 },
-  { sel: '#assign[open] .temp-head', text: '派遣<br>お金を払うと、仕事の間だけ<br>人を借りられる', ok: true, sheet: true, back: 1 },
+  { sel: '#assign[open] .temp-head', text: 'SES<br>お金を払うと、この仕事の間だけ<br>外の技術者が来てくれる', ok: true, sheet: true, back: 1 },
   { sel: '#assign[open] #assign-go:not([disabled])', text: 'スタート', tap: true, back: 2 },
   { sel: '#view-work.active .pr-row', text: '宣伝<br>お金を払うと<br>依頼が来やすくなる', ok: true },
   { sel: '.tab[data-view="office"]', text: '会社へ', tap: true },
@@ -1768,6 +1859,8 @@ function eventsNotice(ev) {
   if (rivals) parts.push(rivals);
   const quits = quitsHtml(ev);
   if (quits) parts.push(quits);
+  const ends = hakenEndHtml(ev);
+  if (ends) parts.push(ends);
   const done = resultsHtml(ev);
   if (done) parts.push(done);
   if (parts.length) notice(parts.join('<hr class="nsep">'));
@@ -1855,6 +1948,18 @@ function rivalsHtml(ev, { head = true } = {}) {
   return `${head ? `${icon('error', 'big-ic rival-ic')}<h2>冷やかし</h2><p class="muted small">${icon('task')}仕事中に来る</p>` : ''}<div class="results">${rows.join('')}</div>`;
 }
 
+// 契約が終わった派遣の人。紹介予定派遣の人は面接の一覧で社員にするか決められる（押すと仲間タブへ）
+function hakenEndHtml(ev, { head = true } = {}) {
+  const es = ev.filter((e) => e.type === 'hakenEnd');
+  if (!es.length) return '';
+  const rows = es.map(
+    (e) => `<button class="rival quit-row" ${e.intro ? 'data-go-team' : 'disabled'}>${avatar(e.m)}
+      <span class="rival-what"><b>${esc(e.m.name)}</b><small>${jobShort(e.m)} Lv${e.m.level}</small></span>
+      ${e.intro ? `<span class="quit-back">${icon('people')}社員に</span>` : '<span class="muted small">契約終了</span>'}
+    </button>`,
+  );
+  return `${head ? `${icon('people', 'big-ic')}<h2>契約終了</h2>` : ''}<div class="results">${rows.join('')}</div>`;
+}
 // 自分から辞めたレジェンド（呼び戻すお金も出す）
 function quitsHtml(ev, { head = true } = {}) {
   const qs = ev.filter((e) => e.type === 'quit');
@@ -1896,7 +2001,7 @@ function welcomeBack(ev, away) {
   if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '面接に来た', 'legend'));
   // 終わった仕事は1つずつ（resultsHtml の一覧だけを使う）
   const done = resultsHtml(ev, { head: false });
-  const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false });
+  const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false }) + hakenEndHtml(ev, { head: false });
   if (!rows.length && !done && !rivals) return;
   notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${breakdown}${rivals}${done}`);
 }

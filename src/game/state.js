@@ -205,6 +205,77 @@ export function makeTemp(s, offer, i) {
 }
 export const tempFee = (offer) => round(offer.reward * R.TEMP_FEE);
 
+// ---------- 派遣（期間を決めて借りる人） ----------
+// 選ぶ前に腕を見せるため、記録の乱数は使わず「何人目の派遣か」と職種で決まった人が来る
+export function hakenPerson(s, job) {
+  let x = Math.floor(hash01(s.seed, s.hakenNo ?? 0, job, 'haken') * 2 ** 31);
+  const r = () => {
+    x = (Math.imul(x, 1103515245) + 12345) & 0x7fffffff;
+    return x / 2 ** 31;
+  };
+  const j = R.JOBS[job];
+  const p = randomPerson(r);
+  const level = R.OFFICES[s.office].lv[1];
+  const stats = {};
+  for (const k of R.STAT_KEYS) stats[k] = Math.round(4 + j.w[k] * (3 + 1.5 * r()) + (level - 1) * j.w[k] * 1.1);
+  const avg = R.STAT_KEYS.reduce((a, k) => a + stats[k], 0) / 4;
+  const wage = round((2000 + avg * 350) * 1.08 ** (level - 1), 500); // 同じ腕の社員の給料
+  return { id: 0, kind: 'staff', job, name: p.name, look: { ...p.look, shirt: j.shirt }, stats, level, xp: 0, busy: null, wage };
+}
+export const hakenDaily = (m, intro) => round(m.wage * R.HAKEN_RATE * (intro ? R.HAKEN_INTRO : 1), 500);
+export function startHaken(s, job, days, intro, now) {
+  if (seatsUsed(s) >= capacity(s)) return false;
+  const m = hakenPerson(s, job);
+  const daily = hakenDaily(m, intro);
+  if (s.money < daily * days) return false;
+  s.money -= daily * days;
+  s.hakenNo = (s.hakenNo ?? 0) + 1;
+  m.id = newId(s);
+  m.haken = { until: now + days * R.DAY, intro, daily };
+  s.members.push(m);
+  addLog(s, now, `${m.name}  ${intro ? '紹介予定派遣' : '派遣'}`, 'good');
+  return true;
+}
+// 契約の更新（今の期限のあとに足す）
+export function renewHaken(s, id, days, now) {
+  const m = memberById(s, id);
+  if (!m?.haken || s.money < m.haken.daily * days) return false;
+  s.money -= m.haken.daily * days;
+  m.haken.until = Math.max(m.haken.until, now) + days * R.DAY;
+  return true;
+}
+// 紹介予定派遣の人を社員にする（期間中）
+export function hireHaken(s, id, now) {
+  const m = memberById(s, id);
+  if (!m?.haken?.intro) return false;
+  const cost = hireCost(s, { ...m, salary: m.wage, intro: true });
+  if (s.money < cost) return false;
+  s.money -= cost;
+  m.salary = m.wage;
+  delete m.wage;
+  delete m.haken;
+  addLog(s, now, `${m.name}  入社`, 'good');
+  return true;
+}
+// 期限が来た派遣の人は帰る（仕事中なら終わってから）。紹介予定派遣の人は、社員になるか返事を待つ面接の人になる
+function endHaken(s, t, ev) {
+  for (const m of s.members.filter((x) => x.haken && x.haken.until <= t && !x.busy)) {
+    s.members = s.members.filter((x) => x !== m);
+    const intro = m.haken.intro;
+    ev.push({ type: 'hakenEnd', t, intro, m: { id: m.id, kind: 'staff', name: m.name, job: m.job, look: m.look, level: m.level } });
+    addLog(s, t, `${m.name}  契約終了`);
+    if (intro) {
+      m.salary = m.wage;
+      delete m.wage;
+      delete m.haken;
+      m.intro = true;
+      m.at = t;
+      m.until = t + R.INTRO_WAIT * R.DAY;
+      s.candidates.push(m);
+    }
+  }
+}
+
 // 見込み（画面に出す）。temps は派遣の人
 export function taskPreview(s, offer, ids, temps = offer.temps ?? []) {
   const team = [...ids.map((id) => memberById(s, id)), ...temps];
@@ -299,6 +370,7 @@ function giveXp(s, team, base, t, ev) {
   const ce = companyEffects(s);
   const te = teamEffects(team);
   for (const m of team) {
+    if (m.haken) continue; // 派遣の人は育たない（よその会社の人）
     m.xp += base * (1 + ce.xpAll + te.teamXp);
     while (m.xp >= xpNeed(m.level)) {
       m.xp -= xpNeed(m.level);
@@ -458,7 +530,8 @@ function rollAd(s, t) {
   const job = pool.length ? pick(s, pool) : undefined;
   addCandidate(s, t, job);
 }
-export const hireCost = (s, m) => (round(m.salary * 5 * (1 - Math.min(0.8, companyEffects(s).hireCost))));
+// 紹介予定派遣で来ていた人は安い（給料 INTRO_HIRE 日分）
+export const hireCost = (s, m) => round(m.salary * (m.intro ? R.INTRO_HIRE : 5) * (1 - Math.min(0.8, companyEffects(s).hireCost)));
 
 export function hire(s, candId, now) {
   const m = s.candidates.find((c) => c.id === candId);
@@ -469,6 +542,7 @@ export function hire(s, candId, now) {
   s.candidates = s.candidates.filter((c) => c !== m);
   delete m.walkin;
   delete m.until;
+  delete m.intro;
   s.members.push(m);
   addLog(s, now, `${m.name}  入社`, 'good');
   return true;
@@ -476,7 +550,7 @@ export function hire(s, candId, now) {
 
 export function dismiss(s, id, now) {
   const m = memberById(s, id);
-  if (!m || m.kind !== 'staff' || m.busy) return false;
+  if (!m || m.kind !== 'staff' || m.busy || m.haken) return false;
   s.members = s.members.filter((x) => x !== m);
   addLog(s, now, `${m.name}  退社`);
   return true;
@@ -700,7 +774,7 @@ function rollRival(s, t, ev) {
   const pool = LEGENDS.filter((l) => !owned.has(l.id) && l.id !== s.encounter?.id);
   if (!pool.length) return;
   const l = pick(s, pool);
-  const free = s.members.filter((m) => m.kind === 'staff' && !m.busy);
+  const free = s.members.filter((m) => m.kind === 'staff' && !m.busy && !m.haken); // 派遣の人は引き抜かれない
   const e = { type: 'rival', id: l.id };
   if (free.length && s.members.filter((m) => m.kind === 'staff').length >= 2 && rand(s) < R.RIVAL_POACH) {
     const m = pick(s, free);
@@ -730,6 +804,7 @@ export function advance(s, now, ev = []) {
       .filter(([, x]) => x.endsAt <= next)
       .sort((a, b) => a[1].endsAt - b[1].endsAt);
     for (const [kind, x] of ending) (kind === 'task' ? finishTask : finishDev)(s, x, x.endsAt, ev);
+    endHaken(s, next, ev);
     // 製品の収入と給料
     const dt = next - s.time;
     const mid = s.time + dt / 2;
