@@ -1387,11 +1387,13 @@ function openProduct(id) {
       <div><small>流行</small><b>${trendIcon(G.trendAt(S, p.genre, now))}</b></div>
     </div>
     <div class="spark"><svg viewBox="0 0 300 80" preserveAspectRatio="none"><polygon points="0,80 ${xy} 300,80"/><polyline points="${xy}"/></svg></div>
-    ${by.length ? `<div class="by">${icon('people')}<span class="avs">${by.map((m) => avatar(m)).join('')}</span></div>` : ''}
+    ${by.length ? `<div class="by">${icon('people')}<span class="avs">${by.map((m, i) => `<button class="by-face" data-by="${i}">${avatar(m)}</button>`).join('')}</span></div>` : ''}
     <div class="sheet-btns"><button class="btn fire" id="prod-stop">販売終了</button><button class="big ghost" id="run-close">OK</button></div>`;
   fillThumbs($('#assign-body'));
   if (!dlg.open) dlg.showModal();
   $('#run-close').onclick = () => dlg.close();
+  // 作った人の顔を押すと、その人の詳しい画面（2026-10-06 ユーザー指示）
+  $('#assign-body').querySelectorAll('[data-by]').forEach((el) => (el.onclick = () => openProfile(by[+el.dataset.by])));
   $('#prod-stop').onclick = async () => {
     if (!(await ask({ head: `${prodIcon(p.genre)}<b>${esc(p.name)}</b>`, text: '販売をやめますか？', ok: '販売終了' }))) return;
     G.stopProduct(S, id);
@@ -1418,7 +1420,7 @@ function openDevRunning(devId) {
     <div class="need ${sum >= g.need ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / g.need))}"></i></span><span class="need-num"><b>${sum}</b>/${g.need}</span></div>
     <div class="pick">${team
       .map(
-        (m) => `<div class="person active">
+        (m, i) => `<div class="person active" data-prof="${i}">
           ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${hakenTag(m)}</small></span><span class="pw">${icon('bolt')}${power(m)}</span>
         </div>`,
       )
@@ -1429,6 +1431,8 @@ function openDevRunning(devId) {
     <button class="big ghost" id="run-close">OK</button>`;
   fillThumbs($('#assign-body'));
   updateTimers();
+  // 担当者を押すと、その人の詳しい画面（2026-10-06 ユーザー指示）
+  $('#assign-body').querySelectorAll('[data-prof]').forEach((el) => (el.onclick = () => openProfile(team[+el.dataset.prof])));
   if (!dlg.open) dlg.showModal();
   $('#run-close').onclick = () => dlg.close();
 }

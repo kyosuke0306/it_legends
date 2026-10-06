@@ -1017,3 +1017,7 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .haken-info .seg button { display: flex; flex-direction: column; align-items: center; }
 .haken-info .seg button small { margin: 0; }
 .haken-info .big { margin-top: 10px; }
+/* 製品を作った人の顔（押すと詳しい画面） */
+.by-face { border: 0; padding: 0; background: none; margin-left: -6px; border-radius: 50%; cursor: pointer; }
+.by-face:first-child { margin-left: 0; }
+.by .avs .by-face .av { margin-left: 0; }
