@@ -405,7 +405,7 @@ export function devPreview(s, genre, ids) {
 
 export function startDev(s, genre, ids, now) {
   const g = R.GENRES[genre];
-  if (!g || s.office < g.office || s.money < g.cost || !ids.length) return false;
+  if (!g || s.office < g.office || s.money < g.cost || !ids.length || genreCount(s, genre) >= R.PRODUCT_MAX) return false;
   if (ids.some((id) => memberById(s, id)?.busy)) return false;
   const pv = devPreview(s, genre, ids);
   s.money -= g.cost;
@@ -440,8 +440,30 @@ export function productIncome(s, p, t, ce = companyEffects(s)) {
   return g.cost * R.PRODUCT_RATE * p.q * trendAt(s, p.genre, t) * decay * (1 + ce.income + (ce.incomeGenre[p.genre] ?? 0));
 }
 
-export function stopProduct(s, id) {
-  s.products = s.products.filter((p) => p.id !== id);
+// 維持費（1時間）と、維持費を引いたもうけ（赤字ならマイナス）
+export function productUpkeep(p) {
+  return R.GENRES[p.genre].cost * R.PRODUCT_RATE * R.PRODUCT_UPKEEP;
+}
+export function productNet(s, p, t, ce = companyEffects(s)) {
+  return productIncome(s, p, t, ce) - productUpkeep(p);
+}
+// 売却したときに入るお金（今のもうけの SELL_HOURS 時間ぶん。赤字なら 0）
+export function sellPrice(s, p, t, ce = companyEffects(s)) {
+  return Math.max(0, Math.round(productNet(s, p, t, ce) * R.SELL_HOURS));
+}
+// 同じ種類の製品の数（開発中も数える）
+export function genreCount(s, genre) {
+  return s.products.filter((p) => p.genre === genre).length + s.devs.filter((d) => d.genre === genre).length;
+}
+
+export function stopProduct(s, id, t = Date.now()) {
+  const p = s.products.find((x) => x.id === id);
+  if (!p) return 0;
+  const price = sellPrice(s, p, t);
+  s.money += price;
+  s.products = s.products.filter((x) => x !== p);
+  addLog(s, t, `${p.name}  ${price ? '売却' : '販売終了'}`);
+  return price;
 }
 
 // ---------- 採用 ----------
@@ -811,7 +833,7 @@ export function advance(s, now, ev = []) {
     const ce = companyEffects(s);
     let income = 0;
     for (const p of s.products) {
-      const v = (productIncome(s, p, mid, ce) * dt) / R.HOUR;
+      const v = (productNet(s, p, mid, ce) * dt) / R.HOUR;
       p.earned += v;
       income += v;
     }

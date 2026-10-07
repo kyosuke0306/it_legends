@@ -73,6 +73,7 @@ function money(n) {
   return `${sign}${Math.round(a).toLocaleString('ja-JP')}`;
 }
 const yen = (n) => `${money(n)}円`;
+const signYen = (n) => `${n < 0 ? '-' : '+'}${yen(Math.abs(n))}`; // 増減（+1,000円 / -1,000円）
 function dur(ms) {
   const m = Math.max(0, Math.ceil(ms / 60000));
   if (m < 60) return `${m}分`;
@@ -510,7 +511,7 @@ function updateTimers() {
 // ----- 会社 -----
 function hourlyIncome() {
   const ce = G.companyEffects(S);
-  return S.products.reduce((a, p) => a + G.productIncome(S, p, Date.now(), ce), 0);
+  return S.products.reduce((a, p) => a + G.productNet(S, p, Date.now(), ce), 0);
 }
 // 次に会えそうなレジェンド（影）と、いちばん足りない条件を会社の画面の左下に出す。押すとレジェンドタブでその人を光らせる
 // 進み具合が同じなら、3Dのできている人・会いやすい人（rarity）を先に。ほかのレジェンドが条件の人は後回し
@@ -1303,10 +1304,13 @@ function renderProduct() {
     .filter(([, g]) => g.office <= S.office + 1)
     .map(([k, g]) => {
       const locked = S.office < g.office;
-      return `<button class="panel genre" data-genre="${k}" ${locked || !canStart || S.money < g.cost ? 'disabled' : ''}>
+      // 同じ種類は PRODUCT_MAX まで（開発中も数える）。持っていれば「2/3」のように出す
+      const n = G.genreCount(S, k);
+      const full = n >= R.PRODUCT_MAX;
+      return `<button class="panel genre${full ? ' full' : ''}" data-genre="${k}" ${locked || full || !canStart || S.money < g.cost ? 'disabled' : ''}>
         <span class="gname">${prodIcon(k, 'small')}<span>${locked ? icon('lock') : ''}${g.name}</span></span>
         <span class="trend">${trendIcon(G.trendAt(S, k, now))}${seeNext ? `<span class="arrow">→</span>${trendIcon(G.trendAt(S, k, next + 1))}` : ''}</span>
-        <span class="vals">${val('coin', yen(g.cost))}${val('clock', dur(g.hours * R.HOUR))}</span>
+        <span class="vals">${val('coin', yen(g.cost))}${val('clock', dur(g.hours * R.HOUR))}${n ? val('box', `${n}/${R.PRODUCT_MAX}`, full ? 'bad' : '') : ''}</span>
       </button>`;
     })
     .join('');
@@ -1320,22 +1324,24 @@ function renderProduct() {
         .join('')}</span></div>${progress(d.startAt, d.endsAt)}</button>`,
     )
     .join('');
-  // 発売した製品：アプリのアイコンのような絵・名前・出来・1時間の稼ぎ・これまでの稼ぎ（新しい順）
+  // 発売した製品：アプリのアイコンのような絵・名前・出来・1時間のもうけ（維持費を引いたもの）・これまでの稼ぎ（新しい順）
+  // 稼ぎが維持費を下回ったら赤字の札（売却・販売終了のしどき）
   const products = [...S.products]
     .reverse()
-    .map(
-      (p) => `<button class="panel prod" data-prod="${p.id}">
+    .map((p) => {
+      const net = G.productNet(S, p, now, ce);
+      return `<button class="panel prod${net < 0 ? ' red' : ''}" data-prod="${p.id}">
         ${prodIcon(p.genre)}
         <span class="prod-main"><b>${esc(p.name)}</b><small>${R.GENRES[p.genre].name}</small>${rating(p.q)}</span>
-        <span class="prod-earn"><b>+${yen(G.productIncome(S, p, now, ce))}<small>/時</small></b><small>${icon('wallet')}${yen(p.earned ?? 0)}</small></span>
-      </button>`,
-    )
+        <span class="prod-earn">${net < 0 ? '<span class="red-tag">赤字</span>' : ''}<b>${signYen(net)}<small>/時</small></b><small>${icon('wallet')}${yen(p.earned ?? 0)}</small></span>
+      </button>`;
+    })
     .join('');
   $('#view-product').innerHTML = `
     <div class="sec">${icon('clock')}<span data-left="${next}">${dur(next - Date.now())}</span></div>
     <div class="genres">${genres}</div>
     ${devs}
-    ${S.products.length ? `<div class="sec prod-head">${icon('box')}<b>自社製品</b><span class="grow"></span>${val('coin', `+${yen(hourlyIncome())}/時`, 'ok')}</div>${products}` : ''}`;
+    ${S.products.length ? `<div class="sec prod-head">${icon('box')}<b>自社製品</b><span class="grow"></span>${val('coin', `${signYen(hourlyIncome())}/時`, hourlyIncome() >= 0 ? 'ok' : 'bad')}</div>${products}` : ''}`;
   const v = $('#view-product');
   v.querySelectorAll('[data-genre]').forEach((b) => (b.onclick = () => assignDev(b.dataset.genre)));
   fillThumbs(v);
@@ -1360,7 +1366,7 @@ function assignDev(genre) {
 }
 
 // 発売した製品のくわしい画面（2026-10-04 ユーザー指示）。稼ぎ・開発費をどれだけ取り戻したか・発売からの稼ぎの移り変わり・作った人
-// 販売終了もここから（一覧の × は押し間違えやすいのでやめた）
+// 販売終了もここから（一覧の × は押し間違えやすいのでやめた）。もうけがあるうちにやめると売却でお金が入る（2026-10-07）
 function openProduct(id) {
   const p = S.products.find((x) => x.id === id);
   if (!p) return;
@@ -1372,31 +1378,39 @@ function openProduct(id) {
   const N = 60;
   const age = Math.max(1, now - p.launchedAt);
   const pts = Array.from({ length: N + 1 }, (_, i) => G.productIncome(S, p, p.launchedAt + (age * i) / N, ce));
-  const top = Math.max(...pts) || 1;
+  const upkeep = G.productUpkeep(p);
+  const top = Math.max(upkeep, ...pts) || 1;
   const xy = pts.map((v, i) => `${((i / N) * 300).toFixed(1)},${(76 - (v / top) * 70).toFixed(1)}`).join(' ');
+  const upY = (76 - (upkeep / top) * 70).toFixed(1); // 維持費の線（下回ると赤字）
+  const net = G.productNet(S, p, now, ce);
+  const price = G.sellPrice(S, p, now, ce);
   const back = (p.earned ?? 0) / g.cost; // 開発費を取り戻した割合
   const dlg = $('#assign');
   $('#assign-body').innerHTML = `
     <div class="prod-hero">${prodIcon(p.genre, 'big')}<b>${esc(p.name)}</b><small>${g.name}</small>${rating(p.q)}</div>
     <div class="facts">
-      <div><small>1時間</small><b class="ok">+${yen(G.productIncome(S, p, now, ce))}</b></div>
+      <div><small>1時間</small><b class="${net >= 0 ? 'ok' : 'bad'}">${signYen(net)}</b></div>
+      <div><small>維持費</small><b class="bad">-${yen(upkeep)}</b></div>
       <div><small>これまで</small><b>${yen(p.earned ?? 0)}</b></div>
-      <div><small>開発費</small><b>${yen(g.cost)}</b></div>
       <div><small>回収</small><b class="${back >= 1 ? 'ok' : ''}">${pct(back)}</b></div>
       <div><small>発売から</small><b>${dur(age)}</b></div>
       <div><small>流行</small><b>${trendIcon(G.trendAt(S, p.genre, now))}</b></div>
     </div>
-    <div class="spark"><svg viewBox="0 0 300 80" preserveAspectRatio="none"><polygon points="0,80 ${xy} 300,80"/><polyline points="${xy}"/></svg></div>
+    <div class="spark"><svg viewBox="0 0 300 80" preserveAspectRatio="none"><polygon points="0,80 ${xy} 300,80"/><polyline points="${xy}"/><line class="upkeep" x1="0" x2="300" y1="${upY}" y2="${upY}"/></svg></div>
     ${by.length ? `<div class="by">${icon('people')}<span class="avs">${by.map((m, i) => `<button class="by-face" data-by="${i}">${avatar(m)}</button>`).join('')}</span></div>` : ''}
-    <div class="sheet-btns"><button class="btn fire" id="prod-stop">販売終了</button><button class="big ghost" id="run-close">OK</button></div>`;
+    <div class="sheet-btns"><button class="btn ${price ? 'sell' : 'fire'}" id="prod-stop">${price ? `売却 +${yen(price)}` : '販売終了'}</button><button class="big ghost" id="run-close">OK</button></div>`;
   fillThumbs($('#assign-body'));
   if (!dlg.open) dlg.showModal();
   $('#run-close').onclick = () => dlg.close();
   // 作った人の顔を押すと、その人の詳しい画面（2026-10-06 ユーザー指示）
   $('#assign-body').querySelectorAll('[data-by]').forEach((el) => (el.onclick = () => openProfile(by[+el.dataset.by])));
   $('#prod-stop').onclick = async () => {
-    if (!(await ask({ head: `${prodIcon(p.genre)}<b>${esc(p.name)}</b>`, text: '販売をやめますか？', ok: '販売終了' }))) return;
-    G.stopProduct(S, id);
+    // 押した時点の値段で売る（確認の間に流行が変わっても、見せた値段と違わないように）
+    const ok = price
+      ? await ask({ head: `${prodIcon(p.genre)}<b>${esc(p.name)}</b>`, text: `${yen(price)}で売却しますか？`, ok: '売却', safe: true })
+      : await ask({ head: `${prodIcon(p.genre)}<b>${esc(p.name)}</b>`, text: '販売をやめますか？', ok: '販売終了' });
+    if (!ok) return;
+    G.stopProduct(S, id, now);
     dlg.close();
     commit();
   };
@@ -1414,7 +1428,7 @@ function openDevRunning(devId) {
   const p = G.devPreview(S, d.genre, team.map((m) => m.id));
   const now = Date.now();
   // 今の流行で発売したときの、はじめの1時間の稼ぎ（出来は運で 0.6〜1.4 倍に振れる）
-  const income = (q) => G.productIncome(S, { genre: d.genre, q: Math.min(3, q), launchedAt: now }, now);
+  const income = (q) => G.productNet(S, { genre: d.genre, q: Math.min(3, q), launchedAt: now }, now);
   $('#assign-body').innerHTML = `
     <div class="sheet-head"><b>${g.name}</b><span class="muted">${icon('people')}${team.length}</span></div>
     <div class="need ${sum >= g.need ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / g.need))}"></i></span><span class="need-num"><b>${sum}</b>/${g.need}</span></div>
@@ -1426,7 +1440,7 @@ function openDevRunning(devId) {
       )
       .join('')}</div>
     <div class="preview">${rating(p.quality * 0.6)}<span class="muted">〜</span>${rating(p.quality * 1.4)}${trendIcon(G.trendAt(S, d.genre, now))}</div>
-    <div class="preview">${val('coin', `+${yen(income(p.quality * 0.6))}〜${yen(income(p.quality * 1.4))}/時`)}${val('box', yen(g.cost))}</div>
+    <div class="preview">${val('coin', `${signYen(income(p.quality * 0.6))}〜${signYen(income(p.quality * 1.4))}/時`)}${val('box', yen(g.cost))}</div>
     ${progress(d.startAt, d.endsAt)}
     <button class="big ghost" id="run-close">OK</button>`;
   fillThumbs($('#assign-body'));
@@ -1908,14 +1922,14 @@ function resultsHtml(ev, { head = true } = {}) {
 function launchCard(e, alone = false) {
   const p = S.products.find((x) => x.id === e.id);
   const genre = e.genre ?? p?.genre ?? 'web';
-  const income = p ? G.productIncome(S, p, p.launchedAt) : 0;
+  const income = p ? G.productNet(S, p, p.launchedAt) : 0;
   return `<div class="launch">
     <div class="launch-art">${prodIcon(genre, 'big')}</div>
     ${alone ? '' : `<span class="launch-tag">${icon('box')}発売</span>`}
     <b class="launch-name">${esc(e.name)}</b>
     <small>${R.GENRES[genre]?.name ?? ''}</small>
     ${rating(e.q)}
-    ${income ? `<span class="launch-earn">+${yen(income)}<small>/時</small></span>` : ''}
+    ${income ? `<span class="launch-earn">${signYen(income)}<small>/時</small></span>` : ''}
   </div>`;
 }
 

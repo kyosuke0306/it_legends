@@ -181,6 +181,14 @@ export const GENRES = {
 export const PRODUCT_RATE = 0.006; // ふつうの出来なら1時間に開発費の 0.6% を稼ぐ
 export const PRODUCT_HALF_LIFE = 7 * DAY; // 収入が半分になるまでの時間
 export const TREND_PERIOD = 2 * DAY; // 流行が変わる間隔
+// 販売終了にも意味を持たせる（2026-10-07 ユーザー指示）
+// 維持費: 1時間に、ふつうの出来・流行1倍で発売したときの稼ぎの PRODUCT_UPKEEP 倍（サーバー代など）。出来・流行・レジェンドには左右されない
+// 古くなって稼ぎが維持費を下回ると赤字になる（ふつうの出来で約3週間、出来が良いほど長く持つ）
+export const PRODUCT_UPKEEP = 0.1;
+// 売却: やめるときに、今の1時間のもうけ（稼ぎ − 維持費）の SELL_HOURS 時間ぶんで売れる。赤字なら 0 円（ただやめるだけ）
+export const SELL_HOURS = 48;
+// 同じ種類の製品は、開発中も含めて同時に PRODUCT_MAX までしか持てない（種類ごとなので、後半でも Web の枠はほかの製品と取り合わない）
+export const PRODUCT_MAX = 3;
 
 export const START_MONEY = 100_000;
 export const FIRST_OFFER_HOURS = [1 / 60, 1 / 6, 0.5]; // 始めたときの依頼の時間（1分・10分・30分。2026-10-03 序盤を速く。案内で選ぶ最初の仕事はすぐ終わるように）

@@ -1021,3 +1021,11 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .by-face { border: 0; padding: 0; background: none; margin-left: -6px; border-radius: 50%; cursor: pointer; }
 .by-face:first-child { margin-left: 0; }
 .by .avs .by-face .av { margin-left: 0; }
+/* 製品の維持費・赤字・売却（2026-10-07） */
+.prod.red { border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+.prod.red .prod-earn b { color: var(--bad); }
+.red-tag { padding: 1px 7px; border-radius: 999px; font-size: 0.66rem; font-weight: 800; color: #fff; background: var(--bad); }
+.spark line.upkeep { stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+.facts b.bad, .val.bad { color: var(--bad); }
+.btn.sell { margin-left: auto; background: linear-gradient(90deg, #f5b13d, #e8873a); }
+.genre.full { opacity: 0.6; }
