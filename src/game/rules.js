@@ -189,6 +189,9 @@ export const PRODUCT_UPKEEP = 0.1;
 export const SELL_HOURS = 48;
 // 同じ種類の製品は、開発中も含めて同時に PRODUCT_MAX までしか持てない（種類ごとなので、後半でも Web の枠はほかの製品と取り合わない）
 export const PRODUCT_MAX = 3;
+// ブランド力（2026-10-07 ユーザー指示）: 大きな会社が出す製品ほどよく売れる。作れるようになった会社より1つ大きくなるごとに売上 ×BRAND_STEP
+// 安い製品ほど差が開くので、後半の Web でも売上が伸びる（自宅で作れる Web は本社ビルで約10倍、宇宙ステーションで約200倍）。維持費は増えない
+export const BRAND_STEP = 1.8;
 
 export const START_MONEY = 100_000;
 export const FIRST_OFFER_HOURS = [1 / 60, 1 / 6, 0.5]; // 始めたときの依頼の時間（1分・10分・30分。2026-10-03 序盤を速く。案内で選ぶ最初の仕事はすぐ終わるように）

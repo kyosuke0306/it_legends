@@ -1293,6 +1293,13 @@ function trendIcon(x) {
   if (x >= 0.85) return icon('flat', 't');
   return icon('down', 't down');
 }
+// ブランド力の倍率（×1.8 / ×10 / ×198）
+const brandNum = (x) => (x < 10 ? x.toFixed(1).replace(/\.0$/, '') : Math.round(x).toLocaleString('ja-JP'));
+// 種類のボタンに、ブランド力で売上が増える製品だけ倍率を出す
+function brandVal(genre) {
+  const x = G.brand(S, genre);
+  return x > 1 ? val('building', `×${brandNum(x)}`, 'ok') : '';
+}
 function renderProduct() {
   const now = Date.now();
   const ce = G.companyEffects(S);
@@ -1310,7 +1317,7 @@ function renderProduct() {
       return `<button class="panel genre${full ? ' full' : ''}" data-genre="${k}" ${locked || full || !canStart || S.money < g.cost ? 'disabled' : ''}>
         <span class="gname">${prodIcon(k, 'small')}<span>${locked ? icon('lock') : ''}${g.name}</span></span>
         <span class="trend">${trendIcon(G.trendAt(S, k, now))}${seeNext ? `<span class="arrow">→</span>${trendIcon(G.trendAt(S, k, next + 1))}` : ''}</span>
-        <span class="vals">${val('coin', yen(g.cost))}${val('clock', dur(g.hours * R.HOUR))}${n ? val('box', `${n}/${R.PRODUCT_MAX}`, full ? 'bad' : '') : ''}</span>
+        <span class="vals">${val('coin', yen(g.cost))}${val('clock', dur(g.hours * R.HOUR))}${n ? val('box', `${n}/${R.PRODUCT_MAX}`, full ? 'bad' : '') : ''}${brandVal(k)}</span>
       </button>`;
     })
     .join('');
@@ -1389,12 +1396,15 @@ function openProduct(id) {
   $('#assign-body').innerHTML = `
     <div class="prod-hero">${prodIcon(p.genre, 'big')}<b>${esc(p.name)}</b><small>${g.name}</small>${rating(p.q)}</div>
     <div class="facts">
-      <div><small>1時間</small><b class="${net >= 0 ? 'ok' : 'bad'}">${signYen(net)}</b></div>
+      <div><small>売上</small><b class="ok">+${yen(net + upkeep)}</b></div>
       <div><small>維持費</small><b class="bad">-${yen(upkeep)}</b></div>
+      <div class="net"><small>もうけ</small><b class="${net >= 0 ? 'ok' : 'bad'}">${signYen(net)}</b></div>
       <div><small>これまで</small><b>${yen(p.earned ?? 0)}</b></div>
+      <div><small>開発費</small><b>${yen(g.cost)}</b></div>
       <div><small>回収</small><b class="${back >= 1 ? 'ok' : ''}">${pct(back)}</b></div>
       <div><small>発売から</small><b>${dur(age)}</b></div>
       <div><small>流行</small><b>${trendIcon(G.trendAt(S, p.genre, now))}</b></div>
+      <div><small>ブランド</small><b>×${brandNum(G.brand(S, p.genre))}</b></div>
     </div>
     <div class="spark"><svg viewBox="0 0 300 80" preserveAspectRatio="none"><polygon points="0,80 ${xy} 300,80"/><polyline points="${xy}"/><line class="upkeep" x1="0" x2="300" y1="${upY}" y2="${upY}"/></svg></div>
     ${by.length ? `<div class="by">${icon('people')}<span class="avs">${by.map((m, i) => `<button class="by-face" data-by="${i}">${avatar(m)}</button>`).join('')}</span></div>` : ''}

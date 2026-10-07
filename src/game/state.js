@@ -433,11 +433,15 @@ function finishDev(s, dev, t, ev) {
   ev.push({ type: 'product', id: product.id, genre: dev.genre, name: product.name, q });
 }
 
+// ブランド力: 製品を作れるようになった会社より大きいほど、売上が増える
+export function brand(s, genre) {
+  return R.BRAND_STEP ** Math.max(0, s.office - R.GENRES[genre].office);
+}
 export function productIncome(s, p, t, ce = companyEffects(s)) {
   const g = R.GENRES[p.genre];
   const age = Math.max(0, t - p.launchedAt);
   const decay = 0.5 ** (age / (R.PRODUCT_HALF_LIFE * (1 + ce.decaySlow)));
-  return g.cost * R.PRODUCT_RATE * p.q * trendAt(s, p.genre, t) * decay * (1 + ce.income + (ce.incomeGenre[p.genre] ?? 0));
+  return g.cost * R.PRODUCT_RATE * p.q * trendAt(s, p.genre, t) * decay * brand(s, p.genre) * (1 + ce.income + (ce.incomeGenre[p.genre] ?? 0));
 }
 
 // 維持費（1時間）と、維持費を引いたもうけ（赤字ならマイナス）
