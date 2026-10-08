@@ -1583,7 +1583,11 @@ function openEncounter() {
       $('#detail-info').innerHTML = `${legendHead(legend)}<div class="joined">仲間になった</div><div class="ability">${esc(rule.abilityText)}</div>`;
       await showOnDetail(legend, { reveal: true });
     } else {
-      $('#detail-info').innerHTML = `${legendHead(legend, { secret: true })}<p class="scene">「まだ早いようだ」</p>`;
+      // 断られた: 3日会えない時計と、次に誘うときの確率（断られるたびに上がる）
+      const cd = S.met[e.id]?.cooldown ?? 0;
+      $('#detail-info').innerHTML = `${legendHead(legend, { secret: true })}<div class="refused">断られた</div><p class="scene">「まだ早いようだ」</p>
+        <div class="vals">${val('clock', `<span data-left="${cd}">${dur(cd - Date.now())}</span>`)}${val('target', `次 ${pct(G.scoutChance(S, e.id))}`, 'ok')}</div>`;
+      updateTimers();
     }
   };
 }
