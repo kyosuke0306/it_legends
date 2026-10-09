@@ -18,6 +18,16 @@ export const LEGENDS = [
       'プログラミング言語「Ada」の名前の由来になった',
     ],
     look: { skin: 0xf6d7c3, hairStyle: 'bun', hairColor: 0x3b2417, shirt: 0x6a4c93 },
+    // 1840 年代のロンドンの夜の客間（バベッジの機関の歯車、ろうそくの明かり）で話す
+    show: {
+      stage: 'victorian',
+      props: ['victorian'],
+      lines: [
+        { text: '解析機関は、織機が花を織るように、代数の模様を織る。', sub: 'The Analytical Engine weaves algebraical patterns just as the Jacquard loom weaves flowers and leaves.', prop: 'punchCards', anim: 'agree' },
+        { text: '想像力こそ、発見する力。', sub: 'Imagination is the Discovering Faculty, pre-eminently.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: 'この機械は、音楽さえ作れるかもしれない。', sub: 'The engine might compose elaborate and scientific pieces of music.', prop: 'notes', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'turing',
@@ -52,6 +62,16 @@ export const LEGENDS = [
       '乱数を使って計算するモンテカルロ法の発展に貢献',
     ],
     look: { skin: 0xf1cfb6, hairStyle: 'receding', hairColor: 0x2e2620, shirt: 0x4a4f5a },
+    // プリンストン高等研究所（黒板にゲーム理論とノイマン型の図、真空管の IAS マシン）で話す
+    show: {
+      stage: 'ias',
+      props: ['ias'],
+      lines: [
+        { text: '数学が簡単に思えないのは、人生がどれほど複雑か知らないからだ。', sub: 'If people do not believe that mathematics is simple, it is only because they do not realize how complicated life is.', anim: 'agree' },
+        { text: '数学は理解するものではない。慣れるものだ。', sub: 'In mathematics you don\'t understand things. You just get used to them.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: '現実の人生は、はったりでできている。', sub: 'Real life consists of bluffing.', prop: 'cards', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'hopper',
@@ -69,6 +89,16 @@ export const LEGENDS = [
       'コンピュータに挟まった蛾の記録で「バグ」という言葉を有名にした',
     ],
     look: { skin: 0xf4d6c6, hairStyle: 'short', hairColor: 0xd9d9d9, shirt: 0x1f2d4d },
+    // ハーバード大学の Mark II の部屋（壁に「最初のバグ」の蛾を貼った記録）で話す
+    show: {
+      stage: 'harvard',
+      props: ['harvard'],
+      lines: [
+        { text: '許可をもらうより、あとで謝る方が簡単。', sub: 'It\'s easier to ask forgiveness than it is to get permission.', anim: 'agree' },
+        { text: 'いちばん危ない言葉は「ずっとこうしてきた」。', sub: 'The most dangerous phrase is "We\'ve always done it this way."', anim: 'fold_arms', animFrom: 1.5 },
+        { text: 'これが1ナノ秒。光が進む長さです。', sub: 'This is a nanosecond.', prop: 'nanosecond', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'hamilton',
@@ -86,6 +116,16 @@ export const LEGENDS = [
       'アメリカ大統領自由勲章を受章（2016年）',
     ],
     look: { skin: 0xf6d9c4, hairStyle: 'long', hairColor: 0x5a3b22, shirt: 0xc9a227, glasses: true },
+    // 1969 年の MIT の研究室（窓の外に月、背の高さほどのプログラムの紙の山、NASA のマーク）で話す
+    show: {
+      stage: 'apollo',
+      props: ['apollo'],
+      lines: [
+        { text: '先駆者になるしかなかった。', sub: 'There was no choice but to be pioneers.', anim: 'agree' },
+        { text: '警報が鳴っても、止まらないソフトを。', sub: 'Program alarm 1202, and the software kept going.', prop: 'eagle', anim: 'fold_arms', animFrom: 1.5 },
+        { text: '振り返れば、私たちは世界一幸運だった。', sub: 'Looking back, we were the luckiest people in the world.', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'ritchie',
@@ -103,6 +143,16 @@ export const LEGENDS = [
       'チューリング賞を受賞（1983年）',
     ],
     look: { skin: 0xf0cdb4, hairStyle: 'short', hairColor: 0x2b2118, shirt: 0x7a5c3e, beard: true, glasses: true },
+    // ベル研究所の夜（PDP-11 と UNIX の図）で話す
+    show: {
+      stage: 'bell',
+      props: ['bell'],
+      lines: [
+        { text: 'UNIXは単純だ。ただ、その単純さを分かるには天才がいる。', sub: 'UNIX is very simple, it just needs a genius to understand its simplicity.', anim: 'agree' },
+        { text: '新しい言語は、その言語で書いて覚える。', sub: 'The only way to learn a new programming language is by writing programs in it.', prop: 'helloC', anim: 'fold_arms', animFrom: 1.5 },
+        { text: 'Cはくせがあり、欠点もある。そして大成功した。', sub: 'C is quirky, flawed, and an enormous success.', prop: 'krBook', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'bernerslee',
@@ -120,6 +170,16 @@ export const LEGENDS = [
       'Webの標準を決める団体W3Cを創設（1994年）',
     ],
     look: { skin: 0xf5d5c0, hairStyle: 'receding', hairColor: 0x9c8466, shirt: 0x3d6fb6 },
+    // CERN の 1990 年の事務所（窓の外にジュラの山、壁で光る WWW のマーク）で話す
+    show: {
+      stage: 'cern',
+      props: ['cern'],
+      lines: [
+        { text: 'Webは、みんなのためのもの。', sub: 'This is for everyone.', anim: 'agree' },
+        { text: 'Webは、技術より人のつながりから生まれた。', sub: 'The Web is more a social creation than a technical one.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: 'このマシンはサーバー。電源を切らないで！', sub: 'This machine is a server. DO NOT POWER IT DOWN!!', prop: 'nextCube', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'torvalds',
@@ -137,6 +197,16 @@ export const LEGENDS = [
       'バージョン管理システムGitを開発（2005年）',
     ],
     look: { skin: 0xf6d8c5, hairStyle: 'receding', hairColor: 0xa08058, shirt: 0x2f6e8f, glasses: true },
+    // ヘルシンキの冬の夜の学生部屋（雪の窓、壁に Linux のペンギン）で話す
+    show: {
+      stage: 'helsinki',
+      props: ['helsinki'],
+      lines: [
+        { text: '口で言うのは簡単。コードを見せて。', sub: 'Talk is cheap. Show me the code.', anim: 'fold_arms' },
+        { text: 'ただの趣味。大きなものにはならないよ。', sub: 'Just a hobby, won\'t be big and professional.', prop: 'linuxTerm', anim: 'agree' },
+        { text: 'いいプログラマーは、楽しいから書く。', sub: 'Most good programmers do programming because it is fun to program.', prop: 'gitTree', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'jobs',

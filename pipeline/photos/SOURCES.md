@@ -24,3 +24,7 @@
 - assets/nvidia-logo.svg: https://commons.wikimedia.org/wiki/File:NVIDIA_logo.svg （黒い字を白にして使う）
 - assets/softbank-logo.svg: https://commons.wikimedia.org/wiki/File:SoftBank_logo.svg
 - assets/openai-logo.svg: https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg
+- assets/nasa-logo.svg: https://commons.wikimedia.org/wiki/File:NASA_logo.svg
+- assets/www-logo.svg: https://commons.wikimedia.org/wiki/File:WWW_logo_by_Robert_Cailliau.svg
+- assets/tux.svg: https://commons.wikimedia.org/wiki/File:Tux.svg （Larry Ewing 作の Linux のペンギン）
+- assets/git-logo.svg: https://commons.wikimedia.org/wiki/File:Git-logo.svg

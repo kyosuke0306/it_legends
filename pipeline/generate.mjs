@@ -69,13 +69,16 @@ for (const legend of targets) {
       console.log(`[${legend.id}] Tripo で3Dモデルを生成（数分かかります）`);
       const token = await tripoUpload(chibiPath);
       // 高品質テクスチャ（+10クレジット）で Gemini 画像の質感に近づけ、PBR(金属・反射)は付けずテカリを防ぐ
-      task = await tripoRun({
-        type: 'image_to_model',
-        file: { type: 'png', file_token: token },
-        texture_quality: 'detailed',
-        pbr: false,
-      });
-      await fs.writeFile(taskPath, JSON.stringify({ task_id: task.task_id }) + '\n');
+      // タスクIDは作った直後に残す（待っている間に通信が切れても、次に実行したとき作り直さず使える）
+      task = await tripoRun(
+        {
+          type: 'image_to_model',
+          file: { type: 'png', file_token: token },
+          texture_quality: 'detailed',
+          pbr: false,
+        },
+        (taskId) => fs.writeFile(taskPath, JSON.stringify({ task_id: taskId }) + '\n'),
+      );
     }
     let url = task.output.pbr_model || task.output.model;
 
@@ -190,7 +193,7 @@ async function tripoReuse(taskPath) {
   return s.data?.status === 'success' ? s.data : null;
 }
 
-async function tripoRun(body) {
+async function tripoRun(body, onCreate) {
   const res = await fetch(`${TRIPO}/task`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${TRIPO_KEY}`, 'Content-Type': 'application/json' },
@@ -199,9 +202,14 @@ async function tripoRun(body) {
   const json = await res.json();
   if (json.code !== 0) throw new Error(`Tripo task(${body.type}): ${json.message || res.status}`);
   const id = json.data.task_id;
+  await onCreate?.(id);
   for (;;) {
     await new Promise((r) => setTimeout(r, 5000));
-    const s = await (await fetch(`${TRIPO}/task/${id}`, { headers: { Authorization: `Bearer ${TRIPO_KEY}` } })).json();
+    // 様子を聞くときの一時的な通信の失敗（HTML のエラーページなど）は、待ってから聞き直す
+    const s = await fetch(`${TRIPO}/task/${id}`, { headers: { Authorization: `Bearer ${TRIPO_KEY}` } })
+      .then((r) => r.json())
+      .catch(() => null);
+    if (!s) continue;
     const st = s.data?.status;
     process.stdout.write(`  ${body.type}: ${st} ${s.data?.progress ?? ''}%\r`);
     if (st === 'success') {

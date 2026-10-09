@@ -136,15 +136,32 @@ async function cachedTask(name, label, body) {
   }
 }
 
+// 一時的な通信の失敗（HTML のエラーページなど）は、少し待って聞き直す
 async function getTask(taskId) {
-  const res = await fetch(`${TRIPO}/task/${taskId}`, { headers: { Authorization: `Bearer ${KEY}` } });
-  return (await res.json()).data;
+  for (let i = 0; ; i++) {
+    try {
+      const res = await fetch(`${TRIPO}/task/${taskId}`, { headers: { Authorization: `Bearer ${KEY}` } });
+      return (await res.json()).data;
+    } catch (e) {
+      if (i >= 20) throw e;
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+  }
 }
 
+// 途中で切れたら、少し待って取り直す
 async function download(url, file) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`ダウンロードに失敗 (${res.status})`);
-  await fs.writeFile(file, Buffer.from(await res.arrayBuffer()));
+  for (let i = 0; ; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`ダウンロードに失敗 (${res.status})`);
+      await fs.writeFile(file, Buffer.from(await res.arrayBuffer()));
+      return;
+    } catch (e) {
+      if (i >= 4) throw e;
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+  }
 }
 
 async function loadDotEnv() {

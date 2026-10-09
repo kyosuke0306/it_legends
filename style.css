@@ -581,6 +581,19 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .stage-gtc .loading { color: #c9cbd3; }
 .stage-wrap.stage-softbank { background: #a89c84; }
 .stage-wrap.stage-openai { background: #a88d6c; }
+.stage-wrap.stage-victorian { background: #23342c; }
+.stage-victorian .loading { color: #c9cbd3; }
+.stage-wrap.stage-ias { background: #2a221a; }
+.stage-ias .loading { color: #c9cbd3; }
+.stage-wrap.stage-apollo { background: #232a35; }
+.stage-apollo .loading { color: #c9cbd3; }
+.stage-wrap.stage-bell { background: #1b221d; }
+.stage-bell .loading { color: #c9cbd3; }
+.stage-wrap.stage-cern { background: #3e4448; }
+.stage-cern .loading { color: #c9cbd3; }
+.stage-wrap.stage-helsinki { background: #1d1b24; }
+.stage-helsinki .loading { color: #c9cbd3; }
+.stage-wrap.stage-harvard { background: #c9c4b4; }
 .spinner {
   width: 32px;
   height: 32px;
