@@ -144,7 +144,10 @@ export const freeMembers = (s) => s.members.filter((m) => !m.busy);
 // 席の数。いちばん上の会社のあとは増築したぶん増える
 export const capacity = (s) => R.OFFICES[s.office].cap + (s.floors ?? 0) * R.FLOOR_CAP;
 // 席を使う人数（偉人は特別な席なので数えない。せっかくの出会いを席不足で逃さないように）
-export const seatsUsed = (s) => s.members.filter((m) => m.kind !== 'legend').length;
+// レジェンドも席を使う（2026-10-09 ユーザー指示。社員はレジェンドがそろうまでの補い）。
+// 前の記録で席より多くいるときは誰も外さず、空くまで雇う・誘う・呼び戻すができないだけ
+export const seatsUsed = (s) => s.members.length;
+export const hasSeat = (s) => seatsUsed(s) < capacity(s);
 
 // ---------- 依頼（受託の仕事） ----------
 // easy: 最初の仕事の時間（時間。0 や false ならふつうの仕事）
@@ -665,7 +668,7 @@ export function scoutChance(s, id) {
 // 口説く。結果 'joined' | 'refused' | null
 export function scout(s, now) {
   const e = s.encounter;
-  if (!e || e.until <= now) return null;
+  if (!e || e.until <= now || !hasSeat(s)) return null;
   const id = e.id;
   const met = (s.met[id] = { ...s.met[id] });
   const ok = rand(s) < scoutChance(s, id);
@@ -784,7 +787,7 @@ export const rehireCost = (s) => round(R.TIERS[Math.min(s.office, R.TIERS.length
 export function rehire(s, id, now) {
   const m = leftLegend(s, id);
   const cost = rehireCost(s);
-  if (!m || s.money < cost) return false;
+  if (!m || s.money < cost || !hasSeat(s)) return false;
   s.money -= cost;
   s.members.push({ ...m, busy: null, joinedAt: now });
   delete s.met[id].left;

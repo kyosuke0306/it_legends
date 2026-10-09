@@ -1546,8 +1546,12 @@ function openLegend(id) {
   $('#detail-info').innerHTML = `${legendHead(legend)}
     <div class="ability">${esc(R.LEGEND_RULES[id].abilityText)}</div>
     ${m ? `<div class="lvrow">Lv${m.level} ${statBars(G.statsOf(S, m))}</div>` : ''}
-    ${left ? `<p class="scene">${esc(R.LEGEND_RULES[id].quitText)}</p><button class="big" id="rehire" ${S.money >= cost ? '' : 'disabled'}>呼び戻す <small>${icon('coin')}${yen(cost)}</small></button>` : ''}
+    ${left ? `<p class="scene">${esc(R.LEGEND_RULES[id].quitText)}</p><button class="big" id="rehire" ${S.money >= cost && G.hasSeat(S) ? '' : 'disabled'}>呼び戻す <small>${icon('coin')}${yen(cost)}</small></button>${seatFull()}` : ''}
     <details><summary>くわしく</summary><p>${legend.summary}</p></details>`;
+  $('#seat-full') && ($('#seat-full').onclick = () => {
+    $('#detail').close();
+    document.querySelector('.tab[data-view="team"]').click();
+  });
   $('#rehire') &&
     ($('#rehire').onclick = () => {
       if (!G.rehire(S, id, Date.now())) return;
@@ -1557,6 +1561,9 @@ function openLegend(id) {
   $('#detail').showModal();
   showOnDetail(legend);
 }
+
+// 席がいっぱいのとき（レジェンドも席を使う）。押すと仲間タブへ
+const seatFull = () => (G.hasSeat(S) ? '' : `<button class="seat-full" id="seat-full">${icon('people')}席がいっぱい <b>${G.seatsUsed(S)}/${G.capacity(S)}</b>${icon('back', 'flip')}</button>`);
 
 function openEncounter() {
   const e = S.encounter;
@@ -1569,8 +1576,12 @@ function openEncounter() {
     <p class="scene">${esc(rule.scene)}</p>
     <div class="ability">${esc(rule.abilityText)}</div>
     <div class="vals">${val('target', pct(G.scoutChance(S, e.id)))}${val('clock', `<span data-left="${e.until}">${dur(e.until - Date.now())}</span>`)}</div>
-    <button class="big" id="scout">仲間に誘う</button>`;
+    <button class="big" id="scout" ${G.hasSeat(S) ? '' : 'disabled'}>仲間に誘う</button>${seatFull()}`;
   updateTimers();
+  $('#seat-full') && ($('#seat-full').onclick = () => {
+    $('#detail').close();
+    document.querySelector('.tab[data-view="team"]').click();
+  });
   $('#detail').showModal();
   // まだ姿はシルエットだけ
   const wrap = $('#detail-canvas').parentElement;
