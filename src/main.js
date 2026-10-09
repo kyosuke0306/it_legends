@@ -244,7 +244,7 @@ async function titleLegends() {
   if (!box) return;
   let ids = [];
   try {
-    ids = await (await fetch('models/manifest.json')).json();
+    ids = await (await fetch(`models/manifest.json?${VERSION}`)).json();
   } catch {}
   modelIds = new Set(ids);
   const owned = new Set((S ?? loadLocal())?.members.filter((m) => m.kind === 'legend').map((m) => m.legend) ?? []);

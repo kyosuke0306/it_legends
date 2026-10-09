@@ -2,14 +2,16 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import { VERSION } from './version.js';
 
 // GLB は pipeline/optimize.mjs で meshopt 圧縮しているので、その展開器を設定する
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 let manifestPromise;
 
 // models/manifest.json に載っている偉人だけ GLB を読みにいく（404を出さないため）
+// 一覧はバージョンごとに取り直す（前の一覧をブラウザが使い続けると、できたばかりの 3D が仮の体のままになる）
 function loadManifest() {
-  manifestPromise ??= fetch('models/manifest.json')
+  manifestPromise ??= fetch(`models/manifest.json?${VERSION}`)
     .then((r) => (r.ok ? r.json() : []))
     .catch(() => []);
   return manifestPromise;
