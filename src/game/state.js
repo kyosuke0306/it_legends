@@ -848,6 +848,18 @@ function makeRoom(s, fireId, now) {
   return dismiss(s, fireId, now) && hasSeat(s);
 }
 
+// ---------- 評判が下がる出来事（不具合・個人情報流出・デマ・不祥事など） ----------
+function rollRepHit(s, t, ev) {
+  if (t - s.createdAt < R.RIVAL_GRACE || s.rep < R.REP_HIT_MIN) return;
+  if (rand(s) >= 1 / (R.REP_HIT_DAYS * 24)) return;
+  const pool = R.REP_HITS.filter((h) => h.need !== 'product' || s.products.length);
+  const h = pick(s, pool);
+  const rep = Math.max(1, Math.round((s.rep * between(s, ...h.pct)) / 100));
+  s.rep -= rep;
+  addLog(s, t, `${h.title}  評判 -${rep}`, 'bad');
+  ev.push({ type: 'repHit', t, title: h.title, rep });
+}
+
 // ---------- 冷やかし（まだ仲間でないレジェンドがライバルとして来る） ----------
 function rollRival(s, t, ev) {
   if (!s.tasks.length && !s.devs.length) return; // 仕事中だけ
@@ -929,6 +941,7 @@ export function advance(s, now, ev = []) {
       rollRival(s, next, ev);
       rollQuit(s, next, ev);
       rollPoach(s, next, ev);
+      rollRepHit(s, next, ev);
       rollWalkin(s, next, ev);
       rollAd(s, next);
     }

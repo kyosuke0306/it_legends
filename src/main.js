@@ -1957,6 +1957,8 @@ function eventsNotice(ev) {
   if (ends) parts.push(ends);
   const leaves = staffQuitHtml(ev);
   if (leaves) parts.push(leaves);
+  const hits = repHitHtml(ev);
+  if (hits) parts.push(hits);
   const done = resultsHtml(ev);
   if (done) parts.push(done);
   if (parts.length) notice(parts.join('<hr class="nsep">'));
@@ -2056,6 +2058,13 @@ function hakenEndHtml(ev, { head = true } = {}) {
   );
   return `${head ? `${icon('people', 'big-ic')}<h2>契約終了</h2>` : ''}<div class="results">${rows.join('')}</div>`;
 }
+// 評判が下がった出来事（不具合・個人情報流出・デマなど）
+function repHitHtml(ev, { head = true } = {}) {
+  const es = ev.filter((e) => e.type === 'repHit');
+  if (!es.length) return '';
+  const rows = es.map((e) => `<div class="result bad">${icon('error')}<b>${esc(e.title)}</b><span class="vals">${val('star', `-${e.rep}`, 'bad')}</span></div>`);
+  return `${head ? `${icon('star', 'big-ic rival-ic')}<h2>評判ダウン</h2>` : ''}<div class="results">${rows.join('')}</div>`;
+}
 // 疲れて辞めた・ほかの会社に引き抜かれた社員
 function staffQuitHtml(ev, { head = true } = {}) {
   const es = ev.filter((e) => e.type === 'staffQuit');
@@ -2110,7 +2119,7 @@ function welcomeBack(ev, away) {
   if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '面接に来た', 'legend'));
   // 終わった仕事は1つずつ（resultsHtml の一覧だけを使う）
   const done = resultsHtml(ev, { head: false });
-  const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false }) + hakenEndHtml(ev, { head: false }) + staffQuitHtml(ev, { head: false });
+  const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false }) + hakenEndHtml(ev, { head: false }) + staffQuitHtml(ev, { head: false }) + repHitHtml(ev, { head: false });
   if (!rows.length && !done && !rivals) return;
   notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${breakdown}${rivals}${done}`);
 }

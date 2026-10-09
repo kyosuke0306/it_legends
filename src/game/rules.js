@@ -289,6 +289,18 @@ export const TIRED_WARN = 70;
 // 引き抜き: Lv POACH_LV 以上の社員がいると、会社全体で平均 POACH_DAYS 日に1回。レベルの高い人ほど狙われる
 export const POACH_LV = 5;
 export const POACH_DAYS = 7;
+// 評判が下がる出来事（2026-10-09 ユーザー指示「不祥事・デマ・不具合・個人情報流出などで、たまに評判を落とす」）
+// 評判が REP_HIT_MIN 以上で、平均 REP_HIT_DAYS 日に1回。pct は今の評判の何%下がるか。need: 'product' は製品があるときだけ
+export const REP_HIT_DAYS = 6;
+export const REP_HIT_MIN = 50;
+export const REP_HITS = [
+  { title: '納品したシステムに不具合', pct: [3, 6] },
+  { title: '個人情報流出', pct: [8, 14] },
+  { title: 'SNS でデマが広まった', pct: [2, 5] },
+  { title: '社員の不祥事が報道された', pct: [4, 8] },
+  { title: '自社サービスが半日止まった', pct: [3, 7], need: 'product' },
+  { title: '口コミサイトで炎上', pct: [2, 6] },
+];
 export const LEGEND_SETTLE = 7 * DAY; // 仲間になって（戻って）しばらくは辞めない
 // お金を減らされるとき。amount は今の会社の仕事1時間ぶんの報酬の何倍か
 export const RIVAL_HITS = [
