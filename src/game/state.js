@@ -148,6 +148,8 @@ export const capacity = (s) => R.OFFICES[s.office].cap + (s.floors ?? 0) * R.FLO
 // 前の記録で席より多くいるときは誰も外さず、空くまで雇う・誘う・呼び戻すができないだけ
 export const seatsUsed = (s) => s.members.length;
 export const hasSeat = (s) => seatsUsed(s) < capacity(s);
+// あと1人入れられるか（席が空いているか、ちょうど満席で fireId の人を FIRE すれば空くか）
+export const roomFor = (s, fireId) => hasSeat(s) || (seatsUsed(s) === capacity(s) && fireable(s).some((m) => m.id === fireId));
 
 // ---------- 依頼（受託の仕事） ----------
 // easy: 最初の仕事の時間（時間。0 や false ならふつうの仕事）
@@ -355,6 +357,7 @@ function finishTask(s, task, t, ev) {
   giveXp(s, team, xp, t, ev);
   for (const m of team) m.busy = null;
   s.tasks = s.tasks.filter((x) => x !== task);
+  tiredQuit(s, team, t, ev);
   addLog(s, t, ok ? `${task.title}  成功` : `${task.title}  失敗`, ok ? 'good' : 'bad');
   ev.push({ type: 'task', t, ok, money, rep, great: ok && pv.great, early: ok && early, title: task.title });
   // これまでの仕事（仕事タブの「実績」で見る）。新しい順に最大 HISTORY_MAX 件
@@ -436,6 +439,7 @@ function finishDev(s, dev, t, ev) {
   s.devs = s.devs.filter((x) => x !== dev);
   addLog(s, t, `${product.name}  発売`, 'good');
   ev.push({ type: 'product', id: product.id, genre: dev.genre, name: product.name, q });
+  tiredQuit(s, team, t, ev);
 }
 
 // ブランド力: 製品を作れるようになった会社より大きいほど、売上が増える
@@ -666,14 +670,17 @@ export function scoutChance(s, id) {
 }
 
 // 口説く。結果 'joined' | 'refused' | null
-export function scout(s, now) {
+// 席がいっぱいのときは fireId（FIRE する社員）を渡す。仲間になったときだけ FIRE する（断られたら誰も辞めない）
+export function scout(s, now, fireId = null) {
   const e = s.encounter;
-  if (!e || e.until <= now || !hasSeat(s)) return null;
+  if (!e || e.until <= now) return null;
+  if (!roomFor(s, fireId)) return null;
   const id = e.id;
   const met = (s.met[id] = { ...s.met[id] });
   const ok = rand(s) < scoutChance(s, id);
   s.encounter = null;
   if (ok) {
+    makeRoom(s, fireId, now);
     // 前に辞めたレジェンドなら、そのときのレベルのまま戻ってくる
     s.members.push(met.left ? { ...met.left, busy: null, joinedAt: now } : makeLegend(s, id, now));
     delete met.left;
@@ -784,16 +791,61 @@ function rollQuit(s, t, ev) {
 export const leftLegend = (s, id) => s.met[id]?.left ?? null;
 export const rehireCost = (s) => round(R.TIERS[Math.min(s.office, R.TIERS.length - 1)].rate * R.REHIRE_HOURS, 10000);
 // 高いお金を払って呼び戻す
-export function rehire(s, id, now) {
+export function rehire(s, id, now, fireId = null) {
   const m = leftLegend(s, id);
   const cost = rehireCost(s);
-  if (!m || s.money < cost || !hasSeat(s)) return false;
+  if (!m || s.money < cost || !roomFor(s, fireId)) return false;
+  makeRoom(s, fireId, now);
   s.money -= cost;
   s.members.push({ ...m, busy: null, joinedAt: now });
   delete s.met[id].left;
   if (s.encounter?.id === id) s.encounter = null;
   addLog(s, now, `${m.name}  復帰`, 'legend');
   return true;
+}
+
+// ---------- 社員の疲れ・退職・引き抜き（2026-10-09） ----------
+// 疲れるのは社員だけ（CEO・レジェンド・派遣の人は疲れない）
+export const canTire = (m) => m?.kind === 'staff' && !m.haken;
+export const isTired = (m) => canTire(m) && (m.tired ?? 0) >= R.TIRED_WARN;
+function addTired(s, dt) {
+  const h = dt / R.HOUR;
+  for (const m of s.members) {
+    if (!canTire(m)) continue;
+    const up = !m.busy ? -R.TIRED_REST : s.devs.some((d) => d.id === m.busy) ? R.TIRED_DEV : R.TIRED_WORK;
+    m.tired = Math.min(100, Math.max(0, (m.tired ?? 0) + up * h));
+  }
+}
+// 辞めた人の姿（お知らせに顔を出すため）
+const leaver = (m) => ({ id: m.id, kind: 'staff', name: m.name, job: m.job, look: m.look, level: m.level });
+// 疲れたまま仕事・開発を終えると、嫌になって辞めることがある
+function tiredQuit(s, team, t, ev) {
+  for (const m of team) {
+    if (!isTired(m) || m.busy || rand(s) >= (m.tired - 60) / 200) continue;
+    s.members = s.members.filter((x) => x !== m);
+    addLog(s, t, `${m.name}  退職`, 'bad');
+    ev.push({ type: 'staffQuit', why: 'tired', t, m: leaver(m) });
+  }
+}
+// ほかの会社からの引き抜き。レベルの高い人ほど狙われる（最後の1人は取られない）
+function rollPoach(s, t, ev) {
+  if (t - s.createdAt < R.RIVAL_GRACE) return;
+  const staff = s.members.filter(canTire);
+  const pool = staff.filter((m) => !m.busy && m.level >= R.POACH_LV);
+  if (staff.length < 2 || !pool.length || rand(s) >= 1 / (R.POACH_DAYS * 24)) return;
+  let r = rand(s) * pool.reduce((a, m) => a + m.level, 0);
+  const m = pool.find((x) => (r -= x.level) < 0) ?? pool[0];
+  s.members = s.members.filter((x) => x !== m);
+  addLog(s, t, `${m.name}  引き抜かれた`, 'bad');
+  ev.push({ type: 'staffQuit', why: 'poach', t, m: leaver(m) });
+}
+// 席がいっぱいのとき、レジェンドの代わりに FIRE できる人（手の空いた社員。派遣の人は除く）
+export const fireable = (s) => s.members.filter((m) => m.kind === 'staff' && !m.busy && !m.haken);
+// 席を空ける。fireId の人を FIRE する（席が空いていれば何もしない）。できなければ false
+function makeRoom(s, fireId, now) {
+  if (hasSeat(s)) return true;
+  if (!fireable(s).some((m) => m.id === fireId)) return false;
+  return dismiss(s, fireId, now) && hasSeat(s);
 }
 
 // ---------- 冷やかし（まだ仲間でないレジェンドがライバルとして来る） ----------
@@ -848,6 +900,7 @@ export function advance(s, now, ev = []) {
     }
     const salary = (s.members.reduce((a, m) => a + (m.salary ?? 0), 0) * dt) / R.DAY;
     s.money += income - salary;
+    addTired(s, dt);
     ev.income = (ev.income ?? 0) + income;
     ev.salary = (ev.salary ?? 0) + salary;
     // 依頼が届く・期限切れ
@@ -875,6 +928,7 @@ export function advance(s, now, ev = []) {
       rollWalkOffer(s, next);
       rollRival(s, next, ev);
       rollQuit(s, next, ev);
+      rollPoach(s, next, ev);
       rollWalkin(s, next, ev);
       rollAd(s, next);
     }

@@ -6,7 +6,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildChibi, createCharacter, animateCharacter } from './character.js';
 import { byId as LEGEND_BY_ID } from './data.js';
 import { OFFICES, JOBS } from './game/rules.js';
-import { displayName, workOf, capacity } from './game/state.js';
+import { displayName, workOf, capacity, isTired } from './game/state.js';
 import { buildPerson } from './outfits.js';
 import { themeOf, LIGHT, makeDesk, decorate, windowMaterial } from './office-decor.js';
 
@@ -125,6 +125,7 @@ export class Office {
       p.lk = lk;
       p.busy = Boolean(m.busy);
       p.hero = m.kind === 'hero';
+      p.tired = isTired(m); // 疲れた社員は頭の横に汗
       p.canSit = m.kind === 'staff'; // 社員は手が空くとクッションに座ってノートPCで働く（レジェンドは座る動きがないので立ったまま）
       // 仕事中なら仕事の名前も出す。who / busy は札を押したときに詳しい画面を開くため（main.js の onPerson / onWork）
       p.label = { ...labelOf(m), work: workOf(state, m)?.title ?? '', who: m, busy: m.busy };
@@ -497,6 +498,24 @@ export class Office {
     return true;
   }
 
+  // 疲れた社員の頭の横に、青い汗のしずく
+  sweat(p, t) {
+    if (p.tired && !p.drop) {
+      const m = new THREE.MeshBasicMaterial({ color: 0x7fd3ff });
+      const g = new THREE.Group();
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), m);
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.059, 0.1, 12), m);
+      tip.position.y = 0.07;
+      g.add(ball, tip);
+      p.holder.add(g);
+      p.drop = g;
+    }
+    if (p.drop) {
+      p.drop.visible = p.tired && !!p.obj;
+      p.drop.position.set(0.3, 1.0 - ((t * 0.6) % 1) * 0.12, 0.05);
+    }
+  }
+
   loop() {
     requestAnimationFrame(this.loop);
     const dt = Math.min(this.clock.getDelta(), 0.1);
@@ -506,6 +525,7 @@ export class Office {
     for (const l of this.blink) l.visible = Math.sin(t * 4 + l.userData.phase * 3) > -0.4;
     for (const p of this.people.values()) {
       this.step(p, t, dt);
+      this.sweat(p, t);
       const mark = p.obj?.userData.ceoMark;
       if (mark) {
         mark.rotation.y = t * 1.5;

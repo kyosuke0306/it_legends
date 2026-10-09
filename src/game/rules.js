@@ -278,6 +278,17 @@ export const RIVAL_PER_HOUR = 1 / 96; // 仕事をし続けて平均4日に1回�
 export const RIVAL_POACH = 0.25; // 社員を引き抜かれる確率（社員が2人以上いて、手の空いている社員がいるとき。最後の1人は取られない）
 export const RIVAL_STAY = 20 * 60_000;
 export const RIVAL_GRACE = 3 * DAY; // 始めてからしばらくは冷やかしに来ない（最初から取られると理不尽に感じるため。2026-10-03）
+// 社員の疲れと退職・引き抜き（2026-10-09 ユーザー指示。CEO・レジェンド・派遣は対象外）
+// 疲れ（0〜100）は仕事中に1時間 TIRED_WORK（製品の開発は TIRED_DEV）たまり、手が空くと TIRED_REST 減る
+// 1日16時間働いて8時間休むくらいなら、たまらない。TIRED_WARN を超えると顔に印が出て、
+// その状態で仕事・開発を終えると (疲れ - 60) / 200 の確率で退職する（70 で 5%、100 で 20%）
+export const TIRED_WORK = 2;
+export const TIRED_DEV = 1;
+export const TIRED_REST = 4;
+export const TIRED_WARN = 70;
+// 引き抜き: Lv POACH_LV 以上の社員がいると、会社全体で平均 POACH_DAYS 日に1回。レベルの高い人ほど狙われる
+export const POACH_LV = 5;
+export const POACH_DAYS = 7;
 export const LEGEND_SETTLE = 7 * DAY; // 仲間になって（戻って）しばらくは辞めない
 // お金を減らされるとき。amount は今の会社の仕事1時間ぶんの報酬の何倍か
 export const RIVAL_HITS = [

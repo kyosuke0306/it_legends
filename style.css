@@ -1035,3 +1035,26 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .seat-full { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 8px; padding: 10px; border: 1px solid #ff6b6b55; border-radius: 12px; background: #ff6b6b14; color: #ff8080; font: inherit; font-size: 14px; }
 .seat-full svg { width: 16px; height: 16px; }
 .seat-full b { font-weight: 800; }
+/* 疲れ（社員だけ。たまると顔の丸が赤く脈打つ） */
+.av.face.tired { box-shadow: 0 0 0 2px #ff5a5a; animation: tired-pulse 1.6s ease-in-out infinite; }
+@keyframes tired-pulse { 50% { box-shadow: 0 0 0 3px #ff5a5a88; } }
+.tired-ic { width: 13px; height: 13px; margin-left: 4px; color: #ff6b6b; vertical-align: -2px; }
+.tired-bar { display: flex; align-items: center; gap: 8px; margin: 8px 0; color: var(--muted); }
+.tired-bar svg { width: 16px; height: 16px; flex: none; }
+.tired-bar i { position: relative; flex: 1; height: 6px; border-radius: 3px; background: #8881; overflow: visible; }
+.tired-bar b { display: block; height: 100%; border-radius: 3px; background: #ffb347; }
+.tired-bar u { position: absolute; top: -3px; width: 2px; height: 12px; background: #ff6b6b88; }
+.tired-bar.on { color: #ff6b6b; }
+.tired-bar.on b { background: #ff5a5a; }
+.quit-why { display: inline-flex; align-items: center; gap: 4px; color: #ff6b6b; font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+.quit-why svg { width: 14px; height: 14px; }
+/* 席がいっぱいのとき FIRE する人を選ぶ */
+.fire-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.fire-head b { font-size: 1.2rem; font-weight: 900; letter-spacing: 0.08em; color: #ff5a5a; }
+.fire-list { display: grid; gap: 6px; max-height: 50vh; overflow-y: auto; margin-bottom: 12px; }
+.fire-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #8883; border-radius: 12px; background: var(--panel); color: inherit; font: inherit; text-align: left; }
+.fire-row:not(:disabled):active { border-color: #ff5a5a; background: #ff5a5a14; }
+.fire-row:disabled { opacity: 0.4; }
+.fire-row .rival-what { flex: 1; }
+.fired-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: #ff5a5a14; color: #ff6b6b; font-weight: 700; }
+.fired-line b { flex: 1; color: var(--text, inherit); }

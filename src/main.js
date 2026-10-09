@@ -98,7 +98,7 @@ function avatar(m) {
   const k = faceKey(m);
   const src = faceFor(m);
   const inner = src ? `<img src="${src}" alt="">` : esc(m.name.replace(/\s.*/, '').slice(0, 1));
-  return `<span class="av face ${m.kind === 'temp' ? 'temp' : ''}" style="--c:${c}" data-face="${esc(k)}">${inner}</span>`;
+  return `<span class="av face ${m.kind === 'temp' ? 'temp' : ''} ${G.isTired(m) ? 'tired' : ''}" style="--c:${c}" data-face="${esc(k)}">${inner}</span>`;
 }
 // 顔の絵は見た目（髪・肌・メガネ・職種の小物・CEO か）ごとに1回だけ作って覚えておく
 const faces = new Map();
@@ -1092,7 +1092,7 @@ function memberRow(m, { candidate = false } = {}) {
   };
   return `<div class="member ${m.kind} ${m.walkin ? 'walkin' : ''}">
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
-      <span class="pname">${candidate && (m.at ?? 0) > seenSnap.team ? newTag : ''}${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${hakenTag(m)}${
+      <span class="pname">${candidate && (m.at ?? 0) > seenSnap.team ? newTag : ''}${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${hakenTag(m)}${G.isTired(m) ? icon('drop', 'tired-ic') : ''}${
         m.haken ? `<span class="haken-left">${icon('hourglass')}<span data-left="${m.haken.until}">${dur(m.haken.until - Date.now())}</span></span>` : ''
       }</small></span>
       ${statBars(st)}
@@ -1101,7 +1101,7 @@ function memberRow(m, { candidate = false } = {}) {
       candidate
         ? `<div class="more"><span class="perk">${esc(perkText(m))}</span>${
             m.salary ? `<span class="muted">${val('wallet', `${yen(m.salary)}/日`)}</span>` : ''
-          }${!candidate && m.kind === 'staff' ? `<button class="btn fire" data-dismiss="${m.id}" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}${
+          }${!candidate && m.kind === 'staff' ? `<button class="btn fire" data-dismiss="${m.id}" ${m.busy ? 'disabled' : ''}>FIRE</button>` : ''}${
             m.kind === 'legend' ? `<button class="link small" data-legend="${m.legend}">見る</button>` : ''
           }${candidate ? hireBtn() : ''}</div>`
         : ''
@@ -1122,6 +1122,9 @@ function hakenInfo(m) {
     ${h.intro ? `<button class="big" id="m-intro" ${S.money >= cost ? '' : 'disabled'}>${icon('people')}社員にする ${yen(cost)}</button>` : ''}
   </div>`;
 }
+// 疲れの棒（たまると赤く。印が出る所に線）
+const tiredBar = (m) =>
+  `<div class="tired-bar ${G.isTired(m) ? 'on' : ''}">${icon('drop')}<i><b style="width:${pct((m.tired ?? 0) / 100)}"></b><u style="left:${R.TIRED_WARN}%"></u></i></div>`;
 function openMember(m, candidate = false) {
   if (!m) return;
   const j = R.JOBS[m.job];
@@ -1134,9 +1137,10 @@ function openMember(m, candidate = false) {
     <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
+    ${!candidate && G.canTire(m) ? tiredBar(m) : ''}
     ${m.haken ? hakenInfo(m) : ''}
     ${candidate ? `${hakenTag(m) ? `<div class="vals">${hakenTag(m)}</div>` : ''}<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button><button class="decline" id="m-reject">不採用</button>` : ''}
-    ${!candidate && m.kind === 'staff' && !m.haken ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>解雇</button>` : ''}`;
+    ${!candidate && m.kind === 'staff' && !m.haken ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>FIRE</button>` : ''}`;
   $('#m-reject') &&
     ($('#m-reject').onclick = async () => {
       if ((await askReject(m)) && G.rejectCandidate(S, m.id, Date.now())) {
@@ -1171,7 +1175,7 @@ function openMember(m, candidate = false) {
     });
   $('#m-fire') &&
     ($('#m-fire').onclick = async () => {
-      if ((await ask({ head: personHead(m), text: '解雇しますか？', ok: '解雇' })) && G.dismiss(S, m.id, Date.now())) {
+      if ((await ask({ head: personHead(m), text: 'FIRE しますか？', ok: 'FIRE' })) && G.dismiss(S, m.id, Date.now())) {
         $('#detail').close();
         commit();
       }
@@ -1280,7 +1284,7 @@ function renderTeam() {
     (b) =>
       (b.onclick = async () => {
         const m = S.members.find((x) => x.id === +b.dataset.dismiss);
-        if (m && (await ask({ head: personHead(m), text: '解雇しますか？', ok: '解雇' })) && G.dismiss(S, m.id, Date.now())) commit();
+        if (m && (await ask({ head: personHead(m), text: 'FIRE しますか？', ok: 'FIRE' })) && G.dismiss(S, m.id, Date.now())) commit();
       }),
   );
   v.querySelectorAll('[data-legend]').forEach((b) => (b.onclick = () => openLegend(b.dataset.legend)));
@@ -1546,22 +1550,61 @@ function openLegend(id) {
   $('#detail-info').innerHTML = `${legendHead(legend)}
     <div class="ability">${esc(R.LEGEND_RULES[id].abilityText)}</div>
     ${m ? `<div class="lvrow">Lv${m.level} ${statBars(G.statsOf(S, m))}</div>` : ''}
-    ${left ? `<p class="scene">${esc(R.LEGEND_RULES[id].quitText)}</p><button class="big" id="rehire" ${S.money >= cost && G.hasSeat(S) ? '' : 'disabled'}>呼び戻す <small>${icon('coin')}${yen(cost)}</small></button>${seatFull()}` : ''}
+    ${left ? `<p class="scene">${esc(R.LEGEND_RULES[id].quitText)}</p><button class="big" id="rehire" ${S.money >= cost && (G.hasSeat(S) || canSwap()) ? '' : 'disabled'}>呼び戻す <small>${icon('coin')}${yen(cost)}</small></button>${G.hasSeat(S) || canSwap() ? '' : seatFull()}` : ''}
     <details><summary>くわしく</summary><p>${legend.summary}</p></details>`;
   $('#seat-full') && ($('#seat-full').onclick = () => {
     $('#detail').close();
     document.querySelector('.tab[data-view="team"]').click();
   });
   $('#rehire') &&
-    ($('#rehire').onclick = () => {
-      if (!G.rehire(S, id, Date.now())) return;
+    ($('#rehire').onclick = async () => {
+      let fireId = null;
+      if (!G.hasSeat(S)) {
+        fireId = await pickFire();
+        if (fireId == null) return;
+      }
+      const fired = S.members.find((x) => x.id === fireId);
+      if (!G.rehire(S, id, Date.now(), fireId)) return;
       commit();
-      $('#detail-info').innerHTML = `${legendHead(legend)}<div class="joined">戻ってきた</div><div class="ability">${esc(R.LEGEND_RULES[id].abilityText)}</div>`;
+      $('#detail-info').innerHTML = `${legendHead(legend)}<div class="joined">戻ってきた</div><div class="ability">${esc(R.LEGEND_RULES[id].abilityText)}</div>${firedLine(fired)}`;
     });
   $('#detail').showModal();
   showOnDetail(legend);
 }
 
+// ちょうど満席で、FIRE できる社員がいれば入れ替えられる
+const canSwap = () => G.seatsUsed(S) === G.capacity(S) && G.fireable(S).length > 0;
+const firedLine = (m) => (m ? `<div class="fired-line">${avatar(m)}<b>${esc(m.name)}</b><span>FIRE</span></div>` : '');
+// FIRE する人を選ぶ（下からのシート）。選んだ人の id、やめたら null
+function pickFire() {
+  const staff = S.members.filter((m) => m.kind === 'staff');
+  const ok = new Set(G.fireable(S));
+  askEl.innerHTML = `<div class="fire-head"><b>FIRE</b>${val('people', `${G.seatsUsed(S)}/${G.capacity(S)}`, 'bad')}</div>
+    <div class="fire-list">${staff
+      .map(
+        (m) => `<button class="fire-row" data-id="${m.id}" ${ok.has(m) ? '' : 'disabled'}>${avatar(m)}<span class="rival-what"><b>${esc(m.name)}</b><small>${jobShort(m)} Lv${m.level}${
+          G.isTired(m) ? icon('drop', 'tired-ic') : ''
+        }</small></span>${m.busy ? `<span class="muted">${icon('task')}</span>` : m.haken ? hakenTag(m) : ''}</button>`,
+      )
+      .join('')}</div>
+    <div class="ask-btns"><button class="big ghost" data-a="0">やめる</button></div>`;
+  askEnd?.(false);
+  if (!askEl.open) askEl.showModal();
+  return new Promise((done) => {
+    const end = (v) => {
+      askEnd = null;
+      askEl.close();
+      done(v);
+    };
+    askEnd = () => end(null);
+    askEl.querySelectorAll('.fire-row').forEach((b) => (b.onclick = () => end(+b.dataset.id)));
+    askEl.querySelector('[data-a]').onclick = () => end(null);
+    askEl.oncancel = (e) => {
+      e.preventDefault();
+      end(null);
+    };
+  });
+}
 // 席がいっぱいのとき（レジェンドも席を使う）。押すと仲間タブへ
 const seatFull = () => (G.hasSeat(S) ? '' : `<button class="seat-full" id="seat-full">${icon('people')}席がいっぱい <b>${G.seatsUsed(S)}/${G.capacity(S)}</b>${icon('back', 'flip')}</button>`);
 
@@ -1576,7 +1619,7 @@ function openEncounter() {
     <p class="scene">${esc(rule.scene)}</p>
     <div class="ability">${esc(rule.abilityText)}</div>
     <div class="vals">${val('target', pct(G.scoutChance(S, e.id)))}${val('clock', `<span data-left="${e.until}">${dur(e.until - Date.now())}</span>`)}</div>
-    <button class="big" id="scout" ${G.hasSeat(S) ? '' : 'disabled'}>仲間に誘う</button>${seatFull()}`;
+    <button class="big" id="scout" ${G.hasSeat(S) || canSwap() ? '' : 'disabled'}>仲間に誘う</button>${G.hasSeat(S) || canSwap() ? '' : seatFull()}`;
   updateTimers();
   $('#seat-full') && ($('#seat-full').onclick = () => {
     $('#detail').close();
@@ -1587,11 +1630,19 @@ function openEncounter() {
   const wrap = $('#detail-canvas').parentElement;
   showSilhouette(legend);
   $('#scout').onclick = async () => {
-    const r = G.scout(S, Date.now());
+    // 席がいっぱいなら、仲間になったときに FIRE する人を先に選ぶ（断られたら誰も辞めない）
+    let fireId = null;
+    if (!G.hasSeat(S)) {
+      fireId = await pickFire();
+      if (fireId == null) return;
+    }
+    const fired = S.members.find((x) => x.id === fireId);
+    const r = G.scout(S, Date.now(), fireId);
+    if (!r) return;
     commit();
     wrap.querySelector('.silhouette')?.remove();
     if (r === 'joined') {
-      $('#detail-info').innerHTML = `${legendHead(legend)}<div class="joined">仲間になった</div><div class="ability">${esc(rule.abilityText)}</div>`;
+      $('#detail-info').innerHTML = `${legendHead(legend)}<div class="joined">仲間になった</div><div class="ability">${esc(rule.abilityText)}</div>${firedLine(fired)}`;
       await showOnDetail(legend, { reveal: true });
     } else {
       // 断られた: 3日会えない時計と、次に誘うときの確率（断られるたびに上がる）
@@ -1904,6 +1955,8 @@ function eventsNotice(ev) {
   if (quits) parts.push(quits);
   const ends = hakenEndHtml(ev);
   if (ends) parts.push(ends);
+  const leaves = staffQuitHtml(ev);
+  if (leaves) parts.push(leaves);
   const done = resultsHtml(ev);
   if (done) parts.push(done);
   if (parts.length) notice(parts.join('<hr class="nsep">'));
@@ -2003,6 +2056,19 @@ function hakenEndHtml(ev, { head = true } = {}) {
   );
   return `${head ? `${icon('people', 'big-ic')}<h2>契約終了</h2>` : ''}<div class="results">${rows.join('')}</div>`;
 }
+// 疲れて辞めた・ほかの会社に引き抜かれた社員
+function staffQuitHtml(ev, { head = true } = {}) {
+  const es = ev.filter((e) => e.type === 'staffQuit');
+  if (!es.length) return '';
+  const rows = es.map(
+    (e) => `<div class="rival">${avatar(e.m)}
+      <span class="rival-what"><b>${esc(e.m.name)}</b><small>${jobShort(e.m)} Lv${e.m.level}</small></span>
+      <span class="quit-why">${e.why === 'tired' ? `${icon('drop')}退職` : `${icon('move')}引き抜き`}</span>
+    </div>`,
+  );
+  const h = es.every((e) => e.why === 'tired') ? `${icon('drop', 'big-ic rival-ic')}<h2>退職</h2>` : es.every((e) => e.why === 'poach') ? `${icon('move', 'big-ic rival-ic')}<h2>引き抜き</h2>` : `${icon('people', 'big-ic rival-ic')}<h2>退職</h2>`;
+  return `${head ? h : ''}<div class="results">${rows.join('')}</div>`;
+}
 // 自分から辞めたレジェンド（呼び戻すお金も出す）
 function quitsHtml(ev, { head = true } = {}) {
   const qs = ev.filter((e) => e.type === 'quit');
@@ -2044,7 +2110,7 @@ function welcomeBack(ev, away) {
   if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '面接に来た', 'legend'));
   // 終わった仕事は1つずつ（resultsHtml の一覧だけを使う）
   const done = resultsHtml(ev, { head: false });
-  const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false }) + hakenEndHtml(ev, { head: false });
+  const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false }) + hakenEndHtml(ev, { head: false }) + staffQuitHtml(ev, { head: false });
   if (!rows.length && !done && !rivals) return;
   notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${breakdown}${rivals}${done}`);
 }
