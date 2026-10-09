@@ -359,6 +359,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf3d3bf, hairStyle: 'short', hairColor: 0x3b2c22, shirt: 0x111111 },
     outfit: 'a plain black T-shirt under an open black bomber jacket, black jeans and black sneakers',
+    // SpaceX のロケット工場の夜（窓の外に発射台と銀のロケット）で話す
+    show: {
+      stage: 'spacex',
+      props: ['spacex'],
+      lines: [
+        { text: '人類を、いくつもの星に住める種に。', sub: 'Make life multiplanetary.', anim: 'agree' },
+        { text: '大事なことなら、勝ち目が薄くてもやる。', sub: 'When something is important enough, you do it even if the odds are not in your favor.', prop: 'starship', anim: 'fold_arms', animFrom: 1.5 },
+        { text: '火星で死にたい。ただし、墜落ではなく。', sub: 'I\'d like to die on Mars. Just not on impact.', prop: 'mars', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'page',
@@ -377,6 +387,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf2d3bf, hairStyle: 'short', hairColor: 0x8c8a88, shirt: 0x8a8d92 },
     outfit: 'a casual gray crew-neck sweater over a white T-shirt, dark blue jeans and gray sneakers',
+    // Google を始めたスタンフォードの研究室（PageRank のホワイトボード、レゴの箱のサーバー）で話す
+    show: {
+      stage: 'stanford',
+      props: ['stanford'],
+      lines: [
+        { text: '世界中の情報を整理し、誰もが使えるようにする。', sub: 'Organize the world\'s information and make it universally accessible and useful.', prop: 'searchBox', anim: 'agree' },
+        { text: '不可能なことは、ほどよく無視しよう。', sub: 'Have a healthy disregard for the impossible.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: '大きすぎる夢の方が、かえって進みやすい。', sub: 'It is often easier to make progress on mega-ambitious dreams.', anim: 'greet_01' },
+      ],
+    },
   },
   {
     id: 'huang',
@@ -396,6 +416,16 @@ export const LEGENDS = [
     look: { skin: 0xe9c7a8, hairStyle: 'short', hairColor: 0x8a8a8a, shirt: 0x161616, glasses: true },
     // おなじみの黒い革ジャンの姿で作る
     outfit: 'his signature black leather biker jacket over a plain black T-shirt, black jeans and black shoes',
+    // NVIDIA の基調講演（黒に緑の回路の線）で話す
+    show: {
+      stage: 'gtc',
+      props: ['gtc'],
+      lines: [
+        { text: 'たくさん買うほど、たくさん得をする。', sub: 'The more you buy, the more you save.', prop: 'gpu', anim: 'greet_01' },
+        { text: 'うちの会社は、つぶれるまであと30日。', sub: 'Our company is thirty days from going out of business.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: 'みなさんに、たっぷりの痛みと苦しみを。', sub: 'I wish upon you ample doses of pain and suffering.', anim: 'agree' },
+      ],
+    },
   },
   {
     id: 'son',
@@ -414,6 +444,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xecc9aa, hairStyle: 'receding', hairColor: 0x8a8a8a, shirt: 0x2c3a52 },
     outfit: 'a dark navy business suit with a white dress shirt and no tie, black leather shoes',
+    // ソフトバンクを始めた 1981 年の小さな事務所（みかん箱の上で「1兆、2兆」と話した）で話す
+    show: {
+      stage: 'softbank',
+      props: ['softbank'],
+      lines: [
+        { text: 'いずれ売上を、豆腐のように1兆、2兆と数える。', sub: 'Someday we will count our sales by the trillion.', anim: 'greet_01' },
+        { text: '志高く。', sub: 'Aim high.', anim: 'agree' },
+        { text: '情報革命で、人々を幸せに。', sub: 'Happiness for everyone through the Information Revolution.', prop: 'phone', anim: 'fold_arms', animFrom: 1.5 },
+      ],
+    },
   },
   {
     id: 'altman',
@@ -432,6 +472,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf1d1bd, hairStyle: 'short', hairColor: 0x6a5440, shirt: 0x2a2f38 },
     outfit: 'a plain navy crew-neck sweater, dark blue jeans and white sneakers',
+    // OpenAI の明るい事務所で話す
+    show: {
+      stage: 'openai',
+      props: ['openai'],
+      lines: [
+        { text: '汎用AIを、すべての人類のために。', sub: 'Ensure that AGI benefits all of humanity.', anim: 'agree' },
+        { text: '一日は長いが、十年は短い。', sub: 'The days are long but the decades are short.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: '速く動こう。遅さはどこにでも広がる。', sub: 'Move faster. Slowness anywhere justifies slowness everywhere.', prop: 'chat', anim: 'greet_01' },
+      ],
+    },
   },
 ];
 

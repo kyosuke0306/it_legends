@@ -573,6 +573,14 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .stage-iss .loading { color: #c9cbd3; }
 .stage-wrap.stage-matsue { background: #1e1610; }
 .stage-matsue .loading { color: #c9cbd3; }
+.stage-wrap.stage-spacex { background: #15181d; }
+.stage-spacex .loading { color: #c9cbd3; }
+.stage-wrap.stage-stanford { background: #262a33; }
+.stage-stanford .loading { color: #c9cbd3; }
+.stage-wrap.stage-gtc { background: #040504; }
+.stage-gtc .loading { color: #c9cbd3; }
+.stage-wrap.stage-softbank { background: #a89c84; }
+.stage-wrap.stage-openai { background: #a88d6c; }
 .spinner {
   width: 32px;
   height: 32px;

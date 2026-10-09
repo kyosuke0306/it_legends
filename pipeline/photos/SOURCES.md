@@ -10,3 +10,17 @@
 - huang: https://upload.wikimedia.org/wikipedia/commons/e/e6/Jen-Hsun_Huang_2025.jpg (https://en.wikipedia.org/wiki/Jensen_Huang)
 - son: https://upload.wikimedia.org/wikipedia/commons/5/58/Masayoshi_Son_%28P066533-522034%2C_cropped%29.jpg (https://en.wikipedia.org/wiki/Masayoshi_Son)
 - altman: https://upload.wikimedia.org/wikipedia/commons/5/5a/Meeting_with_Masayoshi_Son_and_Sam_Altman_%28February_3%2C_2025%29_%283x4_cropped_on_Altman%29.jpg (https://en.wikipedia.org/wiki/Sam_Altman)
+- lovelace: https://upload.wikimedia.org/wikipedia/commons/4/4c/Ada_Lovelace_daguerreotype_by_Antoine_Claudet_1843_-_cropped.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Ada_Lovelace)
+- vonneumann: https://upload.wikimedia.org/wikipedia/commons/5/5e/JohnvonNeumann-LosAlamos.gif (https://en.wikipedia.org/wiki/John_von_Neumann)
+- hamilton: https://upload.wikimedia.org/wikipedia/commons/6/68/Margaret_Hamilton_1995.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Margaret_Hamilton_(software_engineer))
+- ritchie: https://upload.wikimedia.org/wikipedia/commons/2/23/Dennis_Ritchie_2011.jpg (https://en.wikipedia.org/wiki/Dennis_Ritchie)
+- bernerslee: https://upload.wikimedia.org/wikipedia/commons/d/d1/Tim_Berners-Lee_at_the_2025_Web_Summit_%28Cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Tim_Berners-Lee)
+- torvalds: https://upload.wikimedia.org/wikipedia/commons/0/01/LinuxCon_Europe_Linus_Torvalds_03_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Linus_Torvalds)
+- hopper: https://upload.wikimedia.org/wikipedia/commons/9/98/Commodore_Grace_M._Hopper%2C_USN_%28covered%29_head_and_shoulders_crop.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Grace_Hopper)
+
+## ロゴ（ステージで使う本物のマーク。Wikimedia Commons から）
+- assets/spacex-logo.svg: https://commons.wikimedia.org/wiki/File:SpaceX_logo_black.svg （黒い字を白にして使う）
+- assets/google-logo.svg: https://commons.wikimedia.org/wiki/File:Google_2015_logo.svg
+- assets/nvidia-logo.svg: https://commons.wikimedia.org/wiki/File:NVIDIA_logo.svg （黒い字を白にして使う）
+- assets/softbank-logo.svg: https://commons.wikimedia.org/wiki/File:SoftBank_logo.svg
+- assets/openai-logo.svg: https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg
