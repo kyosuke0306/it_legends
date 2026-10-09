@@ -2063,8 +2063,8 @@ function hakenEndHtml(ev, { head = true } = {}) {
   );
   return `${head ? `${icon('people', 'big-ic')}<h2>契約終了</h2>` : ''}<div class="results">${rows.join('')}</div>`;
 }
-// 防げる評判ダウン（職種・レジェンド）。青い枠で「防ぐ」と短い名前
-const guardLine = (list) => (list.length ? `<div class="guard-line">${icon('shield')}<span>${list.map(esc).join('・')}</span><b>防ぐ</b></div>` : '');
+// 防げる評判ダウン（職種・レジェンド）。青い枠に盾と短い名前（「防ぐ」の文字は出さない。2026-10-09 ユーザー指示）
+const guardLine = (list) => (list.length ? `<div class="guard-line">${icon('shield')}<span>${list.map(esc).join('・')}</span></div>` : '');
 // 評判ダウンを防いだ人
 function repGuardHtml(ev, { head = true } = {}) {
   const es = ev.filter((e) => e.type === 'repGuard');
