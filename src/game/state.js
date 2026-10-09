@@ -854,6 +854,15 @@ function rollRepHit(s, t, ev) {
   if (rand(s) >= 1 / (R.REP_HIT_DAYS * 24)) return;
   const pool = R.REP_HITS.filter((h) => h.need !== 'product' || s.products.length);
   const h = pick(s, pool);
+  // 防げる職種の人・レジェンドがいれば防ぐ（レジェンドは必ず、職種は1人ごとに REP_GUARD）
+  const legend = s.members.find((m) => m.kind === 'legend' && h.legends.includes(m.legend));
+  const staff = s.members.filter((m) => m.kind !== 'legend' && h.jobs.includes(m.job));
+  if (legend || rand(s) < Math.min(R.REP_GUARD_MAX, R.REP_GUARD * staff.length)) {
+    const g = legend ?? pick(s, staff);
+    addLog(s, t, `${h.title}を${g.name}が防いだ`, 'good');
+    ev.push({ type: 'repGuard', t, title: h.title, m: g.kind === 'legend' ? { kind: 'legend', legend: g.legend, name: g.name } : { ...leaver(g), kind: g.kind } });
+    return;
+  }
   const rep = Math.max(1, Math.round((s.rep * between(s, ...h.pct)) / 100));
   s.rep -= rep;
   addLog(s, t, `${h.title}  評判 -${rep}`, 'bad');

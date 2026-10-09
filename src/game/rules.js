@@ -293,14 +293,26 @@ export const POACH_DAYS = 7;
 // 評判が REP_HIT_MIN 以上で、平均 REP_HIT_DAYS 日に1回。pct は今の評判の何%下がるか。need: 'product' は製品があるときだけ
 export const REP_HIT_DAYS = 6;
 export const REP_HIT_MIN = 50;
+// short は画面の短い名前。jobs の職種の人（CEO も）が1人いるごとに REP_GUARD ずつ防ぎやすく（最大 REP_GUARD_MAX）、
+// legends のレジェンドがいれば必ず防ぐ（2026-10-09 ユーザー指示「職種やレジェンドの要素も」。実際の仕事・歴史に合わせた）
+export const REP_GUARD = 0.3;
+export const REP_GUARD_MAX = 0.9;
 export const REP_HITS = [
-  { title: '納品したシステムに不具合', pct: [3, 6] },
-  { title: '個人情報流出', pct: [8, 14] },
-  { title: 'SNS でデマが広まった', pct: [2, 5] },
-  { title: '社員の不祥事が報道された', pct: [4, 8] },
-  { title: '自社サービスが半日止まった', pct: [3, 7], need: 'product' },
-  { title: '口コミサイトで炎上', pct: [2, 6] },
+  // テストと設計で防ぐ。月へ行くソフトを止めなかったハミルトン、C と UNIX のリッチー
+  { short: '不具合', title: '納品したシステムに不具合', pct: [3, 6], jobs: ['se', 'pg'], legends: ['hamilton', 'ritchie'] },
+  // サーバーの守りと仕組みで防ぐ。暗号を解いたチューリング
+  { short: '個人情報流出', title: '個人情報流出', pct: [8, 14], jobs: ['infra', 'se'], legends: ['turing'] },
+  // 発信と説明で打ち消す。SNS を知りつくした人たち
+  { short: 'デマ', title: 'SNS でデマが広まった', pct: [2, 5], jobs: ['sales', 'data'], legends: ['zuckerberg', 'maezawa'] },
+  // 人と組織をまとめる人が防ぐ。海軍の規律のホッパー
+  { short: '不祥事', title: '社員の不祥事が報道された', pct: [4, 8], jobs: ['gm', 'pm'], legends: ['hopper'] },
+  // サーバーを止めない。AWS のベゾス、Linux のトーバルズ
+  { short: 'サービス停止', title: '自社サービスが半日止まった', pct: [3, 7], need: 'product', jobs: ['infra', 'pm'], legends: ['bezos', 'torvalds'] },
+  // 使いやすさとお客さんへの説明で防ぐ。細部にこだわるジョブズ
+  { short: '炎上', title: '口コミサイトで炎上', pct: [2, 6], jobs: ['designer', 'consul'], legends: ['jobs'] },
 ];
+// 職種・レジェンドごとの「防ぐ」もの（画面に出す）
+export const guardsOf = (job, legend) => REP_HITS.filter((h) => (job && h.jobs.includes(job)) || (legend && h.legends.includes(legend))).map((h) => h.short);
 export const LEGEND_SETTLE = 7 * DAY; // 仲間になって（戻って）しばらくは辞めない
 // お金を減らされるとき。amount は今の会社の仕事1時間ぶんの報酬の何倍か
 export const RIVAL_HITS = [

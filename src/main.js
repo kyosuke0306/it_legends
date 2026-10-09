@@ -1135,6 +1135,7 @@ function openMember(m, candidate = false) {
     <p class="job-desc">${esc(j.desc)}</p>
     <div class="ability">${esc(j.perkText)}</div>
     <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
+    ${guardLine(R.guardsOf(m.job))}
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
     ${!candidate && G.canTire(m) ? tiredBar(m) : ''}
@@ -1534,6 +1535,7 @@ function openLockedLegend(legend) {
     .join('');
   $('#detail-info').innerHTML = `${legendHead(legend, { secret: true })}
     <div class="ability">${esc(R.LEGEND_RULES[legend.id].abilityText)}</div>
+    ${guardLine(R.guardsOf(null, legend.id))}
     <div class="conds">${conds}</div>
     ${legendWait(legend.id)}`;
   updateTimers();
@@ -1549,6 +1551,7 @@ function openLegend(id) {
   const cost = G.rehireCost(S);
   $('#detail-info').innerHTML = `${legendHead(legend)}
     <div class="ability">${esc(R.LEGEND_RULES[id].abilityText)}</div>
+    ${guardLine(R.guardsOf(null, id))}
     ${m ? `<div class="lvrow">Lv${m.level} ${statBars(G.statsOf(S, m))}</div>` : ''}
     ${left ? `<p class="scene">${esc(R.LEGEND_RULES[id].quitText)}</p><button class="big" id="rehire" ${S.money >= cost && (G.hasSeat(S) || canSwap()) ? '' : 'disabled'}>呼び戻す <small>${icon('coin')}${yen(cost)}</small></button>${G.hasSeat(S) || canSwap() ? '' : seatFull()}` : ''}
     <details><summary>くわしく</summary><p>${legend.summary}</p></details>`;
@@ -1959,6 +1962,8 @@ function eventsNotice(ev) {
   if (leaves) parts.push(leaves);
   const hits = repHitHtml(ev);
   if (hits) parts.push(hits);
+  const guards = repGuardHtml(ev);
+  if (guards) parts.push(guards);
   const done = resultsHtml(ev);
   if (done) parts.push(done);
   if (parts.length) notice(parts.join('<hr class="nsep">'));
@@ -2058,6 +2063,15 @@ function hakenEndHtml(ev, { head = true } = {}) {
   );
   return `${head ? `${icon('people', 'big-ic')}<h2>契約終了</h2>` : ''}<div class="results">${rows.join('')}</div>`;
 }
+// 防げる評判ダウン（職種・レジェンド）。青い枠で「防ぐ」と短い名前
+const guardLine = (list) => (list.length ? `<div class="guard-line">${icon('shield')}<span>${list.map(esc).join('・')}</span><b>防ぐ</b></div>` : '');
+// 評判ダウンを防いだ人
+function repGuardHtml(ev, { head = true } = {}) {
+  const es = ev.filter((e) => e.type === 'repGuard');
+  if (!es.length) return '';
+  const rows = es.map((e) => `<div class="rival guard-row">${avatar(e.m)}<span class="rival-what"><b>${esc(e.title)}</b><small>${esc(e.m.name)}</small></span><span class="guard-ok">${icon('shield')}防いだ</span></div>`);
+  return `${head ? `${icon('shield', 'big-ic guard-ic')}<h2>防いだ</h2>` : ''}<div class="results">${rows.join('')}</div>`;
+}
 // 評判が下がった出来事（不具合・個人情報流出・デマなど）
 function repHitHtml(ev, { head = true } = {}) {
   const es = ev.filter((e) => e.type === 'repHit');
@@ -2119,7 +2133,7 @@ function welcomeBack(ev, away) {
   if (ev.some((e) => e.type === 'walkin') && S.candidates.some((c) => c.walkin)) rows.push(val('people', '面接に来た', 'legend'));
   // 終わった仕事は1つずつ（resultsHtml の一覧だけを使う）
   const done = resultsHtml(ev, { head: false });
-  const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false }) + hakenEndHtml(ev, { head: false }) + staffQuitHtml(ev, { head: false }) + repHitHtml(ev, { head: false });
+  const rivals = rivalsHtml(ev, { head: false }) + quitsHtml(ev, { head: false }) + hakenEndHtml(ev, { head: false }) + staffQuitHtml(ev, { head: false }) + repHitHtml(ev, { head: false }) + repGuardHtml(ev, { head: false });
   if (!rows.length && !done && !rivals) return;
   notice(`<h2>おかえりなさい</h2><p class="muted">${dur(away)}</p><div class="welcome">${rows.join('')}</div>${breakdown}${rivals}${done}`);
 }

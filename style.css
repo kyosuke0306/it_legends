@@ -1058,3 +1058,12 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .fire-row .rival-what { flex: 1; }
 .fired-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: #ff5a5a14; color: #ff6b6b; font-weight: 700; }
 .fired-line b { flex: 1; color: var(--text, inherit); }
+/* 評判ダウンを防ぐ（職種・レジェンド）と、防いだお知らせ */
+.guard-line { display: flex; align-items: center; gap: 6px; margin: 6px 0; padding: 7px 10px; border: 1px solid #4aa3ff55; border-radius: 10px; background: #4aa3ff12; color: #3b8fe0; font-size: 0.85rem; font-weight: 700; }
+.guard-line svg { width: 16px; height: 16px; flex: none; }
+.guard-line span { flex: 1; }
+.guard-line b { font-size: 0.75rem; opacity: 0.8; }
+.guard-ok { display: inline-flex; align-items: center; gap: 4px; color: #3b8fe0; font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+.guard-ok svg { width: 14px; height: 14px; }
+.guard-ic { color: #3b8fe0; }
+.rival.guard-row { background: #4aa3ff14; }
