@@ -284,9 +284,11 @@ export function taskPreview(s, offer, ids, temps = offer.temps ?? []) {
   const chance = te.alwaysSuccess ? 1 : Math.min(0.98, Math.max(0.05, 0.9 * (power / offer.diff) + te.teamSuccess));
   const duration = (offer.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed))) / (1 + R.TEAM_SPEEDUP * (team.length - 1));
   const great = power >= offer.diff * R.REP_GREAT;
-  const early = duration <= offer.hours * R.HOUR * R.REP_EARLY;
+  const early = duration <= usualTime(offer, team.length) * R.REP_EARLY;
   return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)), rep: taskRep(offer, power, early, te.teamRep), teamRep: te.teamRep, great, early };
 }
+// その人数ならふつうにかかる時間。早さの評判はこれより早く終えたときだけ（人数をそろえただけでは付かない。2026-10-09）
+const usualTime = (offer, n) => (offer.hours * R.HOUR) / (1 + R.TEAM_SPEEDUP * (Math.max(1, n) - 1));
 // 成功したときの評判（出来と早さで変わる）
 // bonus はインフラの特技など（評判 +20% なら 0.2。小さな仕事でも +1 は付く）
 function taskRep(offer, power, early, bonus = 0) {
@@ -339,7 +341,7 @@ function finishTask(s, task, t, ev) {
   const money = ok ? pv.reward : round(pv.reward * 0.2);
   s.money += money;
   // 早さは実際にかかった時間で決める
-  const early = task.endsAt - (task.begunAt ?? task.startAt) <= task.hours * R.HOUR * R.REP_EARLY;
+  const early = task.endsAt - (task.begunAt ?? task.startAt) <= usualTime(task, team.length + (task.temps?.length ?? 0)) * R.REP_EARLY;
   const rep = ok ? taskRep(task, pv.power, early, pv.teamRep) : -Math.min(s.rep, Math.max(1, Math.round(task.rep * R.FAIL_REP)));
   s.rep += rep;
   if (ok) {

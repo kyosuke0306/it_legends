@@ -219,7 +219,7 @@ export const INTRO_WAIT = 1; // 紹介予定派遣の期間が終わったあと
 // 人数が多いほど早く終わる。1人増えるごとに TEAM_SPEEDUP ぶん速くなる（2人で 1.3倍、3人で 1.6倍…）
 export const TEAM_SPEEDUP = 0.3;
 // 仕事が終わったときの評判。力が必要な分の GREAT 倍以上なら出来が良い（評判 1.5倍）、足りないままの成功は 0.7倍
-// 希望納期（依頼の時間）の EARLY 倍以内に終われば +50%。失敗すると評判が FAIL_REP 倍ぶん下がる
+// その人数でふつうにかかる時間の EARLY 倍以内に終われば +50%（速さの力を持つ人がいるとき。人数だけでは付かない）。失敗すると評判が FAIL_REP 倍ぶん下がる
 export const REP_GREAT = 1.5;
 export const REP_EARLY = 0.75;
 export const FAIL_REP = 0.5;
