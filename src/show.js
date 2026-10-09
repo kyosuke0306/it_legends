@@ -1275,7 +1275,7 @@ const PROPS = {
     return g;
   },
 
-  // ベル研究所の夜：PDP-11 の棚、壁に UNIX のディレクトリの木の図
+  // ベル研究所の夜：PDP-11 の棚、壁に UNIX のディレクトリの木の図と光る C のマーク
   bell() {
     const g = new THREE.Group();
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: bellWallTexture() }));
@@ -1283,7 +1283,11 @@ const PROPS = {
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: floorTexture() }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(0, 0, 1);
-    g.add(wall, floor);
+    const sign = logoPlane('assets/c-logo.png', 0.8, 0.8, false);
+    const glow = logoPlane('assets/c-logo.png', 1.3, 1.3, true);
+    sign.position.set(1.75, 1.85, -2.46);
+    glow.position.set(1.75, 1.85, -2.47);
+    g.add(wall, floor, glow, sign);
     // PDP-11 の棚（左）：点滅するランプの列
     const rack = new THREE.Group();
     const lamps = [];
@@ -1306,6 +1310,7 @@ const PROPS = {
     g.add(rack);
     g.renderOrder = -1;
     g.userData.animate = (p, t) => {
+      glow.material.opacity = 0.4 + Math.sin(t * 1.6) * 0.2;
       lamps.forEach((l, i) => (l.visible = Math.sin(t * 4 + i * 2.3) > -0.2));
     };
     return g;

@@ -28,3 +28,4 @@
 - assets/www-logo.svg: https://commons.wikimedia.org/wiki/File:WWW_logo_by_Robert_Cailliau.svg
 - assets/tux.svg: https://commons.wikimedia.org/wiki/File:Tux.svg （Larry Ewing 作の Linux のペンギン）
 - assets/git-logo.svg: https://commons.wikimedia.org/wiki/File:Git-logo.svg
+- assets/c-logo.png: ユーザーがくれた C 言語のマークの画像（Wikimedia の The_C_Programming_Language_logo.svg と同じ絵）から切り抜き
