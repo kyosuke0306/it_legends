@@ -447,5 +447,59 @@ export const LEGEND_RULES = {
     abilityText: '全員の成長 +30%  速さ +15%',
     scene: '赤い宝石を手に、楽しそうにプログラムを書くメガネの男がいる…',
   },
+  musk: {
+    stats: { idea: 100, tech: 80, plan: 70, talk: 85 },
+    meet: { cat: { space: 5 }, office: 5 },
+    hint: '宇宙の仕事を 5 回こなし、高層タワーを構えると…',
+    join: 0.3,
+    // ロケット・電気自動車・衛星インターネット
+    ability: { teamSpeed: 0.3, incomeGenre: { car: 1, satnet: 1 } },
+    abilityText: '速さ +30%  自動運転・宇宙インターネットの収入 2倍',
+    quit: 15,
+    quitText: '「火星へ行く」と言って去った',
+    scene: 'ロケットの模型を手に、夜中まで働く男がいる…',
+  },
+  page: {
+    stats: { idea: 95, tech: 90, plan: 75, talk: 55 },
+    meet: { cat: { web: 25 }, office: 2 },
+    hint: 'Web の仕事を 25 回こなし、小さな事務所を構えると…',
+    join: 0.4,
+    // 勤務時間の20%を好きな開発に使える「20%ルール」と、検索から
+    ability: { statAll: { idea: 0.2 }, incomeGenre: { web: 0.3, ai: 0.3 } },
+    abilityText: '全員の発想 +20%  Web・AI の収入 +30%',
+    scene: 'ホワイトボードいっぱいに、リンクの矢印を描いている若者がいる…',
+  },
+  huang: {
+    stats: { idea: 85, tech: 95, plan: 85, talk: 80 },
+    meet: { cat: { ai: 5 }, rep: 1000 },
+    hint: 'AI の仕事を 5 回こなし、評判が 1000 を超えると…',
+    join: 0.3,
+    // ゲームの絵のための GPU が、AI を動かす力になった
+    ability: { teamSpeed: 0.3, incomeGenre: { ai: 0.5, game: 0.5 } },
+    abilityText: '速さ +30%  AI・ゲームの収入 +50%',
+    scene: '黒い革ジャンの男が、光る半導体の板を高く掲げている…',
+  },
+  son: {
+    stats: { idea: 85, tech: 50, plan: 90, talk: 95 },
+    meet: { products: 5, office: 3 },
+    hint: '製品を 5 つ出し、オフィスビルを構えると…',
+    join: 0.4,
+    // 伸びる会社に投資してきた
+    ability: { income: 0.25, luck: 0.5 },
+    abilityText: '全製品の収入 +25%  臨時収入 +50%',
+    scene: '「300年続く会社を」と熱く語る男がいる…',
+  },
+  altman: {
+    stats: { idea: 90, tech: 75, plan: 85, talk: 90 },
+    meet: { cat: { ai: 15 }, products: 2 },
+    hint: 'AI の仕事を 15 回こなし、製品を 2 つ出すと…',
+    join: 0.3,
+    ability: { incomeGenre: { ai: 0.6, agi: 1 }, teamQuality: 0.3 },
+    abilityText: 'AI の収入 +60%  汎用AI 2倍  製品の出来 +30%',
+    // 2023年に取締役会から突然解任され、5日後に戻った
+    quit: 30,
+    quitText: '取締役会に突然解任された',
+    scene: 'チャット画面に話しかけながら、静かにほほえむ若者がいる…',
+  },
 };
 

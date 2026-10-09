@@ -342,6 +342,97 @@ export const LEGENDS = [
       ],
     },
   },
+  {
+    id: 'musk',
+    name: 'イーロン・マスク',
+    nameEn: 'Elon Musk',
+    wiki: 'Elon_Musk',
+    years: '1971–',
+    rarity: 'SR',
+    title: '火星を目指す起業家',
+    summary:
+      'ネット決済のPayPalのもとになる会社を作ったあと、ロケットのSpaceXと電気自動車のTeslaを率いました。宇宙から届くインターネットStarlinkも広めています。',
+    achievements: [
+      'ネット決済の会社X.com（のちのPayPal）を創業（1999年）',
+      'SpaceXを設立し、着地して再利用できるロケットを実現（2002年〜）',
+      'Teslaで電気自動車を広め、衛星インターネットStarlinkを始める',
+    ],
+    look: { skin: 0xf3d3bf, hairStyle: 'short', hairColor: 0x3b2c22, shirt: 0x111111 },
+    outfit: 'a plain black T-shirt under an open black bomber jacket, black jeans and black sneakers',
+  },
+  {
+    id: 'page',
+    name: 'ラリー・ペイジ',
+    nameEn: 'Larry Page',
+    wiki: 'Larry_Page',
+    years: '1973–',
+    rarity: 'R',
+    title: '世界の情報を検索できるようにした人',
+    summary:
+      'スタンフォード大学の大学院でセルゲイ・ブリンとGoogleを作りました。多くのページからリンクされているページほど大切、と考える仕組みで、検索を大きく変えました。',
+    achievements: [
+      'ページの大切さを決める仕組みPageRankを考えた（1996年）',
+      'セルゲイ・ブリンとGoogleを創業（1998年）',
+      'Androidを買収し、親会社Alphabetをつくる（2015年）',
+    ],
+    look: { skin: 0xf2d3bf, hairStyle: 'short', hairColor: 0x8c8a88, shirt: 0x8a8d92 },
+    outfit: 'a casual gray crew-neck sweater over a white T-shirt, dark blue jeans and gray sneakers',
+  },
+  {
+    id: 'huang',
+    name: 'ジェンスン・フアン',
+    nameEn: 'Jensen Huang',
+    wiki: 'Jensen_Huang',
+    years: '1963–',
+    rarity: 'SR',
+    title: 'AIの時代を支える半導体の人',
+    summary:
+      'ゲームの絵を速く描くための部品GPUを作るNVIDIAを創業しました。同じ計算を一度にたくさんこなすGPUがAIの学習に欠かせなくなり、AIの時代を支えています。',
+    achievements: [
+      '仲間とNVIDIAを創業（1993年）',
+      'GPU「GeForce 256」を発表（1999年）',
+      'GPUでAIを学習させる仕組みCUDAを広める（2006年〜）',
+    ],
+    look: { skin: 0xe9c7a8, hairStyle: 'short', hairColor: 0x8a8a8a, shirt: 0x161616, glasses: true },
+    // おなじみの黒い革ジャンの姿で作る
+    outfit: 'his signature black leather biker jacket over a plain black T-shirt, black jeans and black shoes',
+  },
+  {
+    id: 'son',
+    name: '孫正義',
+    nameEn: 'Masayoshi Son',
+    wiki: 'Masayoshi_Son',
+    years: '1957–',
+    rarity: 'R',
+    title: '未来に賭ける投資家',
+    summary:
+      'パソコンのソフトを売る会社ソフトバンクを作り、インターネットや携帯電話の事業に広げました。Yahoo!やアリババなど、伸びる会社に早くから投資してきました。',
+    achievements: [
+      'ソフトバンクを創業（1981年）',
+      'Yahoo! JAPANを立ち上げ（1996年）、アリババに早くから投資',
+      '日本でiPhoneを売り出す（2008年）、大型の投資ファンドをつくる',
+    ],
+    look: { skin: 0xecc9aa, hairStyle: 'receding', hairColor: 0x8a8a8a, shirt: 0x2c3a52 },
+    outfit: 'a dark navy business suit with a white dress shirt and no tie, black leather shoes',
+  },
+  {
+    id: 'altman',
+    name: 'サム・アルトマン',
+    nameEn: 'Sam Altman',
+    wiki: 'Sam_Altman',
+    years: '1985–',
+    rarity: 'SR',
+    title: 'ChatGPTを世に出した人',
+    summary:
+      'スタートアップを育てるY Combinatorの代表を務めたあと、OpenAIを率いてChatGPTを公開しました。話しかけるだけで使えるAIを、世界中の人に広めました。',
+    achievements: [
+      'スタートアップ養成所Y Combinatorの代表に（2014年）',
+      'OpenAIの共同設立（2015年）',
+      'ChatGPTを公開し、数か月で1億人が使う（2022年）',
+    ],
+    look: { skin: 0xf1d1bd, hairStyle: 'short', hairColor: 0x6a5440, shirt: 0x2a2f38 },
+    outfit: 'a plain navy crew-neck sweater, dark blue jeans and white sneakers',
+  },
 ];
 
 // rarity はレジェンドの並び順だけに使う（画面にランクは出さない。ユーザー指示 2026-10-01）

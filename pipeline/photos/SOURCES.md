@@ -5,3 +5,8 @@
 - bezos: https://upload.wikimedia.org/wikipedia/commons/f/fc/260202-D-PM193-2205_SECWAR_Arsenal_of_Freedom_Tour_-_Florida_%283x4_cropped_on_Bezos_and_rotated%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled (https://en.wikipedia.org/wiki/Jeff_Bezos)
 - ek: https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Daniel_Ek_%28Interview%29_%28cropped%29.jpg/250px-Daniel_Ek_%28Interview%29_%28cropped%29.jpg (https://en.wikipedia.org/wiki/Daniel_Ek 以前の版の写真。メガネのない姿にするため)
 - matz: ユーザーからもらった写真（ピンクの背景、グレーの上着）。白黒の Wikipedia 写真から差し替え
+- musk: https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Elon_Musk_-_54820081119_%28cropped%29.jpg/960px-Elon_Musk_-_54820081119_%28cropped%29.jpg (https://en.wikipedia.org/wiki/Elon_Musk)
+- page: https://upload.wikimedia.org/wikipedia/commons/2/2a/Larry_Page_in_the_European_Parliament%2C_17.06.2009_%28cropped_2%29.jpg (https://en.wikipedia.org/wiki/Larry_Page)
+- huang: https://upload.wikimedia.org/wikipedia/commons/e/e6/Jen-Hsun_Huang_2025.jpg (https://en.wikipedia.org/wiki/Jensen_Huang)
+- son: https://upload.wikimedia.org/wikipedia/commons/5/58/Masayoshi_Son_%28P066533-522034%2C_cropped%29.jpg (https://en.wikipedia.org/wiki/Masayoshi_Son)
+- altman: https://upload.wikimedia.org/wikipedia/commons/5/5a/Meeting_with_Masayoshi_Son_and_Sam_Altman_%28February_3%2C_2025%29_%283x4_cropped_on_Altman%29.jpg (https://en.wikipedia.org/wiki/Sam_Altman)
