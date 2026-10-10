@@ -1172,7 +1172,8 @@ function hakenInfo(m) {
 // 疲れの棒（たまると赤く。印が出る所に線）
 const tiredBar = (m) =>
   `<div class="tired-bar ${G.isTired(m) ? 'on' : ''}">${icon('drop')}<i><b style="width:${pct((m.tired ?? 0) / 100)}"></b><u style="left:${R.TIRED_WARN}%"></u></i></div>`;
-function openMember(m, candidate = false) {
+// preview: 派遣のシートで、まだ来ていない人を見る（{ daily }。採用・FIRE などのボタンは出さない）
+function openMember(m, candidate = false, preview = null) {
   if (!m) return;
   const j = R.JOBS[m.job];
   const st = candidate ? m.stats : G.statsOf(S, m);
@@ -1185,10 +1186,11 @@ function openMember(m, candidate = false) {
     ${guardLine(R.guardsOf(m.job))}
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
-    ${!candidate && G.canTire(m) ? tiredBar(m) : ''}
+    ${preview ? `<div class="vals">${val('wallet', `${yen(preview.daily)}/日`)}</div>` : ''}
+    ${!candidate && !preview && G.canTire(m) ? tiredBar(m) : ''}
     ${m.haken ? hakenInfo(m) : ''}
     ${candidate ? `${hakenTag(m) ? `<div class="vals">${hakenTag(m)}</div>` : ''}<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button><button class="decline" id="m-reject">不採用</button>` : ''}
-    ${!candidate && m.kind === 'staff' && !m.haken ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>FIRE</button>` : ''}`;
+    ${!candidate && !preview && m.kind === 'staff' && !m.haken ? `<button class="btn fire" id="m-fire" ${m.busy ? 'disabled' : ''}>FIRE</button>` : ''}`;
   $('#m-reject') &&
     ($('#m-reject').onclick = async () => {
       if ((await askReject(m)) && G.rejectCandidate(S, m.id, Date.now())) {
@@ -1257,7 +1259,7 @@ function openHaken() {
       <div class="pjobs">${Object.entries(R.JOBS)
         .map(([k, j]) => `<button class="pjob ${k === job ? 'active' : ''}" data-job="${k}"><img src="assets/jobs/${k}.webp" alt=""><span>${j.name}</span></button>`)
         .join('')}</div>
-      <div class="haken-who">${avatar(m)}<span class="pname">${esc(m.name)}<small>${jobShort(m)} Lv${m.level}</small></span>${statBars(m.stats)}</div>
+      <button class="haken-who" id="haken-who">${avatar(m)}<span class="pname">${esc(m.name)}<small>${jobShort(m)} Lv${m.level}</small></span>${statBars(m.stats)}</button>
       <div class="sec">${icon('clock')}<b>期間</b></div>
       <div class="seg">${R.HAKEN_DAYS.map((d) => `<button class="${d === days ? 'active' : ''}" data-days="${d}">${d}日</button>`).join('')}</div>
       <div class="seg haken-kind">
@@ -1271,6 +1273,7 @@ function openHaken() {
     const b = $('#assign-body');
     b.querySelectorAll('[data-job]').forEach((x) => (x.onclick = () => ((job = x.dataset.job), draw())));
     b.querySelectorAll('[data-days]').forEach((x) => (x.onclick = () => ((days = +x.dataset.days), draw())));
+    $('#haken-who').onclick = () => openMember(m, false, { daily }); // 来る人の詳しい画面（2026-10-10 ユーザー指示）
     b.querySelectorAll('[data-intro]').forEach((x) => (x.onclick = () => ((intro = x.dataset.intro === '1'), draw())));
     $('#haken-go').onclick = () => {
       if (G.startHaken(S, job, days, intro, Date.now())) {
