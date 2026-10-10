@@ -601,7 +601,10 @@ function renderOffice() {
     $('#office-info').innerHTML = `<button class="panel upgrade" id="upgrade" ${S.money >= cost ? '' : 'disabled'}>
         ${icon('plus')}<span class="grow"><b>増築</b> ${val('people', `+${R.FLOOR_CAP}`)}</span>${val('coin', yen(cost), S.money >= cost ? 'ok' : '')}
       </button>`;
-    $('#upgrade').onclick = () => G.expand(S, Date.now()) && commit();
+    $('#upgrade').onclick = () => {
+      const before = moveSnap();
+      if (G.expand(S, Date.now())) celebrateMove(before, true);
+    };
   }
 }
 
@@ -666,11 +669,55 @@ function openNextOffice() {
   peek.wrap.dataset.mood = mood === 'night' || mood === 'neon' ? 'dark' : 'light';
   if (!dlg.open) dlg.showModal();
   $('#move-go').onclick = () => {
+    const before = moveSnap();
     if (G.upgradeOffice(S, Date.now())) {
       dlg.close();
-      commit();
+      celebrateMove(before);
     }
   };
+}
+
+// 引っ越し・増築の演出（2026-10-10 ユーザー指示「演出をつけたり、ポップアップで表示して」）
+// 3Dのカメラが上から回り込んで新しい部屋へ降り、光とオフィスの札が出たあと、席などが「前 → 今」のポップアップ
+const moveSnap = () => ({ office: S.office, cap: G.capacity(S), rate: G.avgRate(S.office), cand: R.CANDIDATES_PER_DAY[S.office], lv: R.OFFICES[S.office].lv });
+function celebrateMove(before, floor = false) {
+  if (view !== 'office') document.querySelector('.tab[data-view="office"]').click();
+  commit(); // ここで部屋が作り直される（office.sync）
+  const o = R.OFFICES[S.office];
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const show = () => notice(moveHtml(before, floor));
+  if (still || !office) return show();
+  office.celebrate();
+  const wrap = $('#office-canvas').parentElement;
+  wrap.querySelector('.move-fx')?.remove();
+  const fx = document.createElement('div');
+  fx.className = 'move-fx';
+  fx.innerHTML = `<div class="move-flash"></div><div class="move-rays"></div>
+    <div class="move-title"><span class="chip chip-office o${Math.min(S.office, 9)}">${icon(floor ? 'plus' : S.office ? 'building' : 'home')}<span class="o-name">${floor ? `増築 ${S.floors}` : o.name}</span></span></div>`;
+  wrap.append(fx);
+  setTimeout(() => {
+    fx.remove();
+    show();
+  }, 2600);
+}
+function moveHtml(b, floor) {
+  const o = R.OFFICES[S.office];
+  const round = (n) => Math.round(n / 1000) * 1000;
+  const row = (ic, name, x, y) => `<div class="cmp">${icon(ic)}<small>${name}</small><span class="grow"></span>${x === y ? '' : `<span class="was">${x}</span><span class="arrow">→</span>`}<b>${y}</b></div>`;
+  const fresh = floor ? [] : Object.entries(R.GENRES).filter(([, g]) => g.office === S.office);
+  const cand = (n, lv) => `${n}<small>人/日</small> Lv${lv[0]}〜${lv[1]}`;
+  return `<h2 class="launch-h">${floor ? '増築' : '引っ越し'}</h2>
+    <div class="launch move-card">
+      <div class="launch-art"><span class="move-badge chip-office o${Math.min(S.office, 9)}">${icon(floor ? 'plus' : S.office ? 'building' : 'home')}</span></div>
+      <b class="launch-name">${o.name}${S.floors ? ` <small>+${S.floors}</small>` : ''}</b>
+      ${floor ? '' : `<small>${o.about}</small>`}
+    </div>
+    <div class="move-rows">
+      ${row('people', '席', b.cap, G.capacity(S))}
+      ${floor ? '' : row('task', '仕事の平均', yen(round(b.rate)), `${yen(round(G.avgRate(S.office)))}<small>/時</small>`)}
+      ${floor ? '' : row('people', '面接', cand(b.cand, b.lv), cand(R.CANDIDATES_PER_DAY[S.office], o.lv))}
+      ${fresh.length ? `<div class="cmp">${icon('box')}<small>製品</small><span class="grow"></span>${fresh.map(([k, g]) => `<span class="new-prod">${prodIcon(k)}${g.name}</span>`).join('')}</div>` : ''}
+    </div>`;
 }
 
 // ----- 仕事 -----

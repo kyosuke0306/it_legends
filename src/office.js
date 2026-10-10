@@ -539,8 +539,34 @@ export class Office {
       animateCharacter(obj, t + g.id, dt);
       obj.position.y *= 0.3; // 立っているだけなので跳ねを小さく
     }
-    this.controls.update();
+    if (this.fly) this.flyStep(); // 演出の間はカメラを動かせない（近づける限界で止まらないように controls も通さない）
+    else this.controls.update();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  // 引っ越し・増築の演出：高いところから回り込みながら、いつもの位置へ降りてくる
+  celebrate(sec = 2.4) {
+    const end = this.camera.position.clone();
+    const target = this.controls.target.clone();
+    const off = end.clone().sub(target);
+    const r = Math.hypot(off.x, off.z);
+    const a = Math.atan2(off.x, off.z);
+    this.fly = { t0: performance.now(), sec, target, r, a, y: off.y };
+    this.controls.enabled = false;
+  }
+  flyStep() {
+    const f = this.fly;
+    const k = Math.min(1, (performance.now() - f.t0) / (f.sec * 1000));
+    const e = 1 - (1 - k) ** 3;
+    const a = f.a - (1 - e) * 1.6; // 横から回り込む
+    const r = f.r * (1 + (1 - e) * 0.9);
+    const y = f.y * (1 + (1 - e) * 1.4);
+    this.camera.position.set(f.target.x + Math.sin(a) * r, f.target.y + y, f.target.z + Math.cos(a) * r);
+    this.camera.lookAt(f.target);
+    if (k >= 1) {
+      this.fly = null;
+      this.controls.enabled = true;
+    }
   }
 
   // 1人ぶんの動き：仕事中は机へ、そうでなければ部屋をぶらぶら
