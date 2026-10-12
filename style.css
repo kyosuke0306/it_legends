@@ -1110,15 +1110,17 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 @media (prefers-reduced-motion: reduce) { .move-fx { display: none; } }
 
 /* 仕事タブの上：仲間の手の空き具合（main.js の crewHtml） */
-.crew { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; margin-bottom: 10px; }
-.crew-line { display: flex; align-items: center; gap: 10px; min-height: 38px; }
-.crew-k { display: inline-flex; align-items: center; gap: 4px; flex: none; width: 5.6em; font-size: 0.82rem; }
+.crew { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; margin-bottom: 10px; }
+.crew-line { display: flex; align-items: center; gap: 8px; height: 44px; }
+.crew-k { display: inline-flex; align-items: center; gap: 4px; flex: none; width: 5em; font-size: 0.82rem; white-space: nowrap; }
 .crew-k .ic { width: 1.05em; height: 1.05em; }
 .crew-k .count { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .crew-line.free .crew-k { color: var(--ok); }
 .crew-line.busy .crew-k { color: var(--accent); }
-.crew-avs { display: flex; gap: 6px; overflow-x: auto; padding: 3px 2px; scrollbar-width: none; }
+.crew-avs { flex: 1; min-width: 0; height: 40px; display: flex; align-items: center; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 0 2px; scrollbar-width: none; }
 .crew-avs::-webkit-scrollbar { display: none; }
-.crew-av { border: 0; padding: 0; background: none; flex: none; cursor: pointer; }
+.crew-av { display: block; width: 34px; height: 34px; border: 0; padding: 0; background: none; flex: none; cursor: pointer; line-height: 0; }
+/* iPhone の Safari では、丸い顔が文字の並び（ベースライン）にそろえられて行が縦に伸び、レジェンドの顔だけ浮いて見えた。丸をブロックにして高さを決める */
+.crew-av .av { display: grid; width: 34px; height: 34px; }
 .crew-line.busy .crew-av .av { opacity: 0.55; }
-.crew-line + .crew-line { border-top: 1px solid var(--line); padding-top: 6px; }
+.crew-line + .crew-line { border-top: 1px solid var(--line); padding-top: 4px; height: 48px; }
