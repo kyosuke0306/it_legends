@@ -1108,3 +1108,17 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .move-card .launch-name small { color: var(--muted); font-size: 0.8rem; }
 .move-rows { margin: 10px 0 4px; text-align: left; }
 @media (prefers-reduced-motion: reduce) { .move-fx { display: none; } }
+
+/* 仕事タブの上：仲間の手の空き具合（main.js の crewHtml） */
+.crew { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; margin-bottom: 10px; }
+.crew-line { display: flex; align-items: center; gap: 10px; min-height: 38px; }
+.crew-k { display: inline-flex; align-items: center; gap: 4px; flex: none; width: 5.6em; font-size: 0.82rem; }
+.crew-k .ic { width: 1.05em; height: 1.05em; }
+.crew-k .count { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.crew-line.free .crew-k { color: var(--ok); }
+.crew-line.busy .crew-k { color: var(--accent); }
+.crew-avs { display: flex; gap: 6px; overflow-x: auto; padding: 3px 2px; scrollbar-width: none; }
+.crew-avs::-webkit-scrollbar { display: none; }
+.crew-av { border: 0; padding: 0; background: none; flex: none; cursor: pointer; }
+.crew-line.busy .crew-av .av { opacity: 0.55; }
+.crew-line + .crew-line { border-top: 1px solid var(--line); padding-top: 6px; }

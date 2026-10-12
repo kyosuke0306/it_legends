@@ -850,6 +850,7 @@ function renderWork() {
   // 仕事中と、受けているだけの依頼は分けて出す（2026-10-04 ユーザー指示「分けてわかりやすく」）
   $('#view-work').innerHTML = `
     <div class="work-top"><button class="hist-btn" id="open-history">${icon('check')}${S.counts.tasks}</button></div>
+    ${crewHtml()}
     ${S.tasks.length ? `<div class="work-box running"><div class="sec work-sec">${icon('task')}<b>仕事中</b><span class="count">${S.tasks.length}</span></div>${running}</div>` : ''}
     <div class="sec work-sec">${icon('paper')}<b>依頼</b><span class="count">${S.offers.length}</span></div>
     ${prRow()}
@@ -858,8 +859,18 @@ function renderWork() {
   $('#view-work').querySelectorAll('[data-offer]').forEach((b) => (b.onclick = () => assignTask(+b.dataset.offer)));
   $('#view-work').querySelectorAll('[data-run]').forEach((el) => (el.onclick = () => openRunning(+el.dataset.run)));
   $('#open-history').onclick = () => openHistory();
+  $('#view-work').querySelectorAll('[data-crew]').forEach((b) => (b.onclick = () => openProfile(S.members.find((m) => m.id === +b.dataset.crew))));
   $('#pr') && ($('#pr').onclick = () => openPromo('pr'));
   $('#pr-on') && ($('#pr-on').onclick = () => openPromoInfo('pr'));
+}
+
+// 仲間の手の空き具合（2026-10-12 ユーザー指示「手が空いてる人、空いてない人」）。顔を押すとその人の詳しい画面
+function crewHtml() {
+  const free = G.freeMembers(S);
+  const busy = S.members.filter((m) => m.busy);
+  const line = (cls, ic, name, list) => `<div class="crew-line ${cls}"><span class="crew-k">${icon(ic)}<b>${name}</b><span class="count">${list.length}</span></span>
+    <span class="crew-avs">${list.map((m) => `<button class="crew-av" data-crew="${m.id}">${avatar(m)}</button>`).join('') || '<small class="muted">—</small>'}</span></div>`;
+  return `<div class="panel crew">${line('free', 'check', '空き', free)}${line('busy', 'task', '仕事中', busy)}</div>`;
 }
 
 // これまでの仕事。上に種類ごとの成功した回数（レジェンドの出会いの条件と同じ数）、押すとその種類だけにしぼる。下に最近の仕事
