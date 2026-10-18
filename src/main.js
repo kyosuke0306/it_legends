@@ -483,9 +483,9 @@ function renderHeader() {
   $('#company-name').textContent = S.company;
   $('#money').innerHTML = val('coin', yen(S.money), S.money < 0 ? 'minus' : '');
   $('#rep').innerHTML = val('star', S.rep);
-  $('#dot-office').classList.toggle('on', Boolean(S.encounter));
+  // 仲間タブを最後に開いたあとに面接に来た人（勉強会の人も）がいるとき。前は勉強会の人がいる間ずっと消えなかった（2026-10-18）
   // 勉強会で訪ねてきた人がいるか、仲間タブを最後に開いたあとに面接に来た人がいるとき
-  $('#dot-team').classList.toggle('on', S.candidates.some((c) => c.walkin || (c.at ?? 0) > (S.teamSeenAt ?? 0)));
+  $('#dot-team').classList.toggle('on', S.candidates.some((c) => (c.at ?? 0) > (S.teamSeenAt ?? 0)));
   // 仕事タブを最後に開いたあとに新しい依頼が届いていて、手の空いている人がいるときだけ（開くと消える）
   const arrived = (o) => o.expiresAt - R.OFFER_LIFE;
   $('#dot-work').classList.toggle('on', G.freeMembers(S).length > 0 && S.offers.some((o) => arrived(o) > (S.workSeenAt ?? 0)));
@@ -1639,19 +1639,33 @@ function openLegend(id) {
 // ちょうど満席で、FIRE できる社員がいれば入れ替えられる
 const canSwap = () => G.seatsUsed(S) === G.capacity(S) && G.fireable(S).length > 0;
 const firedLine = (m) => (m ? `<div class="fired-line">${avatar(m)}<b>${esc(m.name)}</b><span>FIRE</span></div>` : '');
-// FIRE する人を選ぶ（下からのシート）。選んだ人の id、やめたら null
+// FIRE する人を選ぶ（下からのシート）。選んだ人の id、やめたら null。顔を押すとその人のプロフィール（2026-10-18 ユーザー指示）
 function pickFire() {
   const staff = S.members.filter((m) => m.kind === 'staff');
   const ok = new Set(G.fireable(S));
-  askEl.innerHTML = `<div class="fire-head"><b>FIRE</b>${val('people', `${G.seatsUsed(S)}/${G.capacity(S)}`, 'bad')}</div>
+  const list = () => `<div class="fire-head"><b>FIRE</b>${val('people', `${G.seatsUsed(S)}/${G.capacity(S)}`, 'bad')}</div>
     <div class="fire-list">${staff
       .map(
-        (m) => `<button class="fire-row" data-id="${m.id}" ${ok.has(m) ? '' : 'disabled'}>${avatar(m)}<span class="rival-what"><b>${esc(m.name)}</b><small>${jobShort(m)} Lv${m.level}${
+        (m, i) => `<button class="fire-row ${ok.has(m) ? '' : 'off'}" data-id="${m.id}"><span class="fire-face" data-prof="${i}">${avatar(m)}</span><span class="rival-what"><b>${esc(m.name)}</b><small>${jobShort(m)} Lv${m.level}${
           G.isTired(m) ? icon('drop', 'tired-ic') : ''
         }</small></span>${m.busy ? `<span class="muted">${icon('task')}</span>` : m.haken ? hakenTag(m) : ''}</button>`,
       )
       .join('')}</div>
     <div class="ask-btns"><button class="big ghost" data-a="0">やめる</button></div>`;
+  // 職種の詳しい画面と同じ中身（3D の代わりに大きな顔）
+  const profile = (m) => {
+    const j = R.JOBS[m.job];
+    return `<div class="fire-prof">${avatar(m)}<h2>${esc(G.displayName(m))}</h2><div class="sub">${j.full}</div></div>
+    <p class="job-desc">${esc(j.desc)}</p>
+    <div class="ability">${esc(j.perkText)}</div>
+    <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
+    ${guardLine(R.guardsOf(m.job))}
+    <div class="lvrow">Lv${m.level} ${statBars(G.statsOf(S, m))}</div>
+    ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
+    ${G.canTire(m) ? tiredBar(m) : ''}
+    ${m.haken ? `<div class="vals">${hakenTag(m)}</div>` : ''}
+    <div class="ask-btns"><button class="big ghost" data-pback>戻る</button>${ok.has(m) ? `<button class="big danger" data-fire="${m.id}">FIRE</button>` : ''}</div>`;
+  };
   askEnd?.(false);
   if (!askEl.open) askEl.showModal();
   return new Promise((done) => {
@@ -1660,9 +1674,22 @@ function pickFire() {
       askEl.close();
       done(v);
     };
+    const show = (html) => {
+      askEl.innerHTML = html;
+      askEl.querySelectorAll('.fire-row').forEach(
+        (b) =>
+          (b.onclick = (e) => {
+            const prof = e.target.closest('[data-prof]');
+            if (prof) return show(profile(staff[+prof.dataset.prof]));
+            if (!b.classList.contains('off')) end(+b.dataset.id);
+          }),
+      );
+      askEl.querySelector('[data-fire]') && (askEl.querySelector('[data-fire]').onclick = () => end(+askEl.querySelector('[data-fire]').dataset.fire));
+      askEl.querySelector('[data-pback]') && (askEl.querySelector('[data-pback]').onclick = () => show(list()));
+      askEl.querySelector('[data-a]') && (askEl.querySelector('[data-a]').onclick = () => end(null));
+    };
     askEnd = () => end(null);
-    askEl.querySelectorAll('.fire-row').forEach((b) => (b.onclick = () => end(+b.dataset.id)));
-    askEl.querySelector('[data-a]').onclick = () => end(null);
+    show(list());
     askEl.oncancel = (e) => {
       e.preventDefault();
       end(null);
@@ -2146,7 +2173,7 @@ function staffQuitHtml(ev, { head = true } = {}) {
   if (!es.length) return '';
   const rows = es.map(
     (e) => `<div class="rival">${avatar(e.m)}
-      <span class="rival-what"><b>${esc(e.m.name)}</b><small>${jobShort(e.m)} Lv${e.m.level}</small></span>
+      <span class="rival-what"><b>${esc(e.m.name)}</b><small>${jobShort(e.m)} Lv${e.m.level}</small>${e.text ? `<small class="quit-text">${esc(e.text)}</small>` : ''}</span>
       <span class="quit-why">${e.why === 'tired' ? `${icon('drop')}退職` : `${icon('move')}引き抜き`}</span>
     </div>`,
   );

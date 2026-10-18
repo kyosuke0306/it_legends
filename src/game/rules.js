@@ -286,6 +286,8 @@ export const TIRED_WORK = 2;
 export const TIRED_DEV = 1;
 export const TIRED_REST = 4;
 export const TIRED_WARN = 70;
+// 働きすぎで辞めるときの理由（お知らせに出す。2026-10-18 ユーザー指示）
+export const TIRED_QUITS = ['休みなしで体をこわした', '徹夜続きで心が折れた', 'ホワイトな会社へ転職', '燃え尽きて田舎へ帰った', '残業続きで家族に止められた', '週末も仕事で限界'];
 // 引き抜き: Lv POACH_LV 以上の社員がいると、会社全体で平均 POACH_DAYS 日に1回。レベルの高い人ほど狙われる
 export const POACH_LV = 5;
 export const POACH_DAYS = 7;

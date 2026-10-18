@@ -823,8 +823,9 @@ function tiredQuit(s, team, t, ev) {
   for (const m of team) {
     if (!isTired(m) || m.busy || rand(s) >= (m.tired - 60) / 200) continue;
     s.members = s.members.filter((x) => x !== m);
-    addLog(s, t, `${m.name}  退職`, 'bad');
-    ev.push({ type: 'staffQuit', why: 'tired', t, m: leaver(m) });
+    const text = pick(s, R.TIRED_QUITS);
+    addLog(s, t, `${m.name}  退職（${text}）`, 'bad');
+    ev.push({ type: 'staffQuit', why: 'tired', t, m: leaver(m), text });
   }
 }
 // ほかの会社からの引き抜き。レベルの高い人ほど狙われる（最後の1人は取られない）
