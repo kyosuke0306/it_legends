@@ -1082,6 +1082,8 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
         ${face(m)}<span class="pname">${esc(m.name)}<small>${R.JOBS[m.job].name} Lv${m.level}</small></span><span class="fee">${icon('coin')}${yen(temp.fee)}</span>${pw(m)}
       </button>`;
     const tempHtml = temp ? `<div class="sec temp-head">${icon('plus')}<b>SES</b></div>${temps.map((m) => tempRow(m, true)).join('')}${room ? tempRow(temp.make(nTemps), false) : ''}` : '';
+    // 選ぶたびに描き直すので、スクロールの位置を覚えて戻す（2026-10-18 ユーザー「選択するたびに上に戻ってしまう」）
+    const scrolled = [dlg, $('#assign-body'), $('#assign-body .pick')].map((el) => el?.scrollTop ?? 0);
     $('#assign-body').innerHTML = `
       <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${icon('people')}${size}/${max > 20 ? free.length : base.length + max}</span></div>
       ${extra}
@@ -1097,6 +1099,7 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
       <button class="big" id="assign-go" ${ready ? '' : 'disabled'}>${go}${nTemps ? ` <small>${icon('coin')}-${yen(temp.fee * nTemps)}</small>` : ''}</button>
       ${decline ? `<button class="decline" id="assign-decline">${decline.label}</button>` : ''}`;
     fillThumbs($('#assign-body'));
+    [dlg, $('#assign-body'), $('#assign-body .pick')].forEach((el, i) => el && (el.scrollTop = scrolled[i]));
     $('#assign-body').querySelectorAll('[data-prof]').forEach(
       (el) =>
         (el.onclick = (e) => {
