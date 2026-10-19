@@ -1025,16 +1025,6 @@ function finishTraining(s, tr, t, ev) {
   ev.push({ type: 'train', t, id: m.id, name: displayName(m), kind: tr.kind });
 }
 
-// 製品の名前と絵を自分で決める（look: { c: 色の番号, ic: 絵の名前 }。無ければ種類の色と絵）
-export function renameProduct(s, id, name, look) {
-  const p = s.products.find((x) => x.id === id);
-  name = String(name ?? '').trim().slice(0, 20);
-  if (!p || !name) return false;
-  p.name = name;
-  if (look) p.look = look;
-  return true;
-}
-
 // ---------- 時間を進める ----------
 // ゲームを閉じていた間も含めて now まで進める。起きたことを ev に入れて返す
 export function advance(s, now, ev = []) {
@@ -1108,6 +1098,7 @@ export function migrate(s) {
   delete s.achv; // 実績はやめた（2026-10-19 ユーザー指示「実績もいらない」）
   delete s.achvSeen;
   delete s.tally;
+  for (const p of s.products) delete p.look; // 製品の色と絵を選ぶ機能もやめた
   s.log = s.log.filter((l) => l.kind !== 'note');
   backfillHistory(s);
   for (const m of s.members) if (m.kind === 'legend') m.joinedAt ??= s.time; // 前の記録のレジェンドは、いまから数える

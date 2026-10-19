@@ -194,25 +194,10 @@ const GENRE_LOOK = {
   satnet: ['g_satnet', '#2f6bff', '#0b1d55'],
   agi: ['spark', '#ffd35a', '#ff7a2f'],
 };
-function prodIcon(genre, cls = '', look = null) {
-  let [ic, a, b] = GENRE_LOOK[genre] ?? GENRE_LOOK.web;
-  if (look?.c != null && PROD_COLORS[look.c]) [a, b] = PROD_COLORS[look.c];
-  if (look?.ic && PROD_MARKS.includes(look.ic)) ic = look.ic;
+function prodIcon(genre, cls = '') {
+  const [ic, a, b] = GENRE_LOOK[genre] ?? GENRE_LOOK.web;
   return `<span class="prod-ic ${cls}" style="--g1:${a};--g2:${b}">${icon(ic)}</span>`;
 }
-// 発売した製品の絵（自分で色と絵を決めていればそれで。2026-10-19 ユーザー指示）
-const pIcon = (p, cls = '') => prodIcon(p.genre, cls, p.look);
-const PROD_COLORS = [
-  ['#36b6ff', '#4b6bff'],
-  ['#22d3a6', '#1f8fd6'],
-  ['#ff6f9f', '#a24bff'],
-  ['#ff9a3d', '#ff4f7a'],
-  ['#ffd35a', '#ff7a2f'],
-  ['#2fd17a', '#14866b'],
-  ['#8f6bff', '#2b1d7a'],
-  ['#4a4a5a', '#16161e'],
-];
-const PROD_MARKS = ['star', 'bolt', 'spark', 'globe', 'crown', 'chart', 'bubble', 'g_game', 'g_ai', 'cloud', 'plant', 'fish'];
 function progress(start, end) {
   return `<div class="prog"><div class="bar" data-start="${start}" data-ends="${end}"><i></i></div><span class="left" data-left="${end}">${dur(end - Date.now())}</span></div>`;
 }
@@ -1572,7 +1557,7 @@ function renderProduct() {
     .map((p) => {
       const net = G.productNet(S, p, now, ce);
       return `<button class="panel prod${net < 0 ? ' red' : ''}" data-prod="${p.id}">
-        ${pIcon(p)}
+        ${prodIcon(p.genre)}
         <span class="prod-main"><b>${esc(p.name)}</b><small>${R.GENRES[p.genre].name}</small>${rating(p.q)}</span>
         <span class="prod-earn">${net < 0 ? '<span class="red-tag">赤字</span>' : ''}<b>${signYen(net)}<small>/時</small></b><small>${icon('wallet')}${yen(p.earned ?? 0)}</small></span>
       </button>`;
@@ -1628,7 +1613,7 @@ function openProduct(id) {
   const back = (p.earned ?? 0) / g.cost; // 開発費を取り戻した割合
   const dlg = $('#assign');
   $('#assign-body').innerHTML = `
-    <button class="prod-hero" id="prod-edit">${pIcon(p, 'big')}<b>${esc(p.name)}${icon('pen', 'edit-ic')}</b><small>${g.name}</small>${rating(p.q)}</button>
+    <div class="prod-hero">${prodIcon(p.genre, 'big')}<b>${esc(p.name)}</b><small>${g.name}</small>${rating(p.q)}</div>
     <div class="facts">
       <div><small>売上</small><b class="ok">+${yen(net + upkeep)}</b></div>
       <div><small>維持費</small><b class="bad">-${yen(upkeep)}</b></div>
@@ -1646,49 +1631,18 @@ function openProduct(id) {
   fillThumbs($('#assign-body'));
   if (!dlg.open) dlg.showModal();
   $('#run-close').onclick = () => dlg.close();
-  $('#prod-edit').onclick = () => editProduct(id);
   // 作った人の顔を押すと、その人の詳しい画面（2026-10-06 ユーザー指示）
   $('#assign-body').querySelectorAll('[data-by]').forEach((el) => (el.onclick = () => openProfile(by[+el.dataset.by])));
   $('#prod-stop').onclick = async () => {
     // 押した時点の値段で売る（確認の間に流行が変わっても、見せた値段と違わないように）
     const ok = price
-      ? await ask({ head: `${pIcon(p)}<b>${esc(p.name)}</b>`, text: `${yen(price)}で売却しますか？`, ok: '売却', safe: true })
-      : await ask({ head: `${pIcon(p)}<b>${esc(p.name)}</b>`, text: '販売をやめますか？', ok: '販売終了' });
+      ? await ask({ head: `${prodIcon(p.genre)}<b>${esc(p.name)}</b>`, text: `${yen(price)}で売却しますか？`, ok: '売却', safe: true })
+      : await ask({ head: `${prodIcon(p.genre)}<b>${esc(p.name)}</b>`, text: '販売をやめますか？', ok: '販売終了' });
     if (!ok) return;
     G.stopProduct(S, id, now);
     dlg.close();
     commit();
   };
-}
-
-// 製品の名前と絵を自分で決める（2026-10-19 ユーザー指示）。色と絵を選び、名前を打つ
-function editProduct(id) {
-  const p = S.products.find((x) => x.id === id);
-  if (!p) return;
-  const dlg = $('#assign');
-  const look = { c: p.look?.c ?? null, ic: p.look?.ic ?? null };
-  let name = p.name;
-  const draw = () => {
-    $('#assign-body').innerHTML = `
-      <div class="prod-hero">${prodIcon(p.genre, 'big', look)}</div>
-      <input class="prod-name-in" id="prod-name" maxlength="20" value="${esc(name)}" autocomplete="off">
-      <div class="prod-colors">${PROD_COLORS.map(([a, b], i) => `<button class="${look.c === i ? 'on' : ''}" data-c="${i}" style="--g1:${a};--g2:${b}"></button>`).join('')}</div>
-      <div class="prod-marks">${[GENRE_LOOK[p.genre][0], ...PROD_MARKS.filter((m) => m !== GENRE_LOOK[p.genre][0])]
-        .map((m, i) => `<button class="${(look.ic ?? GENRE_LOOK[p.genre][0]) === m ? 'on' : ''}" data-ic="${i ? m : ''}">${icon(m)}</button>`)
-        .join('')}</div>
-      <div class="sheet-btns"><button class="big ghost" id="pe-back">${icon('back')}</button><button class="big" id="pe-save">保存</button></div>`;
-    $('#prod-name').oninput = (e) => (name = e.target.value);
-    $('#assign-body').querySelectorAll('[data-c]').forEach((b) => (b.onclick = () => ((look.c = +b.dataset.c), draw())));
-    $('#assign-body').querySelectorAll('[data-ic]').forEach((b) => (b.onclick = () => ((look.ic = b.dataset.ic || null), draw())));
-    $('#pe-back').onclick = () => openProduct(id);
-    $('#pe-save').onclick = () => {
-      if (!G.renameProduct(S, id, name, { ...(look.c != null ? { c: look.c } : {}), ...(look.ic ? { ic: look.ic } : {}) })) return;
-      commit();
-      openProduct(id);
-    };
-  };
-  draw();
-  if (!dlg.open) dlg.showModal();
 }
 
 // 開発中の製品のくわしい様子（担当者と力・ゲージ・出来の見込み・1時間の稼ぎの見込み・残り時間）
@@ -1971,14 +1925,6 @@ function notice(html) {
       (b.onclick = () => {
         $('#notice').close();
         document.querySelector('.tab[data-view="team"]').click();
-      }),
-  );
-  // 発売した製品を押すと、その製品のくわしいシート（名前と絵を変えられる）
-  $('#notice-body').querySelectorAll('[data-prod]').forEach(
-    (b) =>
-      (b.onclick = () => {
-        $('#notice').close();
-        openProduct(+b.dataset.prod);
       }),
   );
   // 完了した依頼の行を押すと、その依頼のくわしいシート
@@ -2307,11 +2253,10 @@ function launchCard(e, alone = false) {
   const p = S.products.find((x) => x.id === e.id);
   const genre = e.genre ?? p?.genre ?? 'web';
   const income = p ? G.productNet(S, p, p.launchedAt) : 0;
-  // 押すとその製品の詳しいシート（名前と絵はそこで変えられる）
-  return `<div class="launch" ${p ? `data-prod="${p.id}"` : ''}>
-    <div class="launch-art">${p ? pIcon(p, 'big') : prodIcon(genre, 'big')}</div>
+  return `<div class="launch">
+    <div class="launch-art">${prodIcon(genre, 'big')}</div>
     ${alone ? '' : `<span class="launch-tag">${icon('box')}発売</span>`}
-    <b class="launch-name">${esc(p?.name ?? e.name)}${p ? icon('pen', 'edit-ic') : ''}</b>
+    <b class="launch-name">${esc(e.name)}</b>
     <small>${R.GENRES[genre]?.name ?? ''}</small>
     ${rating(e.q)}
     ${income ? `<span class="launch-earn">${signYen(income)}<small>/時</small></span>` : ''}
