@@ -549,6 +549,8 @@ export const FURNITURE = {
   coffee: { name: 'コーヒーメーカー', icon: 'cup', office: 0, cost: 30_000, effect: { rest: 0.25 }, text: '疲れの抜け +25%' },
   plant: { name: '観葉植物', icon: 'plant', office: 0, cost: 60_000, effect: { rep: 0.05 }, text: '評判 +5%' },
   chair: { name: 'ゲーミングチェア', icon: 'chair', office: 1, cost: 250_000, effect: { xp: 0.1 }, text: '成長 +10%' },
+  // 2026-10-19 ユーザー指示。タバコ部屋で仕事の話が回ってくる
+  smoking: { name: '喫煙所', icon: 'smoke', office: 1, cost: 300_000, effect: { offers: 0.15 }, text: '依頼 ×1.15' },
   neon: { name: 'ネオンサイン', icon: 'neon', office: 1, cost: 400_000, effect: { offers: 0.1 }, text: '依頼 ×1.1' },
   sofa: { name: 'ソファ', icon: 'sofa', office: 2, cost: 1_500_000, effect: { rest: 0.5 }, text: '疲れの抜け +50%' },
   aquarium: { name: '水槽', icon: 'fish', office: 2, cost: 2_500_000, effect: { luck: 0.3 }, text: '臨時収入 +30%' },
@@ -593,7 +595,7 @@ export const ACHIEVEMENTS = [
   { id: 'consult', icon: 'bubble', name: '相談', key: 'cat:consult', steps: [10, 50, 200], hours: 3 },
   { id: 'ai', icon: 'g_ai', name: 'AI', key: 'cat:ai', steps: [10, 50, 200], hours: 3 },
   { id: 'space', icon: 'g_satnet', name: '宇宙', key: 'cat:space', steps: [5, 30, 100], hours: 3 },
-  { id: 'furniture', icon: 'sofa', name: '模様替え', key: 'furniture', steps: [1, 4, 9], hours: 3 },
+  { id: 'furniture', icon: 'sofa', name: '模様替え', key: 'furniture', steps: [1, 4, 10], hours: 3 },
   { id: 'trains', icon: 'up', name: '研修', key: 'trains', steps: [3, 20, 100], hours: 3 },
   { id: 'treats', icon: 'cup', name: '差し入れ', key: 'treats', steps: [3, 20, 100], hours: 3 },
   { id: 'pokes', icon: 'spark', name: 'ちょっかい', key: 'pokes', steps: [5, 30, 150], hours: 2 },

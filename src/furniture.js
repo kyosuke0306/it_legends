@@ -78,6 +78,32 @@ const MODELS = {
     g.add(light);
     return g;
   },
+  // ガラスで囲った喫煙所（灰皿のスタンドと、立ちのぼる煙は userData.smoke）
+  smoking: () => {
+    const g = new THREE.Group();
+    const glass = glow(0xbfe6ff, { transparent: true, opacity: 0.22, depthWrite: false });
+    const frame = mat(0x8a8f96);
+    g.add(box(0.7, 0.01, 0.6, mat(0x5a5f66), 0, 0.005, 0));
+    g.add(box(0.7, 0.9, 0.02, glass, 0, 0.45, -0.3), box(0.02, 0.9, 0.6, glass, -0.35, 0.45, 0), box(0.02, 0.9, 0.6, glass, 0.35, 0.45, 0));
+    for (const [x, z] of [[-0.35, -0.3], [0.35, -0.3], [-0.35, 0.3], [0.35, 0.3]]) g.add(box(0.03, 0.92, 0.03, frame, x, 0.46, z));
+    g.add(box(0.7, 0.03, 0.6, frame, 0, 0.92, 0));
+    // 灰皿のスタンド
+    g.add(cyl(0.03, 0.03, 0.5, mat(0x2a2a30), 0, 0.25, 0));
+    g.add(cyl(0.1, 0.08, 0.04, mat(0x9a9aa6), 0, 0.52, 0));
+    g.add(cyl(0.12, 0.12, 0.02, mat(0x2a2a30), 0, 0.01, 0));
+    // 壁の札（たばこの絵）
+    g.add(box(0.2, 0.12, 0.01, mat(0x2f6ad8), 0, 0.75, -0.285));
+    g.add(box(0.12, 0.025, 0.005, glow(0xffffff), -0.01, 0.745, -0.278), box(0.02, 0.025, 0.005, glow(0xff8a2a), 0.06, 0.745, -0.278));
+    const smoke = [];
+    for (let k = 0; k < 4; k++) {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), glow(0xdddddd, { transparent: true, opacity: 0.5, depthWrite: false }));
+      p.userData.phase = k / 4;
+      g.add(p);
+      smoke.push(p);
+    }
+    g.userData.smoke = smoke;
+    return g;
+  },
   // 2人がけのソファとクッション
   sofa: () => {
     const g = new THREE.Group();
@@ -162,7 +188,7 @@ const MODELS = {
 
 // 置く場所。カメラに近い手前の床に、買った順に真ん中から左右へ並べる（奥は机で埋まり、遠くて見えないため）
 // ネオンは左の壁に掛ける
-const SLOTS = [-0.2, 0.2, -0.6, 0.6, 0, -0.4, 0.4, -0.8, 0.8];
+const SLOTS = [-0.2, 0.2, -0.6, 0, 0.85, -0.4, 0.4, -0.8, 0.6, -1]; // 0.6 あたりは外の木に隠れやすいので後回し
 // 置いた家具をまとめて作る（office.js が部屋を作るたび・家具が増えたときに呼ぶ）
 export function buildFurniture(ids, w, d, home) {
   const g = new THREE.Group();
@@ -186,6 +212,13 @@ export function buildFurniture(ids, w, d, home) {
 // 水槽の魚を泳がせる
 export function animateFurniture(g, t) {
   g?.traverse((o) => {
+    // 喫煙所の煙：灰皿から上へゆらゆら昇って消える
+    o.userData.smoke?.forEach((p) => {
+      const k = (t * 0.35 + p.userData.phase) % 1;
+      p.position.set(Math.sin(k * 9 + p.userData.phase * 6) * 0.05, 0.56 + k * 0.6, 0);
+      p.scale.setScalar(0.6 + k * 1.4);
+      p.material.opacity = 0.5 * (1 - k);
+    });
     o.userData.fish?.forEach((f, k) => {
       const a = t * (0.6 + k * 0.25) + k * 2;
       f.position.x = Math.sin(a) * 0.25;
