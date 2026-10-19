@@ -455,7 +455,19 @@ export class Office {
   }
 
   // タップした人を探して、名前と職種を3秒出す
+  // 押したところに広がる輪（押した感じを出す）
+  ripple(e) {
+    const r = this.canvas.getBoundingClientRect();
+    const el = document.createElement('i');
+    el.className = 'tap-ring';
+    el.style.left = `${e.clientX - r.left}px`;
+    el.style.top = `${e.clientY - r.top}px`;
+    this.canvas.parentElement.append(el);
+    setTimeout(() => el.remove(), 600);
+  }
+
   pick(e) {
+    this.ripple(e);
     const r = this.canvas.getBoundingClientRect();
     const ray = new THREE.Raycaster();
     ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), this.camera);
@@ -485,8 +497,12 @@ export class Office {
     if (!best) return this.tag.classList.remove('show');
     const L = best.label;
     // ちょっかい：仲間をタップすると、まれに小さなことが起きる（main.js の onPoke が札に出す中身を返す）
-    const poked = L.who && !L.candidate && L.who.kind !== 'rival' && L.who.kind !== 'temp' ? this.onPoke?.(L.who) : '';
-    this.tag.innerHTML = `<b></b><small></small>${L.work ? '<span class="work"></span>' : ''}${poked ? `<span class="poke">${poked}</span>` : ''}`;
+    // 押した感じ：押された人がぴょんと跳ねて、こちらを向く（スマホは少し震える）
+    const hopped = [...this.people.values()].find((p) => p.holder === best.holder);
+    if (hopped) hopped.hop = this.clock.elapsedTime;
+    navigator.vibrate?.(12);
+    const poked = L.who && !L.candidate && L.who.kind !== 'rival' && L.who.kind !== 'temp' ? this.onPoke?.(L.who) : null;
+    this.tag.innerHTML = `<b></b><small></small>${L.work ? '<span class="work"></span>' : ''}${poked ? `<span class="poke ${poked.bad ? 'bad' : ''}">${poked.html}</span>` : ''}`;
     this.tag.querySelector('b').textContent = L.name;
     this.tag.querySelector('small').textContent = L.sub;
     if (L.work) this.tag.querySelector('.work').textContent = L.work;
@@ -709,6 +725,12 @@ export class Office {
       parts.head.rotation.x = 0.3;
       if (!p.onFurn || p.onFurn.laptop) this.lapTop(p); // ソファではくつろぐだけ
     } else if (parts) p.obj.rotation.x = 0;
+    // 押されたら、ぴょんと跳ねる
+    if (p.hop != null) {
+      const k = (t - p.hop) / 0.45;
+      if (k >= 1) p.hop = null;
+      else p.obj.position.y += Math.sin(k * Math.PI) * 0.22;
+    }
   }
 }
 

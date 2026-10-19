@@ -461,13 +461,20 @@ function enterGame() {
       if (tr) openMember(S.members.find((m) => m.id === tr.member));
     };
     // ちょっかい：仲間をタップすると、まれに小さなことが起きる（2026-10-19 ユーザー指示）。札に出す中身を返す
+    // マイナスのときは赤い札（bad）
     office.onPoke = (m) => {
       const r = G.poke(S, m.id, Date.now());
-      if (!r) return '';
+      if (!r) return null;
       commit();
-      if (r.type === 'rest') return `${icon('drop')}ひと息<b>-${r.v}</b>`;
-      if (r.type === 'idea') return `${icon('spark')}ひらめき${r.level ? `<b>Lv${r.level}</b>` : ''}`;
-      return `${icon('task')}相談<b>+1</b>`;
+      const html = {
+        rest: () => `${icon('drop')}ひと息<b>-${r.v}</b>`,
+        idea: () => `${icon('spark')}ひらめき${r.level ? `<b>Lv${r.level}</b>` : ''}`,
+        offer: () => `${icon('task')}相談<b>+1</b>`,
+        stall: () => `${icon('clock')}手が止まった<b>+${dur(r.v)}</b>`,
+        annoy: () => `${icon('drop')}イラッ<b>+${r.v}</b>`,
+        spill: () => `${icon('cup')}こぼした<b>-${yen(r.v)}</b>`,
+      }[r.type]();
+      return { html, bad: !!r.bad };
     };
   }
   preloadCharacters([...G.ownedLegends(S)]);

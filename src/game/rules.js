@@ -563,6 +563,13 @@ export const FURNITURE = {
 export const POKE_CHANCE = 0.35;
 export const POKE_PER_DAY = 3;
 export const POKE_COOL = HOUR;
+// 起きたうちの POKE_BAD はマイナス（2026-10-19 ユーザー指示「マイナスの効果も」）:
+// 仕事中の人は手が止まる（残りが全体の POKE_STALL ぶん延びる）、手の空いた社員はイラッとする（疲れ +POKE_ANNOY）、
+// CEO・レジェンドはコーヒーをこぼす（今の会社の仕事 POKE_SPILL 時間ぶんのお金）
+export const POKE_BAD = 0.3;
+export const POKE_STALL = 0.05;
+export const POKE_ANNOY = 10;
+export const POKE_SPILL = 0.5;
 
 // 差し入れ: 社員1人ずつに（2026-10-19 ユーザー指示）。疲れが TREAT_REST 減る。同じ人には TREAT_COOL に1回
 // 費用は今の会社の仕事 TREAT_HOURS 時間ぶんの報酬（自宅で6,000円）

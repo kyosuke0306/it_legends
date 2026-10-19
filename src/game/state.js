@@ -954,7 +954,26 @@ export function poke(s, id, now) {
   if (p.n >= R.POKE_PER_DAY || now - (p.at[id] ?? 0) < R.POKE_COOL) return null;
   p.at[id] = now;
   if (rand(s) >= R.POKE_CHANCE) return null;
-  // 起きること: 疲れた社員なら雑談でひと息、そうでなければひらめき（経験）か、知り合いからの相談（依頼が1件）
+  p.n++;
+  // マイナス: 仕事中なら手が止まる、手の空いた社員はイラッとする、CEO・レジェンドはコーヒーをこぼす
+  if (rand(s) < R.POKE_BAD) {
+    const x = [...s.tasks, ...s.devs, ...(s.trains ?? [])].find((y) => y.id === m.busy);
+    if (x) {
+      const d = Math.max(60_000, Math.round((x.endsAt - x.startAt) * R.POKE_STALL));
+      x.begunAt ??= x.startAt; // 早く終わったかは、最初に始めた時刻から測る（止まったぶん遅れる）
+      x.startAt += d; // 進み具合はそのまま、終わりが遅れる
+      x.endsAt += d;
+      return { type: 'stall', v: d, bad: true };
+    }
+    if (canTire(m)) {
+      m.tired = Math.min(100, (m.tired ?? 0) + R.POKE_ANNOY);
+      return { type: 'annoy', v: R.POKE_ANNOY, bad: true };
+    }
+    const v = round(rateNow(s) * R.POKE_SPILL, 500);
+    s.money -= v;
+    return { type: 'spill', v, bad: true };
+  }
+  // プラス: 疲れた社員なら雑談でひと息、そうでなければひらめき（経験）か、知り合いからの相談（依頼が1件）
   const r = rand(s);
   let out;
   if (canTire(m) && (m.tired ?? 0) >= 20 && r < 0.5) {
@@ -969,7 +988,6 @@ export function poke(s, id, now) {
     addOffer(s, now);
     out = { type: 'offer' };
   }
-  p.n++;
   return out;
 }
 

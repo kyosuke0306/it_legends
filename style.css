@@ -308,7 +308,7 @@ button.panel:disabled { opacity: 0.45; }
 .person-tag.show { display: flex; }
 .person-tag b { font-size: 0.85rem; }
 .person-tag small { font-size: 0.7rem; color: var(--muted); }
-.person-tag.tappable b { pointer-events: auto; cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent); text-underline-offset: 3px; }
+.person-tag.tappable > b { pointer-events: auto; cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent); text-underline-offset: 3px; }
 .person-tag .work { pointer-events: auto; cursor: pointer; margin-top: 3px; padding: 2px 8px; border-radius: 99px; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; }
 .person-tag::after { content: ''; position: absolute; bottom: -5px; left: calc(50% + var(--ax, 0px)); margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: var(--panel); }
 @keyframes bob { 50% { transform: translateY(-3px); } }
@@ -1170,3 +1170,6 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .pick .person .tired-bar { width: 90px; margin: 0 0 0 auto; }
 .furn-also { width: 1.1em; height: 1.1em; margin-left: auto; color: var(--muted); }
 #boot-error { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 9999; margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(160, 20, 30, 0.92); color: #fff; font-size: 11px; white-space: pre-wrap; word-break: break-all; }
+.person-tag .poke.bad { background: linear-gradient(100deg, #ff7a59, #e5484d); }
+.tap-ring { position: absolute; z-index: 2; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.85); box-shadow: 0 0 12px rgba(120, 200, 255, 0.7); pointer-events: none; animation: tap-ring 0.55s ease-out forwards; }
+@keyframes tap-ring { from { transform: scale(0.3); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
