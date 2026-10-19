@@ -513,8 +513,8 @@ function renderHeader() {
   $('#company-name').textContent = S.company;
   $('#money').innerHTML = val('coin', yen(S.money), S.money < 0 ? 'minus' : '');
   $('#rep').innerHTML = val('star', S.rep);
-  // 会社タブの点：誰かが現れた・新しく達成した実績がある
-  $('#dot-office').classList.toggle('on', Boolean(S.encounter) || G.achieveNew(S) > 0);
+  // 会社タブの点：誰かが現れた
+  $('#dot-office').classList.toggle('on', Boolean(S.encounter));
   // 仲間タブを最後に開いたあとに面接に来た人（勉強会の人も）がいるとき。前は勉強会の人がいる間ずっと消えなかった（2026-10-18）
   // 勉強会で訪ねてきた人がいるか、仲間タブを最後に開いたあとに面接に来た人がいるとき
   $('#dot-team').classList.toggle('on', S.candidates.some((c) => (c.at ?? 0) > (S.teamSeenAt ?? 0)));
@@ -597,12 +597,9 @@ function renderOffice() {
   // オフィスの名前と席の数は1つのボタンにまとめ、押すと今のオフィスの詳しいシート。色や形はオフィスの格ごとに変わる（.o0〜.o9）
   $('#office-chips').innerHTML = `<button class="chip chip-office o${Math.min(S.office, 9)}" id="chip-office">${icon(S.office ? 'building' : 'home')}<span class="o-name">${o.name}${floors}</span><span class="o-seats">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${icon('back', 'flip')}</button>`; // 製品の数と稼ぎは会社の画面には出さない（2026-10-04 ユーザー指示。製品タブで見る）
   $('#chip-office').onclick = openOffice;
-  // 右上：模様替えと実績（新しく達成した数を赤い丸で）
-  const ready = G.achieveNew(S);
-  $('#office-tools').innerHTML = `<button class="tool-btn" id="open-decor" aria-label="模様替え">${icon('sofa')}</button>
-    <button class="tool-btn" id="open-achv" aria-label="実績">${icon('medal')}${ready ? `<i class="tool-n">${ready}</i>` : ''}</button>`;
+  // 右上：模様替え
+  $('#office-tools').innerHTML = `<button class="tool-btn" id="open-decor" aria-label="模様替え">${icon('sofa')}</button>`;
   $('#open-decor').onclick = openDecor;
-  $('#open-achv').onclick = openAchieve;
   const enc = S.encounter;
   $('#encounter').innerHTML = enc
     ? `<button class="encounter" id="go-encounter">${icon('spark', 'spin')}<span>誰かが現れた</span><span class="left" data-left="${enc.until}">${dur(enc.until - Date.now())}</span></button>`
@@ -679,43 +676,6 @@ function openDecor() {
         commit();
       }),
   );
-}
-
-// 実績（2026-10-19 ユーザー指示）: 目標ごとに達成した段と、次の段までの進み具合。報酬はない（「報酬はいらない」）
-// 新しく達成したものは上に光らせ、開いたら見たことにする
-function openAchieve() {
-  const dlg = $('#assign');
-  const list = G.achievements(S).sort((x, y) => (y.fresh > 0) - (x.fresh > 0) || x.all - y.all || Math.min(1, y.now / y.need) - Math.min(1, x.now / x.need));
-  const got = list.reduce((a, x) => a + x.step, 0);
-  const total = list.reduce((a, x) => a + x.a.steps.length, 0);
-  const num = (n) => (n >= 1e5 ? money(n) : n.toLocaleString('ja-JP'));
-  $('#assign-body').innerHTML = `
-    <div class="sheet-head"><b>${icon('medal')}実績</b><span class="muted">${got}/${total}</span></div>
-    <div class="achv-list">${list
-      .map((x) => {
-        const office = x.a.key === 'office'; // 引っ越しは数ではなく、次の会社の名前で
-        const steps = `<span class="achv-steps">${x.a.steps.map((_, i) => `<i class="${i < x.step ? 'on' : ''}"></i>`).join('')}</span>`;
-        const end = x.all
-          ? icon('crown', 'achv-crown')
-          : office
-            ? ''
-            : `<span class="achv-num">${num(Math.max(0, Math.floor(x.now)))}<small>/${num(x.need)}</small></span>`;
-        return `<div class="achv ${x.fresh > 0 ? 'ready' : ''} ${x.all ? 'all' : ''}">
-          <span class="achv-ic">${icon(x.a.icon)}</span>
-          <span class="achv-main"><b>${x.a.name}<small>${x.all ? '' : office ? R.OFFICES[x.need].name : num(x.need)}</small>${x.fresh > 0 ? '<span class="new-tag">達成</span>' : ''}</b>${steps}<i class="achv-bar"><b style="width:${pct(x.all ? 1 : Math.min(1, Math.max(0, x.now) / x.need))}"></b></i></span>
-          ${end}
-        </div>`;
-      })
-      .join('')}</div>
-    <button class="big ghost" id="run-close">OK</button>`;
-  if (!dlg.open) dlg.showModal();
-  // ボタンが下の OK だけなので、開いたときにそこへ寄ってしまう。いちばん上から見せる
-  document.activeElement?.blur();
-  dlg.scrollTop = 0;
-  $('#assign-body').scrollTop = 0;
-  $('#run-close').onclick = () => dlg.close();
-  G.seeAchieve(S);
-  commit();
 }
 
 // 今のオフィスの詳しいシート（2026-10-04 ユーザー指示）。席の埋まり具合・仕事の平均・面接・作れる製品・増築、次のオフィスへ

@@ -910,8 +910,6 @@ function rollRival(s, t, ev) {
 }
 
 // ---------- 待ち時間の楽しみ（2026-10-19 ユーザー指示） ----------
-// 数えておくもの（実績に使う）
-const bump = (s, k) => ((s.tally ??= {})[k] = (s.tally[k] ?? 0) + 1);
 
 // 模様替え: 家具を買って部屋に置く
 export const hasFurniture = (s, id) => (s.furniture ?? []).includes(id);
@@ -951,7 +949,6 @@ export function poke(s, id, now) {
     out = { type: 'offer' };
   }
   p.n++;
-  bump(s, 'pokes');
   return out;
 }
 
@@ -976,7 +973,6 @@ export function treat(s, kind, id, now) {
   x.endsAt = now + (x.endsAt - now) * R.TREAT_SPEED;
   x.startAt = x.endsAt - (x.endsAt - now) / (1 - done); // 進み具合の棒がそのままになるように
   for (const m of x.members.map((mid) => memberById(s, mid)).filter(canTire)) m.tired = Math.max(0, (m.tired ?? 0) - R.TREAT_REST);
-  bump(s, 'treats');
   addLog(s, now, `差し入れ  -${cost.toLocaleString('ja-JP')}円`);
   return true;
 }
@@ -1007,45 +1003,7 @@ function finishTraining(s, tr, t, ev) {
   if (!m) return;
   m.busy = null;
   giveXp(s, [m], tr.xp, t, ev);
-  bump(s, 'trains');
   ev.push({ type: 'train', t, id: m.id, name: displayName(m), kind: tr.kind });
-}
-
-// 実績: いまの数（key は rules.js の ACHIEVEMENTS）
-export function achieveNow(s, key) {
-  if (key.startsWith('cat:')) return s.counts.cat[key.slice(4)] ?? 0;
-  switch (key) {
-    case 'tasks': return s.counts.tasks;
-    case 'products': return s.counts.products;
-    case 'members': return s.members.length;
-    case 'legends': return ownedLegends(s).size;
-    case 'rep': return s.rep;
-    case 'office': return s.office;
-    case 'money': return s.money;
-    case 'furniture': return (s.furniture ?? []).length;
-    default: return s.tally?.[key] ?? 0;
-  }
-}
-// 目標ごとの今の段階 { a, step（達成した段の数）, need（次の段）, now, all（全部達成）, fresh（まだ見ていない新しい段の数） }
-// 報酬はない（2026-10-19 ユーザー指示「報酬はいらない」）。お金・評判・仲間のように減る数でも、一度達成した段は残す（s.achv）
-export function achievements(s) {
-  return R.ACHIEVEMENTS.map((a) => {
-    const now = achieveNow(s, a.key);
-    const step = Math.max(s.achv?.[a.id] ?? 0, a.steps.filter((n) => now >= n).length);
-    const all = step >= a.steps.length;
-    return { a, step, now, all, need: a.steps[Math.min(step, a.steps.length - 1)], fresh: step - (s.achvSeen?.[a.id] ?? 0) };
-  });
-}
-// 達成した段を覚える（advance のたびに）
-function keepAchieve(s) {
-  for (const x of achievements(s)) if (x.step > (s.achv?.[x.a.id] ?? 0)) (s.achv ??= {})[x.a.id] = x.step;
-}
-// まだ見ていない、新しく達成した段の数（会社の画面のメダルに出す）
-export const achieveNew = (s) => achievements(s).reduce((n, x) => n + Math.max(0, x.fresh), 0);
-// 実績のシートを開いたら、見たことにする
-export function seeAchieve(s) {
-  keepAchieve(s);
-  s.achvSeen = { ...s.achv };
 }
 
 // 製品の名前と絵を自分で決める（look: { c: 色の番号, ic: 絵の名前 }。無ければ種類の色と絵）
@@ -1119,7 +1077,6 @@ export function advance(s, now, ev = []) {
     }
     s.time = next;
   }
-  keepAchieve(s);
   return ev;
 }
 
@@ -1129,6 +1086,9 @@ export function migrate(s) {
   if (!R.ACTIVITIES[s.activity]) s.activity = R.DEFAULT_ACTIVITY;
   s.company = companyTitle(s.company);
   delete s.notes;
+  delete s.achv; // 実績はやめた（2026-10-19 ユーザー指示「実績もいらない」）
+  delete s.achvSeen;
+  delete s.tally;
   s.log = s.log.filter((l) => l.kind !== 'note');
   backfillHistory(s);
   for (const m of s.members) if (m.kind === 'legend') m.joinedAt ??= s.time; // 前の記録のレジェンドは、いまから数える
