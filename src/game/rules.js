@@ -566,12 +566,11 @@ export const POKE_CHANCE = 0.35;
 export const POKE_PER_DAY = 3;
 export const POKE_COOL = HOUR;
 
-// 差し入れ: 仕事中・開発中の欄から1回だけ。残りの時間が TREAT_SPEED 倍になり、担当の社員の疲れが TREAT_REST 減る
-// 費用は仕事の報酬の TREAT_COST 倍（開発は開発費の TREAT_DEV_COST 倍）
-export const TREAT_SPEED = 0.8;
-export const TREAT_REST = 15;
-export const TREAT_COST = 0.15;
-export const TREAT_DEV_COST = 0.04;
+// 差し入れ: 社員1人ずつに（2026-10-19 ユーザー指示）。疲れが TREAT_REST 減る。同じ人には TREAT_COOL に1回
+// 費用は今の会社の仕事 TREAT_HOURS 時間ぶんの報酬（自宅で6,000円）
+export const TREAT_REST = 30;
+export const TREAT_COOL = 8 * HOUR;
+export const TREAT_HOURS = 1;
 
 // 研修: 手の空いた社員・CEO にお金を払って学ばせる。その間は仕事に出せない（疲れは開発と同じくらい）
 // hours: かかる時間 / xp: 今の会社で同じ時間の仕事をしたときの経験の何倍か / cost: 今の会社の仕事 何時間ぶんの報酬か

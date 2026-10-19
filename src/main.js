@@ -1030,21 +1030,6 @@ function openDone(h, back = null) {
   $('#done-back') && ($('#done-back').onclick = back);
 }
 
-// 差し入れ（2026-10-19 ユーザー指示）: 仕事中・開発中に1回だけ。残りが早く進み、担当の社員の疲れが抜ける
-function treatBtn(kind, x) {
-  if (x.treat) return `<div class="treat-done">${icon('cup')}${icon('check')}</div>`;
-  const cost = G.treatCost(S, kind, x.id);
-  return `<button class="btn treat" id="run-treat" ${S.money >= cost ? '' : 'disabled'}>${icon('cup')}差し入れ<small>${yen(cost)}</small></button>`;
-}
-function bindTreat(kind, id, reopen) {
-  $('#run-treat') &&
-    ($('#run-treat').onclick = () => {
-      if (!G.treat(S, kind, id, Date.now())) return;
-      commit();
-      reopen(id);
-    });
-}
-
 // 仕事中の仕事の詳しいシート：担当している人と力、見込み（成功率・かかる時間・報酬・評判）、進み具合。空きがあれば人を足せる
 function openRunning(taskId) {
   const t = S.tasks.find((x) => x.id === taskId);
@@ -1067,12 +1052,10 @@ function openRunning(taskId) {
       .join('')}</div>
     <div class="preview">${val('target', pct(p.chance), p.chance < 0.5 ? 'bad' : p.chance >= 0.8 ? 'ok' : '')}${val('clock', dur(t.endsAt - t.startAt))}${val('coin', yen(p.reward))}${val('star', `+${p.rep}`, p.great || p.early ? 'ok' : '')}</div>
     ${progress(t.startAt, t.endsAt)}
-    ${treatBtn('task', t)}
     ${room ? `<button class="big" id="run-add">${icon('plus')}${icon('people')}</button>` : `<button class="big ghost" id="run-close">OK</button>`}`;
   fillThumbs($('#assign-body'));
   updateTimers();
   $('#assign-body').querySelectorAll('[data-prof]').forEach((el) => (el.onclick = () => openProfile(team[+el.dataset.prof])));
-  bindTreat('task', taskId, openRunning);
   if (!dlg.open) dlg.showModal();
   if (room)
     $('#run-add').onclick = () => {
@@ -1301,6 +1284,13 @@ function hakenInfo(m) {
     ${h.intro ? `<button class="big" id="m-intro" ${S.money >= cost ? '' : 'disabled'}>${icon('people')}社員にする ${yen(cost)}</button>` : ''}
   </div>`;
 }
+// 差し入れ（2026-10-19 ユーザー指示「個人にできるように」）: 社員の詳しい画面の疲れの棒の下。疲れが抜ける。同じ人には8時間に1回
+function treatBtn(m) {
+  const ready = G.treatReadyAt(m);
+  if (ready > Date.now()) return `<div class="treat-done">${icon('cup')}${icon('clock')}<span data-left="${ready}">${dur(ready - Date.now())}</span></div>`;
+  const cost = G.treatCost(S);
+  return `<button class="btn treat" id="m-treat" ${S.money >= cost ? '' : 'disabled'}>${icon('cup')}差し入れ<small>${icon('drop')}-${R.TREAT_REST}</small><small>${yen(cost)}</small></button>`;
+}
 // 研修（2026-10-19 ユーザー指示）: 手が空いていれば選べる。研修中は進み具合。上がるレベルの見込みも出す
 function trainHtml(m) {
   const tr = G.trainingFor(S, m);
@@ -1339,7 +1329,7 @@ function openMember(m, candidate = false, preview = null) {
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
     ${preview ? `<div class="vals">${val('wallet', `${yen(preview.daily)}/日`)}</div>` : ''}
-    ${!candidate && !preview && G.canTire(m) ? tiredBar(m) : ''}
+    ${!candidate && !preview && G.canTire(m) ? tiredBar(m) + treatBtn(m) : ''}
     ${!candidate && !preview && G.canTrain(m) && S.members.includes(m) ? trainHtml(m) : ''}
     ${m.haken ? hakenInfo(m) : ''}
     ${candidate ? `${hakenTag(m) ? `<div class="vals">${hakenTag(m)}</div>` : ''}<button class="big" id="m-hire" ${canHire ? '' : 'disabled'}>採用 ${yen(cost)}</button><button class="decline" id="m-reject">不採用</button>` : ''}
@@ -1369,6 +1359,13 @@ function openMember(m, candidate = false, preview = null) {
           }
         }),
     );
+  $('#m-treat') &&
+    ($('#m-treat').onclick = () => {
+      if (G.treat(S, m.id, Date.now())) {
+        commit();
+        openMember(m);
+      }
+    });
   $('#detail-info')
     .querySelectorAll('[data-train]')
     .forEach(
@@ -1671,13 +1668,11 @@ function openDevRunning(devId) {
     <div class="preview">${rating(p.quality * 0.6)}<span class="muted">〜</span>${rating(p.quality * 1.4)}${trendIcon(G.trendAt(S, d.genre, now))}</div>
     <div class="preview">${val('coin', `${signYen(income(p.quality * 0.6))}〜${signYen(income(p.quality * 1.4))}/時`)}${val('box', yen(g.cost))}</div>
     ${progress(d.startAt, d.endsAt)}
-    ${treatBtn('dev', d)}
     <button class="big ghost" id="run-close">OK</button>`;
   fillThumbs($('#assign-body'));
   updateTimers();
   // 担当者を押すと、その人の詳しい画面（2026-10-06 ユーザー指示）
   $('#assign-body').querySelectorAll('[data-prof]').forEach((el) => (el.onclick = () => openProfile(team[+el.dataset.prof])));
-  bindTreat('dev', devId, openDevRunning);
   if (!dlg.open) dlg.showModal();
   $('#run-close').onclick = () => dlg.close();
 }

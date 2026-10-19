@@ -973,28 +973,18 @@ export function poke(s, id, now) {
   return out;
 }
 
-// 差し入れ: 仕事中・開発中に1回だけ。残りの時間が短くなり、担当の社員の疲れが抜ける
-export function treatCost(s, kind, id) {
-  if (kind === 'task') {
-    const t = s.tasks.find((x) => x.id === id);
-    return t ? round(t.reward * R.TREAT_COST) : 0;
-  }
-  const d = s.devs.find((x) => x.id === id);
-  return d ? round(R.GENRES[d.genre].cost * R.TREAT_DEV_COST) : 0;
-}
-export function treat(s, kind, id, now) {
-  const x = (kind === 'task' ? s.tasks : s.devs).find((y) => y.id === id);
-  const cost = treatCost(s, kind, id);
-  if (!x || x.treat || x.endsAt <= now || s.money < cost) return false;
+// 差し入れ: 社員1人ずつに（2026-10-19 ユーザー指示「個人にできるように」。前は仕事ごとに1回で、時間も縮んだ）
+// 疲れが TREAT_REST 減る。同じ人には TREAT_COOL に1回。費用は今の会社の仕事 TREAT_HOURS 時間ぶん
+export const treatCost = (s) => round(rateNow(s) * R.TREAT_HOURS, 500);
+export const treatReadyAt = (m) => (m?.treatAt ?? 0) + R.TREAT_COOL;
+export function treat(s, id, now) {
+  const m = memberById(s, id);
+  const cost = treatCost(s);
+  if (!canTire(m) || treatReadyAt(m) > now || s.money < cost) return false;
   s.money -= cost;
-  x.treat = true;
-  x.begunAt ??= x.startAt; // 早く終わったかは、最初に始めた時刻から測る
-  // 進んだ割合はそのままで、残りが TREAT_SPEED 倍の時間で進む
-  const done = Math.min(0.99, Math.max(0, (now - x.startAt) / (x.endsAt - x.startAt)));
-  x.endsAt = now + (x.endsAt - now) * R.TREAT_SPEED;
-  x.startAt = x.endsAt - (x.endsAt - now) / (1 - done); // 進み具合の棒がそのままになるように
-  for (const m of x.members.map((mid) => memberById(s, mid)).filter(canTire)) m.tired = Math.max(0, (m.tired ?? 0) - R.TREAT_REST);
-  addLog(s, now, `差し入れ  -${cost.toLocaleString('ja-JP')}円`);
+  m.treatAt = now;
+  m.tired = Math.max(0, (m.tired ?? 0) - R.TREAT_REST);
+  addLog(s, now, `${m.name}に差し入れ  -${cost.toLocaleString('ja-JP')}円`);
   return true;
 }
 

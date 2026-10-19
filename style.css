@@ -1151,10 +1151,10 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .person-tag .poke { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 3px 10px; border-radius: 99px; background: linear-gradient(100deg, #36c8ff, #9a5cf0); color: #fff; font-size: 0.75rem; font-weight: 800; animation: poke-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
 .person-tag .poke .ic { width: 1em; height: 1em; }
 @keyframes poke-pop { from { transform: scale(0.3); opacity: 0; } }
-.btn.treat { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 12px 0 10px; padding: 10px; background: color-mix(in srgb, #e9a21b 16%, transparent); color: #b0700a; border: 1px solid color-mix(in srgb, #e9a21b 55%, transparent); }
+.btn.treat { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 4px 0 10px; padding: 10px; background: color-mix(in srgb, #e9a21b 16%, transparent); color: #b0700a; border: 1px solid color-mix(in srgb, #e9a21b 55%, transparent); }
 .btn.treat .ic { width: 1.15em; height: 1.15em; }
 .btn.treat small { font-weight: 700; opacity: 0.8; }
-.treat-done { display: flex; justify-content: center; gap: 2px; margin: 12px 0 10px; color: var(--ok); }
+.treat-done { display: flex; justify-content: center; align-items: center; gap: 4px; margin: 4px 0 10px; color: var(--muted); font-size: 0.8rem; }
 .treat-done .ic { width: 1.2em; height: 1.2em; }
 .train { margin-top: 12px; }
 .train .sec { margin: 0 2px 8px; }
