@@ -824,7 +824,9 @@ function addTired(s, dt) {
   const rest = 1 + companyEffects(s).rest; // コーヒーメーカーで早く抜ける
   for (const m of s.members) {
     if (!canTire(m)) continue;
-    const up = !m.busy ? -R.TIRED_REST * (rest + selfPerk(s, m, 'rest')) : // ソファを使う人はもっと早く s.devs.some((d) => d.id === m.busy) || (s.trains ?? []).some((x) => x.id === m.busy) ? R.TIRED_DEV : R.TIRED_WORK;
+    // 手が空いていれば抜ける（ソファを使う人はもっと早く）。開発・研修は仕事よりたまりにくい
+    const dev = s.devs.some((d) => d.id === m.busy) || (s.trains ?? []).some((x) => x.id === m.busy);
+    const up = !m.busy ? -R.TIRED_REST * (rest + selfPerk(s, m, 'rest')) : dev ? R.TIRED_DEV : R.TIRED_WORK;
     m.tired = Math.min(100, Math.max(0, (m.tired ?? 0) + up * h));
   }
 }
