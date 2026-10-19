@@ -2606,11 +2606,25 @@ function applyState(remote) {
 }
 
 // ---------- 起動 ----------
-S = loadLocal();
-if (S) {
-  const away = Date.now() - S.time;
-  pendingWelcome = [G.advance(S, Date.now()), away];
-  save();
+// 起動中にエラーが起きても真っ黒のままにせず、タイトルを出してエラーの文を見せる（2026-10-19 iPhone で起動できなかったため）
+function showBootError(e) {
+  const msg = `${e?.message ?? e}`.slice(0, 200);
+  const where = `${e?.stack ?? ''}`.split('\n').find((l) => l.includes('.js')) ?? '';
+  try {
+    if ($('#game').classList.contains('hidden')) $('#start').classList.remove('hidden');
+  } catch {}
+  const box = document.getElementById('boot-error') ?? document.body.appendChild(Object.assign(document.createElement('pre'), { id: 'boot-error' }));
+  box.textContent = `${msg}\n${where.trim().slice(-160)}`;
+}
+try {
+  S = loadLocal();
+  if (S) {
+    const away = Date.now() - S.time;
+    pendingWelcome = [G.advance(S, Date.now()), away];
+    save();
+  }
+} catch (e) {
+  showBootError(e);
 }
 showTitle();
 setInterval(tick, 1000);

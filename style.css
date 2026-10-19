@@ -1169,3 +1169,4 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .furn-top { margin-bottom: 12px; }
 .pick .person .tired-bar { width: 90px; margin: 0 0 0 auto; }
 .furn-also { width: 1.1em; height: 1.1em; margin-left: auto; color: var(--muted); }
+#boot-error { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 9999; margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(160, 20, 30, 0.92); color: #fff; font-size: 11px; white-space: pre-wrap; word-break: break-all; }
