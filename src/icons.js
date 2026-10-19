@@ -74,6 +74,5 @@ const P = {
   arcade: '<path d="M7 20.5V5a1.5 1.5 0 0 1 1.5-1.5h7A1.5 1.5 0 0 1 17 5v15.5"/><rect x="9" y="6" width="6" height="5" rx="1"/><path d="M7 14h10M10 16.5v-2M10 14.5"/><circle cx="14" cy="16.3" r=".9"/><path d="M5.5 20.5h13"/>',
   trophy: '<path d="M8 4.5h8v5a4 4 0 0 1-8 0z"/><path d="M8 6.5H5.5a2.5 2.5 0 0 0 2.6 3.4M16 6.5h2.5a2.5 2.5 0 0 1-2.6 3.4M12 13.5v3.5M8.5 20.5h7l-.8-3.5H9.3z"/>',
   statue: '<circle cx="12" cy="5.5" r="2"/><path d="M9 16.5l1-6.5h4l1 6.5M10 10l-2.5-2.5M14 10l2.5-2.5M7 16.5h10v2H7zM5.5 20.5h13"/>',
-  smoke: '<path d="M3.5 15.5h13v3h-13zM18.5 15.5v3M20.5 15.5v3"/><path d="M18 12.5c0-2 2.5-2 2.5-4s-2-2-2-3.5"/>',
 };
 export const icon = (name, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[name] ?? ''}</svg>`;

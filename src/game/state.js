@@ -1090,6 +1090,9 @@ export function migrate(s) {
   delete s.achv; // 実績はやめた（2026-10-19 ユーザー指示「実績もいらない」）
   delete s.achvSeen;
   delete s.tally;
+  // 喫煙所はやめた（2026-10-19 ユーザー指示）。買っていたら外して、払った30万円を返す
+  if (s.furniture?.includes('smoking')) s.money += 300_000;
+  if (s.furniture) s.furniture = s.furniture.filter((id) => R.FURNITURE[id]);
   for (const p of s.products) delete p.look; // 製品の色と絵を選ぶ機能もやめた
   s.log = s.log.filter((l) => l.kind !== 'note');
   backfillHistory(s);

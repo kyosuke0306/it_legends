@@ -550,8 +550,6 @@ export const FURNITURE = {
   plant: { name: '観葉植物', icon: 'plant', office: 0, cost: 60_000, effect: { rep: 0.05 }, text: '評判 +5%' },
   // チェアとソファは使う人を1人決める（2026-10-19 ユーザー指示）。self はその人だけに効く。who: 使える人（grow 育つ人 / tire 疲れる社員）
   chair: { name: 'ゲーミングチェア', icon: 'chair', office: 1, cost: 250_000, self: { xp: 0.3 }, who: 'grow', text: '成長 +30%' },
-  // 2026-10-19 ユーザー指示。タバコ部屋で仕事の話が回ってくる
-  smoking: { name: '喫煙所', icon: 'smoke', office: 1, cost: 300_000, effect: { offers: 0.15 }, text: '依頼 ×1.15' },
   neon: { name: 'ネオンサイン', icon: 'neon', office: 1, cost: 400_000, effect: { offers: 0.1 }, text: '依頼 ×1.1' },
   sofa: { name: 'ソファ', icon: 'sofa', office: 2, cost: 1_500_000, self: { rest: 1 }, who: 'tire', text: '疲れの抜け 2倍' },
   aquarium: { name: '水槽', icon: 'fish', office: 2, cost: 2_500_000, effect: { luck: 0.3 }, text: '臨時収入 +30%' },
