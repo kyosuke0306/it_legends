@@ -492,17 +492,24 @@ export class Office {
       this.tag.classList.remove('show');
       return this.onArt?.();
     }
+    // 人から外れて押しても、出ている札は消さない（歩いている人を何度も押すと外れやすいため）。札は時間で消える
+    if (!best) return;
     clearTimeout(this.tagTimer);
     this.tagged = best;
-    if (!best) return this.tag.classList.remove('show');
     const L = best.label;
     // ちょっかい：仲間をタップすると、まれに小さなことが起きる（main.js の onPoke が札に出す中身を返す）
     // 押した感じ：押された人がぴょんと跳ねて、こちらを向く（スマホは少し震える）
     const hopped = [...this.people.values()].find((p) => p.holder === best.holder);
     if (hopped) hopped.hop = this.clock.elapsedTime;
     navigator.vibrate?.(12);
-    const poked = L.who && !L.candidate && L.who.kind !== 'rival' && L.who.kind !== 'temp' ? this.onPoke?.(L.who) : null;
-    this.tag.innerHTML = `<b></b><small></small>${L.work ? '<span class="work"></span>' : ''}${poked ? `<span class="poke ${poked.bad ? 'bad' : ''}">${poked.html}</span>` : ''}`;
+    let poked = L.who && !L.candidate && L.who.kind !== 'rival' && L.who.kind !== 'temp' ? this.onPoke?.(L.who) : null;
+    // 起きたことの札は、同じ人を続けて押しても消さずに出し続ける（何度も押すため。2026-10-19 ユーザー指示）
+    const now = performance.now();
+    const keep = !poked && this.lastPoke?.holder === best.holder && this.lastPoke.until > now;
+    if (poked) this.lastPoke = { holder: best.holder, ...poked };
+    if (keep) poked = this.lastPoke;
+    if (poked) this.lastPoke.until = now + 5000;
+    this.tag.innerHTML = `<b></b><small></small>${L.work ? '<span class="work"></span>' : ''}${poked ? `<span class="poke ${poked.bad ? 'bad' : ''} ${keep ? 'keep' : ''}">${poked.html}</span>` : ''}`;
     this.tag.querySelector('b').textContent = L.name;
     this.tag.querySelector('small').textContent = L.sub;
     if (L.work) this.tag.querySelector('.work').textContent = L.work;

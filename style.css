@@ -1173,3 +1173,4 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .person-tag .poke.bad { background: linear-gradient(100deg, #ff7a59, #e5484d); }
 .tap-ring { position: absolute; z-index: 2; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.85); box-shadow: 0 0 12px rgba(120, 200, 255, 0.7); pointer-events: none; animation: tap-ring 0.55s ease-out forwards; }
 @keyframes tap-ring { from { transform: scale(0.3); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
+.person-tag .poke.keep { animation: none; }
