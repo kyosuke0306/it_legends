@@ -1167,8 +1167,6 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .achv.ready .achv-bar b { background: var(--gold); }
 .achv.all { opacity: 0.6; }
 .achv-crown { width: 24px; height: 24px; color: var(--gold); }
-.achv-get { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(100deg, #f5c84a, #e9a21b); color: #3a2600; animation: tool-pulse 1.6s ease-in-out infinite; }
-.achv-get .ic { width: 1em; height: 1em; }
 .person-tag .poke { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 3px 10px; border-radius: 99px; background: linear-gradient(100deg, #36c8ff, #9a5cf0); color: #fff; font-size: 0.75rem; font-weight: 800; animation: poke-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
 .person-tag .poke .ic { width: 1em; height: 1em; }
 @keyframes poke-pop { from { transform: scale(0.3); opacity: 0; } }

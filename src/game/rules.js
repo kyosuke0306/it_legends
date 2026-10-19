@@ -579,24 +579,24 @@ export const TRAININGS = [
   { name: '外部セミナー', hours: 12, xp: 1.6, cost: 10 },
 ];
 
-// 実績: 目標を達成すると、受け取りで今の会社の仕事 hours 時間ぶんのお金。1つの目標は段階ごとに進む（steps）
+// 実績: 目標ごとに段階（steps）を達成していく。報酬はない（2026-10-19 ユーザー指示「報酬はいらない」）
 // key は state.js の achieveNow で数えるもの
 export const ACHIEVEMENTS = [
-  { id: 'tasks', icon: 'check', name: '仕事', key: 'tasks', steps: [10, 50, 200, 1000, 5000], hours: 4 },
-  { id: 'products', icon: 'box', name: '発売', key: 'products', steps: [1, 5, 20, 60], hours: 6 },
-  { id: 'staff', icon: 'people', name: '仲間', key: 'members', steps: [3, 8, 20, 50], hours: 4 },
-  { id: 'legends', icon: 'crown', name: 'レジェンド', key: 'legends', steps: [1, 3, 8, 15, 20], hours: 8 },
-  { id: 'rep', icon: 'star', name: '評判', key: 'rep', steps: [100, 1000, 10_000, 100_000, 1_000_000], hours: 6 },
-  { id: 'office', icon: 'building', name: '引っ越し', key: 'office', steps: [1, 2, 3, 5, 7, 9], hours: 6 },
-  { id: 'money', icon: 'coin', name: '資金', key: 'money', steps: [1_000_000, 100_000_000, 10_000_000_000, 1_000_000_000_000], hours: 6 },
-  { id: 'web', icon: 'globe', name: 'Web', key: 'cat:web', steps: [10, 50, 200], hours: 3 },
-  { id: 'app', icon: 'g_app', name: 'アプリ', key: 'cat:app', steps: [10, 50, 200], hours: 3 },
-  { id: 'infra', icon: 'job_infra', name: 'インフラ', key: 'cat:infra', steps: [10, 50, 200], hours: 3 },
-  { id: 'consult', icon: 'bubble', name: '相談', key: 'cat:consult', steps: [10, 50, 200], hours: 3 },
-  { id: 'ai', icon: 'g_ai', name: 'AI', key: 'cat:ai', steps: [10, 50, 200], hours: 3 },
-  { id: 'space', icon: 'g_satnet', name: '宇宙', key: 'cat:space', steps: [5, 30, 100], hours: 3 },
-  { id: 'furniture', icon: 'sofa', name: '模様替え', key: 'furniture', steps: [1, 4, 10], hours: 3 },
-  { id: 'trains', icon: 'up', name: '研修', key: 'trains', steps: [3, 20, 100], hours: 3 },
-  { id: 'treats', icon: 'cup', name: '差し入れ', key: 'treats', steps: [3, 20, 100], hours: 3 },
-  { id: 'pokes', icon: 'spark', name: 'ちょっかい', key: 'pokes', steps: [5, 30, 150], hours: 2 },
+  { id: 'tasks', icon: 'check', name: '仕事', key: 'tasks', steps: [10, 50, 200, 1000, 5000] },
+  { id: 'products', icon: 'box', name: '発売', key: 'products', steps: [1, 5, 20, 60] },
+  { id: 'staff', icon: 'people', name: '仲間', key: 'members', steps: [3, 8, 20, 50] },
+  { id: 'legends', icon: 'crown', name: 'レジェンド', key: 'legends', steps: [1, 3, 8, 15, 20] },
+  { id: 'rep', icon: 'star', name: '評判', key: 'rep', steps: [100, 1000, 10_000, 100_000, 1_000_000] },
+  { id: 'office', icon: 'building', name: '引っ越し', key: 'office', steps: [1, 2, 3, 5, 7, 9] },
+  { id: 'money', icon: 'coin', name: '資金', key: 'money', steps: [1_000_000, 100_000_000, 10_000_000_000, 1_000_000_000_000] },
+  { id: 'web', icon: 'globe', name: 'Web', key: 'cat:web', steps: [10, 50, 200] },
+  { id: 'app', icon: 'g_app', name: 'アプリ', key: 'cat:app', steps: [10, 50, 200] },
+  { id: 'infra', icon: 'job_infra', name: 'インフラ', key: 'cat:infra', steps: [10, 50, 200] },
+  { id: 'consult', icon: 'bubble', name: '相談', key: 'cat:consult', steps: [10, 50, 200] },
+  { id: 'ai', icon: 'g_ai', name: 'AI', key: 'cat:ai', steps: [10, 50, 200] },
+  { id: 'space', icon: 'g_satnet', name: '宇宙', key: 'cat:space', steps: [5, 30, 100] },
+  { id: 'furniture', icon: 'sofa', name: '模様替え', key: 'furniture', steps: [1, 4, 10] },
+  { id: 'trains', icon: 'up', name: '研修', key: 'trains', steps: [3, 20, 100] },
+  { id: 'treats', icon: 'cup', name: '差し入れ', key: 'treats', steps: [3, 20, 100] },
+  { id: 'pokes', icon: 'spark', name: 'ちょっかい', key: 'pokes', steps: [5, 30, 150] },
 ];

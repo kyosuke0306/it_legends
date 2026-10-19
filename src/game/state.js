@@ -1026,24 +1026,26 @@ export function achieveNow(s, key) {
     default: return s.tally?.[key] ?? 0;
   }
 }
-// 目標ごとの今の段階 { a, step（受け取った段の数）, need, now, done（受け取れる）, all（全部受け取った）, reward }
+// 目標ごとの今の段階 { a, step（達成した段の数）, need（次の段）, now, all（全部達成）, fresh（まだ見ていない新しい段の数） }
+// 報酬はない（2026-10-19 ユーザー指示「報酬はいらない」）。お金・評判・仲間のように減る数でも、一度達成した段は残す（s.achv）
 export function achievements(s) {
   return R.ACHIEVEMENTS.map((a) => {
-    const step = s.achv?.[a.id] ?? 0;
-    const all = step >= a.steps.length;
-    const need = a.steps[Math.min(step, a.steps.length - 1)];
     const now = achieveNow(s, a.key);
-    return { a, step, need, now, all, done: !all && now >= need, reward: round(R.TIERS[tierNow(s)].rate * a.hours * (step + 1)) };
+    const step = Math.max(s.achv?.[a.id] ?? 0, a.steps.filter((n) => now >= n).length);
+    const all = step >= a.steps.length;
+    return { a, step, now, all, need: a.steps[Math.min(step, a.steps.length - 1)], fresh: step - (s.achvSeen?.[a.id] ?? 0) };
   });
 }
-export const achieveReady = (s) => achievements(s).filter((x) => x.done).length;
-export function claimAchieve(s, id, now) {
-  const x = achievements(s).find((y) => y.a.id === id);
-  if (!x?.done) return 0;
-  (s.achv ??= {})[id] = x.step + 1;
-  s.money += x.reward;
-  addLog(s, now, `実績  ${x.a.name} ${x.need.toLocaleString('ja-JP')}  +${x.reward.toLocaleString('ja-JP')}円`, 'good');
-  return x.reward;
+// 達成した段を覚える（advance のたびに）
+function keepAchieve(s) {
+  for (const x of achievements(s)) if (x.step > (s.achv?.[x.a.id] ?? 0)) (s.achv ??= {})[x.a.id] = x.step;
+}
+// まだ見ていない、新しく達成した段の数（会社の画面のメダルに出す）
+export const achieveNew = (s) => achievements(s).reduce((n, x) => n + Math.max(0, x.fresh), 0);
+// 実績のシートを開いたら、見たことにする
+export function seeAchieve(s) {
+  keepAchieve(s);
+  s.achvSeen = { ...s.achv };
 }
 
 // 製品の名前と絵を自分で決める（look: { c: 色の番号, ic: 絵の名前 }。無ければ種類の色と絵）
@@ -1117,6 +1119,7 @@ export function advance(s, now, ev = []) {
     }
     s.time = next;
   }
+  keepAchieve(s);
   return ev;
 }
 
