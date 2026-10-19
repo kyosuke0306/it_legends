@@ -542,20 +542,19 @@ export const LEGEND_RULES = {
 
 
 // ---------- 待ち時間の楽しみ（2026-10-19 ユーザー指示「仕事を任せている間、暇になる」） ----------
-// 模様替え: 家具を買って部屋に置く（1つずつ、置いたままになる）。effect は置いている間だけ効く
-//   rest 疲れの抜け / rep 仕事の評判 / xp 全員の成長 / offers 依頼の届きやすさ（掛け算） / luck 臨時収入 / income 全製品の収入 / success 成功率
-// office はその会社から買える。cost は買うときのお金。見た目は furniture.js
+// 模様替え: 家具を買って部屋に置く（1つずつ、置いたままになる）。見た目だけで効果はない（2026-10-19 ユーザー指示「効果をつけないで」）
+// 長押しで部屋の中を動かせる。sit はチェア・ソファのように人を座らせられるもの。office はその会社から買える。見た目は furniture.js
 export const FURNITURE = {
-  coffee: { name: 'コーヒーメーカー', icon: 'cup', office: 0, cost: 30_000, effect: { rest: 0.25 }, text: '疲れの抜け +25%' },
-  plant: { name: '観葉植物', icon: 'plant', office: 0, cost: 60_000, effect: { rep: 0.05 }, text: '評判 +5%' },
-  // チェアとソファは使う人を1人決める（2026-10-19 ユーザー指示）。self はその人だけに効く。who: 使える人（grow 育つ人 / tire 疲れる社員）
-  chair: { name: 'ゲーミングチェア', icon: 'chair', office: 1, cost: 250_000, self: { xp: 0.3 }, who: 'grow', text: '成長 +30%' },
-  neon: { name: 'ネオンサイン', icon: 'neon', office: 1, cost: 400_000, effect: { offers: 0.1 }, text: '依頼 ×1.1' },
-  sofa: { name: 'ソファ', icon: 'sofa', office: 2, cost: 1_500_000, self: { rest: 1 }, who: 'tire', text: '疲れの抜け 2倍' },
-  aquarium: { name: '水槽', icon: 'fish', office: 2, cost: 2_500_000, effect: { luck: 0.3 }, text: '臨時収入 +30%' },
-  arcade: { name: 'ゲーム機', icon: 'arcade', office: 3, cost: 12_000_000, effect: { income: 0.05 }, text: '製品の収入 +5%' },
-  trophy: { name: 'トロフィー棚', icon: 'trophy', office: 4, cost: 80_000_000, effect: { rep: 0.1 }, text: '評判 +10%' },
-  statue: { name: '金の像', icon: 'statue', office: 5, cost: 600_000_000, effect: { success: 0.05 }, text: '成功率 +5%' },
+  coffee: { name: 'コーヒーメーカー', icon: 'cup', office: 0, cost: 30_000 },
+  plant: { name: '観葉植物', icon: 'plant', office: 0, cost: 60_000 },
+  // チェアとソファは座る人を1人決める（2026-10-19 ユーザー指示）
+  chair: { name: 'ゲーミングチェア', icon: 'chair', office: 1, cost: 250_000, sit: true },
+  neon: { name: 'ネオンサイン', icon: 'neon', office: 1, cost: 400_000 },
+  sofa: { name: 'ソファ', icon: 'sofa', office: 2, cost: 1_500_000, sit: true },
+  aquarium: { name: '水槽', icon: 'fish', office: 2, cost: 2_500_000 },
+  arcade: { name: 'ゲーム機', icon: 'arcade', office: 3, cost: 12_000_000 },
+  trophy: { name: 'トロフィー棚', icon: 'trophy', office: 4, cost: 80_000_000 },
+  statue: { name: '金の像', icon: 'statue', office: 5, cost: 600_000_000 },
 };
 
 // ちょっかい: 3Dの人をタップすると、まれに小さなことが起きる

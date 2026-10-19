@@ -165,17 +165,20 @@ const MODELS = {
 const SLOTS = [-0.2, 0.2, -0.6, 0, 0.85, -0.4, 0.4, -0.8, 0.6, -1]; // 0.6 あたりは外の木に隠れやすいので後回し
 const SEATS = { chair: { dx: 0, dz: 0.02, y: 0.17, laptop: true }, sofa: { dx: -0.2, dz: 0.04, y: 0.1 } };
 // 置いた家具をまとめて作る（office.js が部屋を作るたび・家具が増えたときに呼ぶ）
-export function buildFurniture(ids, w, d, home) {
+// pos: 動かした家具の場所 { id: { fx, fz } }（部屋の広さに対する割合）。無ければ決まった場所
+export function buildFurniture(ids, w, d, home, pos = {}) {
   const g = new THREE.Group();
   let k = 0;
   for (const id of ids) {
     if (!MODELS[id]) continue;
     const m = MODELS[id]();
+    const p = pos[id];
     if (id === 'neon') {
-      m.position.set(-w / 2 + 0.07, 1.15, home ? 0.15 : 0);
+      m.position.set(-w / 2 + 0.07, 1.15, p ? clampZ(p.fz * (d / 2), d) : home ? 0.15 : 0);
       m.rotation.y = Math.PI / 2;
     } else {
-      m.position.set((SLOTS[k++ % SLOTS.length] + 0.15) * (w / 2 - 0.45), 0, d / 2 - 0.2); // カメラが右手前にあるので、左の端は少し空ける
+      const x = (SLOTS[k++ % SLOTS.length] + 0.15) * (w / 2 - 0.45); // カメラが右手前にあるので、左の端は少し空ける
+      m.position.set(p ? clampX(p.fx * (w / 2), w) : x, 0, p ? clampZ(p.fz * (d / 2), d) : d / 2 - 0.2);
       m.rotation.y = 0.15; // カメラのほうを向く
     }
     m.userData.id = id;
@@ -185,6 +188,10 @@ export function buildFurniture(ids, w, d, home) {
   }
   return g;
 }
+
+// 部屋からはみ出さないように
+export const clampX = (x, w) => Math.max(-w / 2 + 0.3, Math.min(w / 2 - 0.3, x));
+export const clampZ = (z, d) => Math.max(-d / 2 + 0.3, Math.min(d / 2 - 0.15, z));
 
 // 水槽の魚を泳がせる
 export function animateFurniture(g, t) {

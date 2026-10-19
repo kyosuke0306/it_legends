@@ -9,7 +9,7 @@ import { OFFICES, JOBS, FURNITURE } from './game/rules.js';
 import { displayName, workOf, capacity, isTired, furnUser } from './game/state.js';
 import { buildPerson } from './outfits.js';
 import { themeOf, LIGHT, makeDesk, decorate, windowMaterial } from './office-decor.js';
-import { buildFurniture, animateFurniture } from './furniture.js';
+import { buildFurniture, animateFurniture, clampX, clampZ } from './furniture.js';
 
 const mat = (color, opts) => new THREE.MeshToonMaterial({ color, ...opts });
 const SPEED = 0.45;
@@ -61,11 +61,30 @@ export class Office {
     canvas.parentElement.append(this.tag);
     this.tagged = null;
     let down = null;
-    canvas.addEventListener('pointerdown', (e) => (down = [e.clientX, e.clientY]));
-    canvas.addEventListener('pointerup', (e) => {
-      if (down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) < 8) this.pick(e);
-      down = null;
+    // 家具は長押しで持ち上げて、指を動かすと床の上を動く（2026-10-19 ユーザー指示「移動できるように」）
+    // すぐ指を動かしたときは、いつもどおり部屋を回す
+    const pointers = new Set();
+    canvas.addEventListener('pointerdown', (e) => {
+      pointers.add(e.pointerId);
+      down = [e.clientX, e.clientY];
+      clearTimeout(this.pressTimer);
+      if (pointers.size > 1) return; // 2本指は動かす・寄せる
+      const f = this.furnitureAt(e);
+      if (f) this.pressTimer = setTimeout(() => down && pointers.size === 1 && this.lift(f), 350);
     });
+    canvas.addEventListener('pointermove', (e) => {
+      if (this.dragging) return this.dragTo(e);
+      if (down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) >= 8) clearTimeout(this.pressTimer);
+    });
+    const up = (e) => {
+      pointers.delete(e.pointerId);
+      clearTimeout(this.pressTimer);
+      if (this.dragging) this.drop();
+      else if (down && e.type === 'pointerup' && Math.hypot(e.clientX - down[0], e.clientY - down[1]) < 8) this.pick(e);
+      down = null;
+    };
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', up);
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
   }
@@ -86,7 +105,7 @@ export class Office {
       this.buildRoom(state.office, capacity(state));
       this.level = key;
     }
-    this.setFurniture(state.furniture ?? []);
+    if (!this.dragging) this.setFurniture(state.furniture ?? [], state.furnPos ?? {}); // 動かしている間は置き直さない
     // チェア・ソファを使う人（手が空くとそこに座る）
     const seatOf = new Map(Object.keys(this.furnSeats).map((id) => [furnUser(state, id)?.id, this.furnSeats[id]]));
     // SES の人は仕事の間だけ事務所にいる（席が足りないときは机の横に立つ）
@@ -145,12 +164,12 @@ export class Office {
   }
 
   // 模様替えで置いた家具（増えたとき・部屋を作り直したときに置き直す）
-  setFurniture(ids) {
-    const key = `${this.level}|${ids.join(',')}`;
+  setFurniture(ids, pos = {}) {
+    const key = `${this.level}|${ids.join(',')}|${JSON.stringify(pos)}`;
     if (this.furnKey === key) return;
     this.furnKey = key;
     if (this.furniture) this.room.remove(this.furniture);
-    this.furniture = buildFurniture(ids, this.size.w, this.size.d, this.home);
+    this.furniture = buildFurniture(ids, this.size.w, this.size.d, this.home, pos);
     this.room.add(this.furniture);
     // 座れる家具の、座る場所と向き
     this.furnSeats = {};
@@ -455,6 +474,54 @@ export class Office {
   }
 
   // タップした人を探して、名前と職種を3秒出す
+  // 指の下にある家具（無ければ null）
+  furnitureAt(e) {
+    if (!this.furniture) return null;
+    let o = this.ray(e).intersectObject(this.furniture, true)[0]?.object;
+    while (o && !o.userData.id) o = o.parent;
+    return o ?? null;
+  }
+  ray(e) {
+    const r = this.canvas.getBoundingClientRect();
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), this.camera);
+    return ray;
+  }
+  // 家具を持ち上げる（部屋は回らなくなる）
+  lift(f) {
+    this.dragging = { f, y: f.position.y };
+    this.controls.enabled = false;
+    f.position.y += 0.12;
+    navigator.vibrate?.(20);
+    this.canvas.parentElement.classList.add('moving');
+  }
+  // 指の下の床（壁のネオンは左の壁の上）へ
+  dragTo(e) {
+    const { f, y } = this.dragging;
+    const ray = this.ray(e);
+    const { w, d } = this.size;
+    const p = new THREE.Vector3();
+    if (f.userData.id === 'neon') {
+      if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(1, 0, 0), w / 2 - 0.07), p)) return;
+      f.position.z = clampZ(p.z, d);
+    } else {
+      if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), p)) return;
+      f.position.x = clampX(p.x, w);
+      f.position.z = clampZ(p.z, d);
+    }
+    this.dragged = true;
+  }
+  // 置く。場所は部屋の広さに対する割合で main.js に知らせる（記録に残す）
+  drop() {
+    const { f, y } = this.dragging;
+    f.position.y = y;
+    this.dragging = null;
+    this.controls.enabled = true;
+    this.canvas.parentElement.classList.remove('moving');
+    const { w, d } = this.size;
+    this.onMoveFurniture?.(f.userData.id, f.position.x / (w / 2), f.position.z / (d / 2));
+  }
+
   // 押したところに広がる輪（押した感じを出す）
   ripple(e) {
     const r = this.canvas.getBoundingClientRect();
@@ -482,7 +549,7 @@ export class Office {
     if (!best && this.furniture) {
       let o = ray.intersectObject(this.furniture, true)[0]?.object;
       while (o && !o.userData.id) o = o.parent;
-      if (o && FURNITURE[o.userData.id]?.who) {
+      if (o && FURNITURE[o.userData.id]?.sit) {
         this.tag.classList.remove('show');
         return this.onFurniture?.(o.userData.id);
       }

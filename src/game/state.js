@@ -92,20 +92,13 @@ function perksOf(m) {
 
 // 会社にいるだけで効くもの
 export function companyEffects(s) {
-  const e = { income: 0, offers: 1, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, luck: 0, statAll: {}, incomeGenre: {}, rest: 0, rep: 0, success: 0 };
+  const e = { income: 0, offers: 1, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, luck: 0, statAll: {}, incomeGenre: {} };
   for (const m of s.members) {
     const p = perksOf(m);
     e.offers *= 1 + (p.offers ?? 0); // 依頼の届きやすさは掛け算で重ねる
     for (const k of ['income', 'nextTrend', 'hireCost', 'xpAll', 'decaySlow', 'luck']) e[k] += p[k] ?? 0;
     for (const [k, v] of Object.entries(p.statAll ?? {})) e.statAll[k] = (e.statAll[k] ?? 0) + v;
     for (const [k, v] of Object.entries(p.incomeGenre ?? {})) e.incomeGenre[k] = (e.incomeGenre[k] ?? 0) + v;
-  }
-  // 部屋に置いた家具（模様替え）
-  for (const id of s.furniture ?? []) {
-    const f = R.FURNITURE[id]?.effect ?? {};
-    e.offers *= 1 + (f.offers ?? 0);
-    e.xpAll += f.xp ?? 0;
-    for (const k of ['income', 'luck', 'rest', 'rep', 'success']) e[k] += f[k] ?? 0;
   }
   return e;
 }
@@ -292,13 +285,12 @@ function endHaken(s, t, ev) {
 export function taskPreview(s, offer, ids, temps = offer.temps ?? []) {
   const team = [...ids.map((id) => memberById(s, id)), ...temps];
   const te = teamEffects(team);
-  const ce = companyEffects(s);
   const power = teamPower(s, team, offer.w, goodJobs(offer));
-  const chance = te.alwaysSuccess ? 1 : Math.min(0.98, Math.max(0.05, 0.9 * (power / offer.diff) + te.teamSuccess + ce.success));
+  const chance = te.alwaysSuccess ? 1 : Math.min(0.98, Math.max(0.05, 0.9 * (power / offer.diff) + te.teamSuccess));
   const duration = (offer.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed))) / (1 + R.TEAM_SPEEDUP * (team.length - 1));
   const great = power >= offer.diff * R.REP_GREAT;
   const early = duration <= usualTime(offer, team.length) * R.REP_EARLY;
-  const bonus = te.teamRep + ce.rep; // インフラの特技・家具（観葉植物など）
+  const bonus = te.teamRep; // インフラの特技
   return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)), rep: taskRep(offer, power, early, bonus), teamRep: bonus, great, early };
 }
 // その人数ならふつうにかかる時間。早さの評判はこれより早く終えたときだけ（人数をそろえただけでは付かない。2026-10-09）
@@ -388,7 +380,7 @@ function giveXp(s, team, base, t, ev) {
   const te = teamEffects(team);
   for (const m of team) {
     if (m.haken) continue; // 派遣の人は育たない（よその会社の人）
-    m.xp += base * (1 + ce.xpAll + te.teamXp + selfPerk(s, m, 'xp'));
+    m.xp += base * (1 + ce.xpAll + te.teamXp);
     while (m.xp >= xpNeed(m.level)) {
       m.xp -= xpNeed(m.level);
       m.level++;
@@ -821,12 +813,11 @@ export const canTire = (m) => m?.kind === 'staff' && !m.haken;
 export const isTired = (m) => canTire(m) && (m.tired ?? 0) >= R.TIRED_WARN;
 function addTired(s, dt) {
   const h = dt / R.HOUR;
-  const rest = 1 + companyEffects(s).rest; // コーヒーメーカーで早く抜ける
   for (const m of s.members) {
     if (!canTire(m)) continue;
-    // 手が空いていれば抜ける（ソファを使う人はもっと早く）。開発・研修は仕事よりたまりにくい
+    // 手が空いていれば抜ける。開発・研修は仕事よりたまりにくい
     const dev = s.devs.some((d) => d.id === m.busy) || (s.trains ?? []).some((x) => x.id === m.busy);
-    const up = !m.busy ? -R.TIRED_REST * (rest + selfPerk(s, m, 'rest')) : dev ? R.TIRED_DEV : R.TIRED_WORK;
+    const up = !m.busy ? -R.TIRED_REST : dev ? R.TIRED_DEV : R.TIRED_WORK;
     m.tired = Math.min(100, Math.max(0, (m.tired ?? 0) + up * h));
   }
 }
@@ -924,23 +915,21 @@ export function buyFurniture(s, id, now) {
   return true;
 }
 
-// チェア・ソファを使う人（2026-10-19 ユーザー指示「誰に使うか決めれるように」）。s.furnUse = { chair: id, sofa: id }
-export const canUse = (m, id) => {
-  const who = R.FURNITURE[id]?.who;
-  return !!m && (who === 'tire' ? canTire(m) : who === 'grow' ? m.kind !== 'temp' && !m.haken : false);
-};
+// チェア・ソファに座る人（2026-10-19 ユーザー指示「座らせれるように」）。s.furnUse = { chair: id, sofa: id }
+// 座る動きがあるのは CEO と社員（派遣も）だけ（レジェンドの体には座る動きがない）
+export const canUse = (m, id) => !!R.FURNITURE[id]?.sit && (m?.kind === 'hero' || m?.kind === 'staff');
 export const furnUser = (s, id) => (hasFurniture(s, id) ? s.members.find((m) => m.id === s.furnUse?.[id] && canUse(m, id)) ?? null : null);
 export function setFurnUser(s, id, mid) {
-  if (!hasFurniture(s, id) || !R.FURNITURE[id].who) return false;
+  if (!hasFurniture(s, id) || !R.FURNITURE[id].sit) return false;
   if (mid != null && !canUse(memberById(s, mid), id)) return false;
   (s.furnUse ??= {})[id] = mid ?? null;
   return true;
 }
-// その人だけに効く家具の力（xp / rest）
-function selfPerk(s, m, k) {
-  let v = 0;
-  for (const [id, mid] of Object.entries(s.furnUse ?? {})) if (mid === m.id && hasFurniture(s, id) && canUse(m, id)) v += R.FURNITURE[id].self?.[k] ?? 0;
-  return v;
+// 家具を動かす。場所は部屋の広さに対する割合（fx, fz: -1〜1）で覚え、引っ越しても同じあたりに置く
+export function moveFurniture(s, id, fx, fz) {
+  if (!hasFurniture(s, id)) return false;
+  (s.furnPos ??= {})[id] = { fx: Math.max(-1, Math.min(1, fx)), fz: Math.max(-1, Math.min(1, fz)) };
+  return true;
 }
 
 // ちょっかい: 3Dの人をタップしたとき。起きたことを返す（何も起きなければ null）
