@@ -189,6 +189,7 @@ const MODELS = {
 // 置く場所。カメラに近い手前の床に、買った順に真ん中から左右へ並べる（奥は机で埋まり、遠くて見えないため）
 // ネオンは左の壁に掛ける
 const SLOTS = [-0.2, 0.2, -0.6, 0, 0.85, -0.4, 0.4, -0.8, 0.6, -1]; // 0.6 あたりは外の木に隠れやすいので後回し
+const SEATS = { chair: { dx: 0, dz: 0.02, y: 0.17, laptop: true }, sofa: { dx: -0.2, dz: 0.04, y: 0.1 } };
 // 置いた家具をまとめて作る（office.js が部屋を作るたび・家具が増えたときに呼ぶ）
 export function buildFurniture(ids, w, d, home) {
   const g = new THREE.Group();
@@ -204,6 +205,8 @@ export function buildFurniture(ids, w, d, home) {
       m.rotation.y = 0.15; // カメラのほうを向く
     }
     m.userData.id = id;
+    // 座れる家具（使う人を決めるもの）: 座る位置のずれ dx と、座面の高さに合わせた体の高さ y
+    if (SEATS[id]) m.userData.seat = SEATS[id];
     g.add(m);
   }
   return g;

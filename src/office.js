@@ -5,8 +5,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildChibi, createCharacter, animateCharacter } from './character.js';
 import { byId as LEGEND_BY_ID } from './data.js';
-import { OFFICES, JOBS } from './game/rules.js';
-import { displayName, workOf, capacity, isTired } from './game/state.js';
+import { OFFICES, JOBS, FURNITURE } from './game/rules.js';
+import { displayName, workOf, capacity, isTired, furnUser } from './game/state.js';
 import { buildPerson } from './outfits.js';
 import { themeOf, LIGHT, makeDesk, decorate, windowMaterial } from './office-decor.js';
 import { buildFurniture, animateFurniture } from './furniture.js';
@@ -86,6 +86,9 @@ export class Office {
       this.buildRoom(state.office, capacity(state));
       this.level = key;
     }
+    this.setFurniture(state.furniture ?? []);
+    // チェア・ソファを使う人（手が空くとそこに座る）
+    const seatOf = new Map(Object.keys(this.furnSeats).map((id) => [furnUser(state, id)?.id, this.furnSeats[id]]));
     // SES の人は仕事の間だけ事務所にいる（席が足りないときは机の横に立つ）
     const people = [...state.members, ...state.tasks.flatMap((x) => x.temps ?? [])];
     // 冷やかしに来たレジェンド（まだ仲間でない）。しばらく事務所をうろうろして帰る
@@ -127,6 +130,7 @@ export class Office {
       p.busy = Boolean(m.busy);
       p.hero = m.kind === 'hero';
       p.tired = isTired(m); // 疲れた社員は頭の横に汗
+      p.furnSeat = seatOf.get(m.id) ?? null;
       p.canSit = m.kind === 'staff'; // 社員は手が空くとクッションに座ってノートPCで働く（レジェンドは座る動きがないので立ったまま）
       // 仕事中なら仕事の名前も出す。who / busy は札を押したときに詳しい画面を開くため（main.js の onPerson / onWork）
       p.label = { ...labelOf(m), work: workOf(state, m)?.title ?? '', who: m, busy: m.busy };
@@ -134,7 +138,6 @@ export class Office {
       p.desk = i < this.desks.length ? desk : desk.clone().add(new THREE.Vector3(0.32 * Math.ceil(i / this.desks.length), 0, 0.15));
     });
     this.setWallArt(state.wallArt ?? null);
-    this.setFurniture(state.furniture ?? []);
     this.activity = state.activity;
     this.board.visible = state.activity === 'meetup';
     this.setGuests(state.activity === 'meetup' ? 3 : 0);
@@ -149,6 +152,14 @@ export class Office {
     if (this.furniture) this.room.remove(this.furniture);
     this.furniture = buildFurniture(ids, this.size.w, this.size.d, this.home);
     this.room.add(this.furniture);
+    // 座れる家具の、座る場所と向き
+    this.furnSeats = {};
+    for (const f of this.furniture.children) {
+      const st = f.userData.seat;
+      if (!st) continue;
+      const off = new THREE.Vector3(st.dx, 0, st.dz).applyAxisAngle(new THREE.Vector3(0, 1, 0), f.rotation.y);
+      this.furnSeats[f.userData.id] = { pos: f.position.clone().add(off), ry: f.rotation.y, y: st.y, laptop: st.laptop };
+    }
   }
 
   // 勉強会に来た人（見た目はその場で作るだけで、記録には残さない）
@@ -455,6 +466,15 @@ export class Office {
       const hit = ray.intersectObject(holder, true)[0];
       if (hit && (!best || hit.distance < best.d)) best = { holder, label, d: hit.distance };
     }
+    // 人がいなければ、使う人を決められる家具（チェア・ソファ）をタップしたか見る
+    if (!best && this.furniture) {
+      let o = ray.intersectObject(this.furniture, true)[0]?.object;
+      while (o && !o.userData.id) o = o.parent;
+      if (o && FURNITURE[o.userData.id]?.who) {
+        this.tag.classList.remove('show');
+        return this.onFurniture?.(o.userData.id);
+      }
+    }
     // 人がいなければ、自分で描ける壁をタップしたか見る
     if (!best && this.artPlane && ray.intersectObject(this.artPlane)[0]) {
       this.tag.classList.remove('show');
@@ -609,9 +629,16 @@ export class Office {
       pos.copy(this.spots.door);
       p.target = null;
     }
-    const atDesk = p.busy || plan === 'net';
-    if (p.seat && (atDesk || plan)) this.standUp(p); // 仕事が入ったら立って机へ
-    const goal = atDesk ? p.desk : plan === 'meetup' ? this.spots.board : p.target;
+    // チェア・ソファを使う人は、手が空いているとそこへ行って座る（CEO のネットは、チェアがあればそこでノートPC）
+    const own = !p.busy && (!plan || (plan === 'net' && p.furnSeat?.laptop)) ? p.furnSeat : null;
+    const atDesk = !own && (p.busy || plan === 'net');
+    if (p.seat && (atDesk || plan || own)) this.standUp(p); // 仕事が入ったら立って机へ
+    if (p.onFurn && p.onFurn !== own) {
+      p.onFurn = null;
+      p.sitting = false;
+      if (p.laptop) p.laptop.visible = false;
+    }
+    const goal = atDesk ? p.desk : plan === 'meetup' ? this.spots.board : own ? own.pos : p.target;
     let moving = false;
     if (goal) {
       const dx = goal.x - pos.x;
@@ -625,6 +652,11 @@ export class Office {
         moving = true;
       } else if (atDesk) {
         p.holder.rotation.y = Math.PI; // 机（奥）のほうを向く
+      } else if (own) {
+        pos.set(own.pos.x, 0, own.pos.z);
+        p.holder.rotation.y = own.ry;
+        p.sitting = true;
+        p.onFurn = own;
       } else if (plan === 'meetup') {
         p.holder.rotation.y = Math.PI / 2; // 勉強会に来た人のほうを向く
       } else if (plan === 'walk') {
@@ -668,14 +700,14 @@ export class Office {
     const parts = p.obj.userData.parts;
     if (p.sitting && parts) {
       // 床に座ってクッションにもたれ、足を前に出してひざのノートPCを打つ
-      p.obj.position.y = -0.14;
+      p.obj.position.y = p.onFurn ? p.onFurn.y : -0.14; // チェア・ソファは座面の高さ
       p.obj.rotation.x = -0.2;
       parts.body.scale.set(1, 1, 1);
       parts.legL.rotation.x = parts.legR.rotation.x = -1.45;
       parts.armL.rotation.x = -0.9 + Math.sin(t * 9) * 0.08;
       parts.armR.rotation.x = -0.9 - Math.sin(t * 9) * 0.08;
       parts.head.rotation.x = 0.3;
-      this.lapTop(p);
+      if (!p.onFurn || p.onFurn.laptop) this.lapTop(p); // ソファではくつろぐだけ
     } else if (parts) p.obj.rotation.x = 0;
   }
 }

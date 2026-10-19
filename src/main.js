@@ -465,7 +465,8 @@ function enterGame() {
   fitScreen();
   if (!office) {
     office = new Office($('#office-canvas'));
-    office.onArt = openArtPad; // 自宅の壁の空いているところをタップすると、落書きを描く
+    office.onArt = openArtPad;
+    office.onFurniture = (id) => openFurnUser(id); // チェア・ソファを押すと、使う人を選ぶ // 自宅の壁の空いているところをタップすると、落書きを描く
     // 3Dの人の札：名前を押すとプロフィール、仕事の名前を押すと仕事の詳しいシート
     office.onPerson = (m, candidate) => (m.kind === 'legend' ? openLegend(m.legend) : openMember(m, candidate));
     office.onWork = (id) => {
@@ -655,7 +656,11 @@ function openDecor() {
       .map(([id, f]) => {
         const own = G.hasFurniture(S, id);
         const locked = S.office < f.office;
-        const end = own
+        // チェア・ソファは使う人の顔（いなければ ＋）。押すと選ぶ
+        const user = own && f.who ? G.furnUser(S, id) : null;
+        const end = own && f.who
+          ? `<button class="furn-user ${user ? '' : 'none'}" data-use="${id}">${user ? avatar(user) : icon('plus')}</button>`
+          : own
           ? icon('check', 'furn-ok')
           : locked
             ? `<span class="furn-lock">${icon('lock')}${R.OFFICES[f.office].name}</span>`
@@ -666,16 +671,57 @@ function openDecor() {
     <button class="big ghost" id="run-close">OK</button>`;
   if (!dlg.open) dlg.showModal();
   $('#run-close').onclick = () => dlg.close();
+  fillThumbs($('#assign-body'));
+  $('#assign-body').querySelectorAll('[data-use]').forEach((b) => (b.onclick = () => openFurnUser(b.dataset.use, true)));
   $('#assign-body').querySelectorAll('[data-buy]').forEach(
     (b) =>
       (b.onclick = () => {
-        if (!G.buyFurniture(S, b.dataset.buy, Date.now())) return;
+        const id = b.dataset.buy;
+        if (!G.buyFurniture(S, id, Date.now())) return;
+        if (R.FURNITURE[id].who) return commit(), openFurnUser(id); // チェア・ソファは、まず使う人を決める
         // 置いたところを見せる
         dlg.close();
         if (view !== 'office') $('.tab[data-view="office"]').click();
         commit();
       }),
   );
+}
+
+// チェア・ソファを使う人を選ぶ（2026-10-19 ユーザー指示「誰に使うか決めれるように」）。3Dの家具を押しても開く
+// 選ぶと会社の画面に戻り、その人が座りに行くところを見せる。back なら模様替えの一覧へ戻れる
+function openFurnUser(id, back = false) {
+  const f = R.FURNITURE[id];
+  const dlg = $('#assign');
+  const cur = G.furnUser(S, id);
+  const list = S.members.filter((m) => G.canUse(m, id));
+  // ほかの家具（チェアならソファ）を使っている人には、その家具の印
+  const other = new Map(Object.keys(R.FURNITURE).filter((k) => k !== id && R.FURNITURE[k].who).map((k) => [G.furnUser(S, k)?.id, k]));
+  $('#assign-body').innerHTML = `
+    <div class="furn furn-top"><img src="${furnitureThumb(id)}" alt=""><span class="furn-main"><b>${f.name}</b><small>${f.text}</small></span></div>
+    <div class="pick">${list
+      .map(
+        (m) => `<button class="person ${cur?.id === m.id ? 'active' : ''}" data-mid="${m.id}">
+          ${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}</small></span>${
+            id === 'sofa' ? tiredBar(m) : other.has(m.id) ? icon(R.FURNITURE[other.get(m.id)].icon, 'furn-also') : ''
+          }
+        </button>`,
+      )
+      .join('') || `<p class="empty">${icon('people')}</p>`}</div>
+    <div class="sheet-btns">${back ? `<button class="big ghost" id="fu-back">${icon('back')}</button>` : ''}${
+      cur ? `<button class="big ghost" id="fu-none">${icon('error')}</button>` : ''
+    }<button class="big ghost" id="run-close">OK</button></div>`;
+  fillThumbs($('#assign-body'));
+  if (!dlg.open) dlg.showModal();
+  const done = (mid) => {
+    G.setFurnUser(S, id, mid);
+    dlg.close();
+    if (view !== 'office') $('.tab[data-view="office"]').click();
+    commit();
+  };
+  $('#assign-body').querySelectorAll('[data-mid]').forEach((b) => (b.onclick = () => done(+b.dataset.mid)));
+  $('#fu-none') && ($('#fu-none').onclick = () => done(null));
+  $('#fu-back') && ($('#fu-back').onclick = openDecor);
+  $('#run-close').onclick = () => dlg.close();
 }
 
 // 今のオフィスの詳しいシート（2026-10-04 ユーザー指示）。席の埋まり具合・仕事の平均・面接・作れる製品・増築、次のオフィスへ

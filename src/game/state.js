@@ -388,7 +388,7 @@ function giveXp(s, team, base, t, ev) {
   const te = teamEffects(team);
   for (const m of team) {
     if (m.haken) continue; // 派遣の人は育たない（よその会社の人）
-    m.xp += base * (1 + ce.xpAll + te.teamXp);
+    m.xp += base * (1 + ce.xpAll + te.teamXp + selfPerk(s, m, 'xp'));
     while (m.xp >= xpNeed(m.level)) {
       m.xp -= xpNeed(m.level);
       m.level++;
@@ -821,10 +821,10 @@ export const canTire = (m) => m?.kind === 'staff' && !m.haken;
 export const isTired = (m) => canTire(m) && (m.tired ?? 0) >= R.TIRED_WARN;
 function addTired(s, dt) {
   const h = dt / R.HOUR;
-  const rest = R.TIRED_REST * (1 + companyEffects(s).rest); // コーヒーメーカー・ソファで早く抜ける
+  const rest = 1 + companyEffects(s).rest; // コーヒーメーカーで早く抜ける
   for (const m of s.members) {
     if (!canTire(m)) continue;
-    const up = !m.busy ? -rest : s.devs.some((d) => d.id === m.busy) || (s.trains ?? []).some((x) => x.id === m.busy) ? R.TIRED_DEV : R.TIRED_WORK;
+    const up = !m.busy ? -R.TIRED_REST * (rest + selfPerk(s, m, 'rest')) : // ソファを使う人はもっと早く s.devs.some((d) => d.id === m.busy) || (s.trains ?? []).some((x) => x.id === m.busy) ? R.TIRED_DEV : R.TIRED_WORK;
     m.tired = Math.min(100, Math.max(0, (m.tired ?? 0) + up * h));
   }
 }
@@ -920,6 +920,25 @@ export function buyFurniture(s, id, now) {
   (s.furniture ??= []).push(id);
   addLog(s, now, `${f.name}  模様替え`, 'good');
   return true;
+}
+
+// チェア・ソファを使う人（2026-10-19 ユーザー指示「誰に使うか決めれるように」）。s.furnUse = { chair: id, sofa: id }
+export const canUse = (m, id) => {
+  const who = R.FURNITURE[id]?.who;
+  return !!m && (who === 'tire' ? canTire(m) : who === 'grow' ? m.kind !== 'temp' && !m.haken : false);
+};
+export const furnUser = (s, id) => (hasFurniture(s, id) ? s.members.find((m) => m.id === s.furnUse?.[id] && canUse(m, id)) ?? null : null);
+export function setFurnUser(s, id, mid) {
+  if (!hasFurniture(s, id) || !R.FURNITURE[id].who) return false;
+  if (mid != null && !canUse(memberById(s, mid), id)) return false;
+  (s.furnUse ??= {})[id] = mid ?? null;
+  return true;
+}
+// その人だけに効く家具の力（xp / rest）
+function selfPerk(s, m, k) {
+  let v = 0;
+  for (const [id, mid] of Object.entries(s.furnUse ?? {})) if (mid === m.id && hasFurniture(s, id) && canUse(m, id)) v += R.FURNITURE[id].self?.[k] ?? 0;
+  return v;
 }
 
 // ちょっかい: 3Dの人をタップしたとき。起きたことを返す（何も起きなければ null）
