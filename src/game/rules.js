@@ -540,3 +540,61 @@ export const LEGEND_RULES = {
   },
 };
 
+
+// ---------- 待ち時間の楽しみ（2026-10-19 ユーザー指示「仕事を任せている間、暇になる」） ----------
+// 模様替え: 家具を買って部屋に置く（1つずつ、置いたままになる）。effect は置いている間だけ効く
+//   rest 疲れの抜け / rep 仕事の評判 / xp 全員の成長 / offers 依頼の届きやすさ（掛け算） / luck 臨時収入 / income 全製品の収入 / success 成功率
+// office はその会社から買える。cost は買うときのお金。見た目は furniture.js
+export const FURNITURE = {
+  coffee: { name: 'コーヒーメーカー', icon: 'cup', office: 0, cost: 30_000, effect: { rest: 0.25 }, text: '疲れの抜け +25%' },
+  plant: { name: '観葉植物', icon: 'plant', office: 0, cost: 60_000, effect: { rep: 0.05 }, text: '評判 +5%' },
+  chair: { name: 'ゲーミングチェア', icon: 'chair', office: 1, cost: 250_000, effect: { xp: 0.1 }, text: '成長 +10%' },
+  neon: { name: 'ネオンサイン', icon: 'neon', office: 1, cost: 400_000, effect: { offers: 0.1 }, text: '依頼 ×1.1' },
+  sofa: { name: 'ソファ', icon: 'sofa', office: 2, cost: 1_500_000, effect: { rest: 0.5 }, text: '疲れの抜け +50%' },
+  aquarium: { name: '水槽', icon: 'fish', office: 2, cost: 2_500_000, effect: { luck: 0.3 }, text: '臨時収入 +30%' },
+  arcade: { name: 'ゲーム機', icon: 'arcade', office: 3, cost: 12_000_000, effect: { income: 0.05 }, text: '製品の収入 +5%' },
+  trophy: { name: 'トロフィー棚', icon: 'trophy', office: 4, cost: 80_000_000, effect: { rep: 0.1 }, text: '評判 +10%' },
+  statue: { name: '金の像', icon: 'statue', office: 5, cost: 600_000_000, effect: { success: 0.05 }, text: '成功率 +5%' },
+};
+
+// ちょっかい: 3Dの人をタップすると、まれに小さなことが起きる
+// 1人に1時間に1回まで判定し、POKE_CHANCE で起きる。起きるのは1日 POKE_PER_DAY 回まで
+export const POKE_CHANCE = 0.35;
+export const POKE_PER_DAY = 3;
+export const POKE_COOL = HOUR;
+
+// 差し入れ: 仕事中・開発中の欄から1回だけ。残りの時間が TREAT_SPEED 倍になり、担当の社員の疲れが TREAT_REST 減る
+// 費用は仕事の報酬の TREAT_COST 倍（開発は開発費の TREAT_DEV_COST 倍）
+export const TREAT_SPEED = 0.8;
+export const TREAT_REST = 15;
+export const TREAT_COST = 0.15;
+export const TREAT_DEV_COST = 0.04;
+
+// 研修: 手の空いた社員・CEO にお金を払って学ばせる。その間は仕事に出せない（疲れは開発と同じくらい）
+// hours: かかる時間 / xp: 今の会社で同じ時間の仕事をしたときの経験の何倍か / cost: 今の会社の仕事 何時間ぶんの報酬か
+export const TRAININGS = [
+  { name: '社内研修', hours: 4, xp: 1.2, cost: 3 },
+  { name: '外部セミナー', hours: 12, xp: 1.6, cost: 10 },
+];
+
+// 実績: 目標を達成すると、受け取りで今の会社の仕事 hours 時間ぶんのお金。1つの目標は段階ごとに進む（steps）
+// key は state.js の achieveNow で数えるもの
+export const ACHIEVEMENTS = [
+  { id: 'tasks', icon: 'check', name: '仕事', key: 'tasks', steps: [10, 50, 200, 1000, 5000], hours: 4 },
+  { id: 'products', icon: 'box', name: '発売', key: 'products', steps: [1, 5, 20, 60], hours: 6 },
+  { id: 'staff', icon: 'people', name: '仲間', key: 'members', steps: [3, 8, 20, 50], hours: 4 },
+  { id: 'legends', icon: 'crown', name: 'レジェンド', key: 'legends', steps: [1, 3, 8, 15, 20], hours: 8 },
+  { id: 'rep', icon: 'star', name: '評判', key: 'rep', steps: [100, 1000, 10_000, 100_000, 1_000_000], hours: 6 },
+  { id: 'office', icon: 'building', name: '引っ越し', key: 'office', steps: [1, 2, 3, 5, 7, 9], hours: 6 },
+  { id: 'money', icon: 'coin', name: '資金', key: 'money', steps: [1_000_000, 100_000_000, 10_000_000_000, 1_000_000_000_000], hours: 6 },
+  { id: 'web', icon: 'globe', name: 'Web', key: 'cat:web', steps: [10, 50, 200], hours: 3 },
+  { id: 'app', icon: 'g_app', name: 'アプリ', key: 'cat:app', steps: [10, 50, 200], hours: 3 },
+  { id: 'infra', icon: 'job_infra', name: 'インフラ', key: 'cat:infra', steps: [10, 50, 200], hours: 3 },
+  { id: 'consult', icon: 'bubble', name: '相談', key: 'cat:consult', steps: [10, 50, 200], hours: 3 },
+  { id: 'ai', icon: 'g_ai', name: 'AI', key: 'cat:ai', steps: [10, 50, 200], hours: 3 },
+  { id: 'space', icon: 'g_satnet', name: '宇宙', key: 'cat:space', steps: [5, 30, 100], hours: 3 },
+  { id: 'furniture', icon: 'sofa', name: '模様替え', key: 'furniture', steps: [1, 4, 9], hours: 3 },
+  { id: 'trains', icon: 'up', name: '研修', key: 'trains', steps: [3, 20, 100], hours: 3 },
+  { id: 'treats', icon: 'cup', name: '差し入れ', key: 'treats', steps: [3, 20, 100], hours: 3 },
+  { id: 'pokes', icon: 'spark', name: 'ちょっかい', key: 'pokes', steps: [5, 30, 150], hours: 2 },
+];

@@ -92,13 +92,20 @@ function perksOf(m) {
 
 // 会社にいるだけで効くもの
 export function companyEffects(s) {
-  const e = { income: 0, offers: 1, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, luck: 0, statAll: {}, incomeGenre: {} };
+  const e = { income: 0, offers: 1, nextTrend: 0, hireCost: 0, xpAll: 0, decaySlow: 0, luck: 0, statAll: {}, incomeGenre: {}, rest: 0, rep: 0, success: 0 };
   for (const m of s.members) {
     const p = perksOf(m);
     e.offers *= 1 + (p.offers ?? 0); // 依頼の届きやすさは掛け算で重ねる
     for (const k of ['income', 'nextTrend', 'hireCost', 'xpAll', 'decaySlow', 'luck']) e[k] += p[k] ?? 0;
     for (const [k, v] of Object.entries(p.statAll ?? {})) e.statAll[k] = (e.statAll[k] ?? 0) + v;
     for (const [k, v] of Object.entries(p.incomeGenre ?? {})) e.incomeGenre[k] = (e.incomeGenre[k] ?? 0) + v;
+  }
+  // 部屋に置いた家具（模様替え）
+  for (const id of s.furniture ?? []) {
+    const f = R.FURNITURE[id]?.effect ?? {};
+    e.offers *= 1 + (f.offers ?? 0);
+    e.xpAll += f.xp ?? 0;
+    for (const k of ['income', 'luck', 'rest', 'rep', 'success']) e[k] += f[k] ?? 0;
   }
   return e;
 }
@@ -285,12 +292,14 @@ function endHaken(s, t, ev) {
 export function taskPreview(s, offer, ids, temps = offer.temps ?? []) {
   const team = [...ids.map((id) => memberById(s, id)), ...temps];
   const te = teamEffects(team);
+  const ce = companyEffects(s);
   const power = teamPower(s, team, offer.w, goodJobs(offer));
-  const chance = te.alwaysSuccess ? 1 : Math.min(0.98, Math.max(0.05, 0.9 * (power / offer.diff) + te.teamSuccess));
+  const chance = te.alwaysSuccess ? 1 : Math.min(0.98, Math.max(0.05, 0.9 * (power / offer.diff) + te.teamSuccess + ce.success));
   const duration = (offer.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed))) / (1 + R.TEAM_SPEEDUP * (team.length - 1));
   const great = power >= offer.diff * R.REP_GREAT;
   const early = duration <= usualTime(offer, team.length) * R.REP_EARLY;
-  return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)), rep: taskRep(offer, power, early, te.teamRep), teamRep: te.teamRep, great, early };
+  const bonus = te.teamRep + ce.rep; // インフラの特技・家具（観葉植物など）
+  return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)), rep: taskRep(offer, power, early, bonus), teamRep: bonus, great, early };
 }
 // その人数ならふつうにかかる時間。早さの評判はこれより早く終えたときだけ（人数をそろえただけでは付かない。2026-10-09）
 const usualTime = (offer, n) => (offer.hours * R.HOUR) / (1 + R.TEAM_SPEEDUP * (Math.max(1, n) - 1));
@@ -711,7 +720,9 @@ export function workOf(s, m) {
   const task = s.tasks.find((x) => x.id === m.busy);
   if (task) return { title: task.title, endsAt: task.endsAt };
   const dev = s.devs.find((x) => x.id === m.busy);
-  return dev ? { title: R.GENRES[dev.genre].name, endsAt: dev.endsAt } : null;
+  if (dev) return { title: R.GENRES[dev.genre].name, endsAt: dev.endsAt };
+  const tr = (s.trains ?? []).find((x) => x.id === m.busy);
+  return tr ? { title: R.TRAININGS[tr.kind].name, endsAt: tr.endsAt } : null;
 }
 // いまの過ごし方で、その出来事が起きるか（CEO の手が空いているときだけ）
 function activityRoll(s, event) {
@@ -810,9 +821,10 @@ export const canTire = (m) => m?.kind === 'staff' && !m.haken;
 export const isTired = (m) => canTire(m) && (m.tired ?? 0) >= R.TIRED_WARN;
 function addTired(s, dt) {
   const h = dt / R.HOUR;
+  const rest = R.TIRED_REST * (1 + companyEffects(s).rest); // コーヒーメーカー・ソファで早く抜ける
   for (const m of s.members) {
     if (!canTire(m)) continue;
-    const up = !m.busy ? -R.TIRED_REST : s.devs.some((d) => d.id === m.busy) ? R.TIRED_DEV : R.TIRED_WORK;
+    const up = !m.busy ? -rest : s.devs.some((d) => d.id === m.busy) || (s.trains ?? []).some((x) => x.id === m.busy) ? R.TIRED_DEV : R.TIRED_WORK;
     m.tired = Math.min(100, Math.max(0, (m.tired ?? 0) + up * h));
   }
 }
@@ -897,6 +909,153 @@ function rollRival(s, t, ev) {
   ev.push(e);
 }
 
+// ---------- 待ち時間の楽しみ（2026-10-19 ユーザー指示） ----------
+// 数えておくもの（実績に使う）
+const bump = (s, k) => ((s.tally ??= {})[k] = (s.tally[k] ?? 0) + 1);
+
+// 模様替え: 家具を買って部屋に置く
+export const hasFurniture = (s, id) => (s.furniture ?? []).includes(id);
+export function buyFurniture(s, id, now) {
+  const f = R.FURNITURE[id];
+  if (!f || hasFurniture(s, id) || s.office < f.office || s.money < f.cost) return false;
+  s.money -= f.cost;
+  (s.furniture ??= []).push(id);
+  addLog(s, now, `${f.name}  模様替え`, 'good');
+  return true;
+}
+
+// ちょっかい: 3Dの人をタップしたとき。起きたことを返す（何も起きなければ null）
+// 1人に1時間に1回だけ判定し、起きるのは1日 POKE_PER_DAY 回まで（何度もタップして当たりを引けないように）
+export function poke(s, id, now) {
+  const m = memberById(s, id);
+  if (!m || m.kind === 'temp') return null;
+  const day = Math.floor((now - s.createdAt) / R.DAY);
+  const p = (s.pokes ??= { day, n: 0, at: {} });
+  if (p.day !== day) Object.assign(p, { day, n: 0, at: {} });
+  if (p.n >= R.POKE_PER_DAY || now - (p.at[id] ?? 0) < R.POKE_COOL) return null;
+  p.at[id] = now;
+  if (rand(s) >= R.POKE_CHANCE) return null;
+  // 起きること: 疲れた社員なら雑談でひと息、そうでなければひらめき（経験）か、知り合いからの相談（依頼が1件）
+  const r = rand(s);
+  let out;
+  if (canTire(m) && (m.tired ?? 0) >= 20 && r < 0.5) {
+    const v = Math.min(m.tired, 15);
+    m.tired -= v;
+    out = { type: 'rest', v };
+  } else if (r < 0.75 && !m.haken) {
+    const ev = [];
+    giveXp(s, [m], Math.max(3, xpNeed(m.level) * 0.2), now, ev); // 次のレベルまでの2割くらい
+    out = { type: 'idea', level: ev.length ? m.level : 0 };
+  } else {
+    addOffer(s, now);
+    out = { type: 'offer' };
+  }
+  p.n++;
+  bump(s, 'pokes');
+  return out;
+}
+
+// 差し入れ: 仕事中・開発中に1回だけ。残りの時間が短くなり、担当の社員の疲れが抜ける
+export function treatCost(s, kind, id) {
+  if (kind === 'task') {
+    const t = s.tasks.find((x) => x.id === id);
+    return t ? round(t.reward * R.TREAT_COST) : 0;
+  }
+  const d = s.devs.find((x) => x.id === id);
+  return d ? round(R.GENRES[d.genre].cost * R.TREAT_DEV_COST) : 0;
+}
+export function treat(s, kind, id, now) {
+  const x = (kind === 'task' ? s.tasks : s.devs).find((y) => y.id === id);
+  const cost = treatCost(s, kind, id);
+  if (!x || x.treat || x.endsAt <= now || s.money < cost) return false;
+  s.money -= cost;
+  x.treat = true;
+  x.begunAt ??= x.startAt; // 早く終わったかは、最初に始めた時刻から測る
+  // 進んだ割合はそのままで、残りが TREAT_SPEED 倍の時間で進む
+  const done = Math.min(0.99, Math.max(0, (now - x.startAt) / (x.endsAt - x.startAt)));
+  x.endsAt = now + (x.endsAt - now) * R.TREAT_SPEED;
+  x.startAt = x.endsAt - (x.endsAt - now) / (1 - done); // 進み具合の棒がそのままになるように
+  for (const m of x.members.map((mid) => memberById(s, mid)).filter(canTire)) m.tired = Math.max(0, (m.tired ?? 0) - R.TREAT_REST);
+  bump(s, 'treats');
+  addLog(s, now, `差し入れ  -${cost.toLocaleString('ja-JP')}円`);
+  return true;
+}
+
+// 研修: 手の空いた社員・CEO にお金を払って学ばせる（派遣の人・レジェンドはできない）
+export const canTrain = (m) => !!m && (m.kind === 'hero' || (m.kind === 'staff' && !m.haken));
+const tierNow = (s) => Math.min(s.office, R.TIERS.length - 1);
+export function trainingOf(s, kind) {
+  const c = R.TRAININGS[kind];
+  const T = R.TIERS[tierNow(s)];
+  return { ...c, cost: round(T.rate * c.cost), xp: Math.round(c.hours * 3 * (tierNow(s) + 1) * (T.xp ?? 1) * c.xp) };
+}
+export function startTraining(s, mid, kind, now) {
+  const m = memberById(s, mid);
+  const c = R.TRAININGS[kind] && trainingOf(s, kind);
+  if (!c || !canTrain(m) || m.busy || s.money < c.cost) return false;
+  s.money -= c.cost;
+  const tr = { id: newId(s), kind, member: mid, xp: c.xp, startAt: now, endsAt: now + c.hours * R.HOUR };
+  (s.trains ??= []).push(tr);
+  m.busy = tr.id;
+  addLog(s, now, `${displayName(m)}  ${c.name}`);
+  return true;
+}
+export const trainingFor = (s, m) => (s.trains ?? []).find((x) => x.id === m?.busy) ?? null;
+function finishTraining(s, tr, t, ev) {
+  s.trains = s.trains.filter((x) => x !== tr);
+  const m = memberById(s, tr.member);
+  if (!m) return;
+  m.busy = null;
+  giveXp(s, [m], tr.xp, t, ev);
+  bump(s, 'trains');
+  ev.push({ type: 'train', t, id: m.id, name: displayName(m), kind: tr.kind });
+}
+
+// 実績: いまの数（key は rules.js の ACHIEVEMENTS）
+export function achieveNow(s, key) {
+  if (key.startsWith('cat:')) return s.counts.cat[key.slice(4)] ?? 0;
+  switch (key) {
+    case 'tasks': return s.counts.tasks;
+    case 'products': return s.counts.products;
+    case 'members': return s.members.length;
+    case 'legends': return ownedLegends(s).size;
+    case 'rep': return s.rep;
+    case 'office': return s.office;
+    case 'money': return s.money;
+    case 'furniture': return (s.furniture ?? []).length;
+    default: return s.tally?.[key] ?? 0;
+  }
+}
+// 目標ごとの今の段階 { a, step（受け取った段の数）, need, now, done（受け取れる）, all（全部受け取った）, reward }
+export function achievements(s) {
+  return R.ACHIEVEMENTS.map((a) => {
+    const step = s.achv?.[a.id] ?? 0;
+    const all = step >= a.steps.length;
+    const need = a.steps[Math.min(step, a.steps.length - 1)];
+    const now = achieveNow(s, a.key);
+    return { a, step, need, now, all, done: !all && now >= need, reward: round(R.TIERS[tierNow(s)].rate * a.hours * (step + 1)) };
+  });
+}
+export const achieveReady = (s) => achievements(s).filter((x) => x.done).length;
+export function claimAchieve(s, id, now) {
+  const x = achievements(s).find((y) => y.a.id === id);
+  if (!x?.done) return 0;
+  (s.achv ??= {})[id] = x.step + 1;
+  s.money += x.reward;
+  addLog(s, now, `実績  ${x.a.name} ${x.need.toLocaleString('ja-JP')}  +${x.reward.toLocaleString('ja-JP')}円`, 'good');
+  return x.reward;
+}
+
+// 製品の名前と絵を自分で決める（look: { c: 色の番号, ic: 絵の名前 }。無ければ種類の色と絵）
+export function renameProduct(s, id, name, look) {
+  const p = s.products.find((x) => x.id === id);
+  name = String(name ?? '').trim().slice(0, 20);
+  if (!p || !name) return false;
+  p.name = name;
+  if (look) p.look = look;
+  return true;
+}
+
 // ---------- 時間を進める ----------
 // ゲームを閉じていた間も含めて now まで進める。起きたことを ev に入れて返す
 export function advance(s, now, ev = []) {
@@ -909,6 +1068,7 @@ export function advance(s, now, ev = []) {
       .filter(([, x]) => x.endsAt <= next)
       .sort((a, b) => a[1].endsAt - b[1].endsAt);
     for (const [kind, x] of ending) (kind === 'task' ? finishTask : finishDev)(s, x, x.endsAt, ev);
+    for (const x of (s.trains ?? []).filter((x) => x.endsAt <= next).sort((a, b) => a.endsAt - b.endsAt)) finishTraining(s, x, x.endsAt, ev);
     endHaken(s, next, ev);
     // 製品の収入と給料
     const dt = next - s.time;

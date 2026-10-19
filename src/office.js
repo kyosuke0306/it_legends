@@ -9,6 +9,7 @@ import { OFFICES, JOBS } from './game/rules.js';
 import { displayName, workOf, capacity, isTired } from './game/state.js';
 import { buildPerson } from './outfits.js';
 import { themeOf, LIGHT, makeDesk, decorate, windowMaterial } from './office-decor.js';
+import { buildFurniture, animateFurniture } from './furniture.js';
 
 const mat = (color, opts) => new THREE.MeshToonMaterial({ color, ...opts });
 const SPEED = 0.45;
@@ -133,10 +134,21 @@ export class Office {
       p.desk = i < this.desks.length ? desk : desk.clone().add(new THREE.Vector3(0.32 * Math.ceil(i / this.desks.length), 0, 0.15));
     });
     this.setWallArt(state.wallArt ?? null);
+    this.setFurniture(state.furniture ?? []);
     this.activity = state.activity;
     this.board.visible = state.activity === 'meetup';
     this.setGuests(state.activity === 'meetup' ? 3 : 0);
     this.setVisitor(state.candidates.find((c) => c.walkin) ?? null);
+  }
+
+  // 模様替えで置いた家具（増えたとき・部屋を作り直したときに置き直す）
+  setFurniture(ids) {
+    const key = `${this.level}|${ids.join(',')}`;
+    if (this.furnKey === key) return;
+    this.furnKey = key;
+    if (this.furniture) this.room.remove(this.furniture);
+    this.furniture = buildFurniture(ids, this.size.w, this.size.d, this.home);
+    this.room.add(this.furniture);
   }
 
   // 勉強会に来た人（見た目はその場で作るだけで、記録には残さない）
@@ -203,6 +215,8 @@ export class Office {
     const w = home ? 3.6 : 3 + Math.ceil(Math.sqrt(cap)) * 1.3;
     const d = w * 0.75;
     this.size = { w, d };
+    this.home = home;
+    this.furnKey = null; // 部屋を作り直したら家具も置き直す
     const floor = new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, d), mat(o.floor));
     floor.position.y = -0.05;
     room.add(floor);
@@ -449,8 +463,10 @@ export class Office {
     clearTimeout(this.tagTimer);
     this.tagged = best;
     if (!best) return this.tag.classList.remove('show');
-    this.tag.innerHTML = `<b></b><small></small>${best.label.work ? '<span class="work"></span>' : ''}`;
     const L = best.label;
+    // ちょっかい：仲間をタップすると、まれに小さなことが起きる（main.js の onPoke が札に出す中身を返す）
+    const poked = L.who && !L.candidate && L.who.kind !== 'rival' && L.who.kind !== 'temp' ? this.onPoke?.(L.who) : '';
+    this.tag.innerHTML = `<b></b><small></small>${L.work ? '<span class="work"></span>' : ''}${poked ? `<span class="poke">${poked}</span>` : ''}`;
     this.tag.querySelector('b').textContent = L.name;
     this.tag.querySelector('small').textContent = L.sub;
     if (L.work) this.tag.querySelector('.work').textContent = L.work;
@@ -523,6 +539,7 @@ export class Office {
     if (document.hidden || !this.canvas.offsetParent || !this.resize()) return;
     const t = this.clock.elapsedTime;
     for (const l of this.blink) l.visible = Math.sin(t * 4 + l.userData.phase * 3) > -0.4;
+    animateFurniture(this.furniture, t);
     for (const p of this.people.values()) {
       this.step(p, t, dt);
       this.sweat(p, t);
