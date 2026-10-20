@@ -1175,3 +1175,18 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .furn-hint { display: flex; align-items: center; gap: 4px; margin: -6px 2px 10px; color: var(--muted); font-size: 0.75rem; }
 .furn-hint .ic { width: 1em; height: 1em; }
 .stage-wrap.moving canvas { cursor: grabbing; }
+
+/* 作れない製品も押せる（薄く見えるだけ）。押すと流行の移り変わりの棒（2026-10-20 ユーザー指示） */
+.genre.off { opacity: 0.45; }
+.genre.off .prod-ic.small { filter: grayscale(0.6); }
+.trend-bars rect { fill: var(--muted); opacity: 0.55; }
+.trend-bars rect.up { fill: #e07a20; }
+.trend-bars rect.up2 { fill: var(--bad); }
+.trend-bars rect.down { fill: #4a78c2; }
+.trend-bars rect.cur { opacity: 1; }
+.trend-bars rect.next { opacity: 0.35; }
+.trend-bars rect.q { fill: none; stroke: var(--muted); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; opacity: 0.6; }
+.trend-bars line.base { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; opacity: 0.6; }
+.genre-why { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 4px 0 12px; color: var(--bad); font-weight: 700; font-size: 0.9rem; }
+.genre-why .ic { width: 1.1em; height: 1.1em; }
+.prod-hero .t { width: 24px; height: 24px; }

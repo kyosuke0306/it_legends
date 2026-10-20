@@ -1539,7 +1539,8 @@ function renderProduct() {
       // 同じ種類は PRODUCT_MAX まで（開発中も数える）。持っていれば「2/3」のように出す
       const n = G.genreCount(S, k);
       const full = n >= R.PRODUCT_MAX;
-      return `<button class="panel genre${full ? ' full' : ''}" data-genre="${k}" ${locked || full || !canStart || S.money < g.cost ? 'disabled' : ''}>
+      // 作れないときも押せる（薄く見えるだけ）。押すと詳しいシートで流行の移り変わりが見られる（2026-10-20 ユーザー指示）
+      return `<button class="panel genre${full ? ' full' : ''}${locked || full || !canStart || S.money < g.cost ? ' off' : ''}" data-genre="${k}">
         <span class="gname">${prodIcon(k, 'small')}<span>${locked ? icon('lock') : ''}${g.name}</span></span>
         <span class="trend">${trendIcon(G.trendAt(S, k, now))}${seeNext ? `<span class="arrow">→</span>${trendIcon(G.trendAt(S, k, next + 1))}` : ''}</span>
         <span class="vals">${val('coin', yen(g.cost))}${val('clock', dur(g.hours * R.HOUR))}${n ? val('box', `${n}/${R.PRODUCT_MAX}`, full ? 'bad' : '') : ''}${brandVal(k)}</span>
@@ -1575,10 +1576,75 @@ function renderProduct() {
     ${devs}
     ${S.products.length ? `<div class="sec prod-head">${icon('box')}<b>自社製品</b><span class="grow"></span>${val('coin', `${signYen(hourlyIncome())}/時`, hourlyIncome() >= 0 ? 'ok' : 'bad')}</div>${products}` : ''}`;
   const v = $('#view-product');
-  v.querySelectorAll('[data-genre]').forEach((b) => (b.onclick = () => assignDev(b.dataset.genre)));
+  v.querySelectorAll('[data-genre]').forEach((b) => (b.onclick = () => openGenre(b.dataset.genre)));
   fillThumbs(v);
   v.querySelectorAll('[data-dev]').forEach((el) => (el.onclick = () => openDevRunning(+el.dataset.dev)));
   v.querySelectorAll('[data-prod]').forEach((b) => (b.onclick = () => openProduct(+b.dataset.prod)));
+}
+
+// 製品の種類のシート：開発費・期間・必要な力・ブランドと、最近の流行の移り変わり（2日ごとの棒）。作れるなら「開発」へ
+const TREND_BARS = 10;
+function trendBars(genre, now) {
+  const P = R.TREND_PERIOD;
+  const cur = Math.floor((now - S.createdAt) / P);
+  const seeNext = G.companyEffects(S).nextTrend > 0;
+  const bars = [];
+  for (let n = Math.max(0, cur - TREND_BARS + 1); n <= cur + 1; n++) {
+    const next = n > cur;
+    if (next && !seeNext) bars.push({ q: true });
+    else bars.push({ x: G.trendAt(S, genre, S.createdAt + n * P), cur: n === cur, next });
+  }
+  const w = 300 / Math.max(bars.length, 6);
+  const y = (x) => 76 - ((x - 0.4) / 1.4) * 70; // 0.6〜1.8 を高さに
+  const cls = (x) => (x >= 1.45 ? 'up2' : x >= 1.1 ? 'up' : x >= 0.85 ? 'flat' : 'down');
+  const rects = bars
+    .map((b, i) => {
+      const x = (i * w + w * 0.15).toFixed(1);
+      const bw = (w * 0.7).toFixed(1);
+      if (b.q) return `<rect class="q" x="${x}" y="40" width="${bw}" height="36" rx="3"/>`;
+      return `<rect class="${cls(b.x)}${b.cur ? ' cur' : ''}${b.next ? ' next' : ''}" x="${x}" y="${y(b.x).toFixed(1)}" width="${bw}" height="${(76 - y(b.x)).toFixed(1)}" rx="3"/>`;
+    })
+    .join('');
+  return `<div class="spark trend-bars"><svg viewBox="0 0 300 80" preserveAspectRatio="none"><line class="base" x1="0" x2="300" y1="${y(1).toFixed(1)}" y2="${y(1).toFixed(1)}"/>${rects}</svg></div>`;
+}
+function openGenre(genre) {
+  const g = R.GENRES[genre];
+  const now = Date.now();
+  const locked = S.office < g.office;
+  const n = G.genreCount(S, genre);
+  const full = n >= R.PRODUCT_MAX;
+  const free = G.freeMembers(S).length > 0;
+  const poor = S.money < g.cost;
+  const ok = !locked && !full && free && !poor;
+  // 作れないわけ（いちばん先に解くものから）
+  const why = locked
+    ? `${icon('lock')}${R.OFFICES[g.office].name}へ引っ越し`
+    : full
+      ? `${icon('box')}${n}/${R.PRODUCT_MAX}`
+      : !free
+        ? `${icon('people')}全員仕事中`
+        : poor
+          ? `${icon('coin')}${yen(g.cost - S.money)} 足りない`
+          : '';
+  const dlg = $('#assign');
+  $('#assign-body').innerHTML = `
+    <div class="prod-hero">${prodIcon(genre, 'big')}<b>${locked ? icon('lock') : ''}${g.name}</b>${trendIcon(G.trendAt(S, genre, now))}</div>
+    <div class="facts">
+      <div><small>開発費</small><b class="${poor ? 'bad' : ''}">${yen(g.cost)}</b></div>
+      <div><small>期間</small><b>${dur(g.hours * R.HOUR)}</b></div>
+      <div><small>必要な力</small><b>${icon('bolt')}${g.need}</b></div>
+      <div><small>持っている</small><b class="${full ? 'bad' : ''}">${n}/${R.PRODUCT_MAX}</b></div>
+      <div><small>ブランド</small><b>×${brandNum(G.brand(S, genre))}</b></div>
+      <div><small>流行</small><b>${icon('clock')}<span data-left="${G.trendEndsAt(S, now)}">${dur(G.trendEndsAt(S, now) - now)}</span></b></div>
+    </div>
+    ${trendBars(genre, now)}
+    ${why ? `<div class="genre-why">${why}</div>` : ''}
+    <div class="sheet-btns">${ok ? '<button class="big" id="genre-go">開発</button>' : ''}<button class="big ghost" id="run-close">${ok ? 'やめる' : 'OK'}</button></div>`;
+  fillThumbs($('#assign-body'));
+  updateTimers();
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
+  if (ok) $('#genre-go').onclick = () => assignDev(genre);
 }
 
 function assignDev(genre) {
