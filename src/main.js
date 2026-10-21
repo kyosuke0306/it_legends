@@ -1582,30 +1582,28 @@ function renderProduct() {
   v.querySelectorAll('[data-prod]').forEach((b) => (b.onclick = () => openProduct(+b.dataset.prod)));
 }
 
-// 製品の種類のシート：開発費・期間・必要な力・ブランドと、最近の流行の移り変わり（2日ごとの棒）。作れるなら「開発」へ
-const TREND_BARS = 10;
-function trendBars(genre, now) {
+// 製品の種類のシート：開発費・期間・必要な力・ブランドと、最近の流行の移り変わり（2日ごとの折れ線）。作れるなら「開発」へ
+const TREND_POINTS = 10;
+function trendLine(genre, now) {
   const P = R.TREND_PERIOD;
   const cur = Math.floor((now - S.createdAt) / P);
+  const first = Math.max(0, cur - TREND_POINTS + 1);
   const seeNext = G.companyEffects(S).nextTrend > 0;
-  const bars = [];
-  for (let n = Math.max(0, cur - TREND_BARS + 1); n <= cur + 1; n++) {
-    const next = n > cur;
-    if (next && !seeNext) bars.push({ q: true });
-    else bars.push({ x: G.trendAt(S, genre, S.createdAt + n * P), cur: n === cur, next });
-  }
-  const w = 300 / Math.max(bars.length, 6);
-  const y = (x) => 76 - ((x - 0.4) / 1.4) * 70; // 0.6〜1.8 を高さに
-  const cls = (x) => (x >= 1.45 ? 'up2' : x >= 1.1 ? 'up' : x >= 0.85 ? 'flat' : 'down');
-  const rects = bars
-    .map((b, i) => {
-      const x = (i * w + w * 0.15).toFixed(1);
-      const bw = (w * 0.7).toFixed(1);
-      if (b.q) return `<rect class="q" x="${x}" y="40" width="${bw}" height="36" rx="3"/>`;
-      return `<rect class="${cls(b.x)}${b.cur ? ' cur' : ''}${b.next ? ' next' : ''}" x="${x}" y="${y(b.x).toFixed(1)}" width="${bw}" height="${(76 - y(b.x)).toFixed(1)}" rx="3"/>`;
-    })
-    .join('');
-  return `<div class="spark trend-bars"><svg viewBox="0 0 300 80" preserveAspectRatio="none"><line class="base" x1="0" x2="300" y1="${y(1).toFixed(1)}" y2="${y(1).toFixed(1)}"/>${rects}</svg></div>`;
+  const xs = [];
+  for (let n = first; n <= cur + (seeNext ? 1 : 0); n++) xs.push(G.trendAt(S, genre, S.createdAt + n * P));
+  const span = Math.max(cur - first + 1, 6); // 点が少ないうちは左に寄せて、右に「次」の場所を空ける
+  const X = (i) => (i / span) * 300;
+  const Y = (x) => 76 - ((x - 0.5) / 1.4) * 70; // 0.6〜1.8 を高さに
+  const xy = (arr, from) => arr.map((x, i) => `${X(from + i).toFixed(1)},${Y(x).toFixed(1)}`).join(' ');
+  const k = cur - first; // 今の点
+  const past = xs.slice(0, k + 1);
+  const cls = (x) => (x >= 1.45 ? 'up2' : x >= 1.1 ? 'up' : x >= 0.85 ? '' : 'down');
+  const dot = (i, x, extra = '') => `<i class="tdot ${cls(x)} ${extra}" style="left:${((X(i) / 300) * 100).toFixed(1)}%;top:${((Y(x) / 80) * 100).toFixed(1)}%"></i>`;
+  return `<div class="spark trend-line"><div class="tl-box"><svg viewBox="0 0 300 80" preserveAspectRatio="none">
+      <line class="base" x1="0" x2="300" y1="${Y(1).toFixed(1)}" y2="${Y(1).toFixed(1)}"/>
+      <polygon points="0,80 ${xy(past, 0)} ${X(k).toFixed(1)},80"/><polyline points="${xy(past, 0)}"/>
+      ${seeNext ? `<polyline class="next" points="${xy(xs.slice(k), k)}"/>` : ''}
+    </svg>${dot(k, xs[k], 'cur')}${seeNext ? dot(k + 1, xs[k + 1], 'next') : ''}</div></div>`;
 }
 function openGenre(genre) {
   const g = R.GENRES[genre];
@@ -1637,7 +1635,7 @@ function openGenre(genre) {
       <div><small>ブランド</small><b>×${brandNum(G.brand(S, genre))}</b></div>
       <div><small>流行</small><b>${icon('clock')}<span data-left="${G.trendEndsAt(S, now)}">${dur(G.trendEndsAt(S, now) - now)}</span></b></div>
     </div>
-    ${trendBars(genre, now)}
+    ${trendLine(genre, now)}
     ${why ? `<div class="genre-why">${why}</div>` : ''}
     <div class="sheet-btns">${ok ? '<button class="big" id="genre-go">開発</button>' : ''}<button class="big ghost" id="run-close">${ok ? 'やめる' : 'OK'}</button></div>`;
   fillThumbs($('#assign-body'));
