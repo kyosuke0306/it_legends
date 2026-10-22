@@ -599,6 +599,16 @@ export const LEGENDS = [
     look: { skin: 0xf0d2b8, hairStyle: 'side', hairColor: 0x1e1a18, shirt: 0x2a3348, glasses: true },
     outfit: 'a dark navy business suit, a white collared shirt and a plain dark navy tie, black shoes',
     face: 'an East Asian Japanese man in his fifties with neatly combed short black hair parted on the side, thin oval wire-rimmed glasses, a round friendly face and a warm gentle smile',
+    // 任天堂の発表会で話す
+    show: {
+      stage: 'nintendo',
+      props: ['nintendo'],
+      lines: [
+        { text: '名刺の上では社長。頭の中ではゲーム開発者。でも心は、ゲーマーです。', sub: 'On my business card, I am a corporate president. In my mind, I am a game developer. But in my heart, I am a gamer.', anim: 'greet_01' },
+        { text: 'ゲームは何より、楽しくなければいけない。すべての人にとって。', sub: 'Above all, video games are meant to be just one thing: fun for everyone.', prop: 'ds', anim: 'agree' },
+        { text: '直接、みなさんにお伝えします。', sub: 'Directly.', prop: 'wiiRemote', anim: 'fold_arms', animFrom: 1.5 },
+      ],
+    },
   },
   {
     id: 'guido',
@@ -617,6 +627,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf3d6c4, hairStyle: 'receding', hairColor: 0x9a948c, shirt: 0x2f4f7a, glasses: true },
     outfit: 'a plain dark blue crew-neck T-shirt with no print, khaki trousers and brown shoes',
+    // Python が生まれた 1989 年のクリスマスのアムステルダムで話す
+    show: {
+      stage: 'amsterdam',
+      props: ['amsterdam'],
+      lines: [
+        { text: 'クリスマスの1週間、暇つぶしに始めた趣味だった。', sub: 'I was looking for a hobby programming project that would keep me occupied during the week around Christmas.', anim: 'greet_01' },
+        { text: 'プログラムは、書くより読まれることの方がずっと多い。', sub: 'Code is read much more often than it is written.', prop: 'pyCode', anim: 'agree' },
+        { text: '美しいは、醜いよりいい。', sub: 'Beautiful is better than ugly.', anim: 'fold_arms', animFrom: 1.5 },
+      ],
+    },
   },
   {
     id: 'nadella',
@@ -635,6 +655,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xa77a58, hairStyle: 'bald', hairColor: 0x2a2420, shirt: 0x1d1f24, glasses: true },
     outfit: 'a black crew-neck sweater over a white collared shirt, dark grey trousers and black shoes',
+    // 今の Microsoft の明るい事務所で話す
+    show: {
+      stage: 'redmond',
+      props: ['redmond'],
+      lines: [
+        { text: 'この業界は伝統を尊重しない。尊重するのは革新だけだ。', sub: 'Our industry does not respect tradition. It only respects innovation.', prop: 'cloud', anim: 'greet_01' },
+        { text: '何でも知っている人より、何でも学ぶ人になれ。', sub: 'Don\'t be a know-it-all, be a learn-it-all.', anim: 'agree' },
+        { text: '地球上のすべての人と組織が、より多くを成し遂げられるように。', sub: 'Empower every person and every organization on the planet to achieve more.', prop: 'cricketBat', anim: 'fold_arms', animFrom: 1.5 },
+      ],
+    },
   },
   {
     id: 'dorsey',
@@ -653,6 +683,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf2d4c0, hairStyle: 'short', hairColor: 0x3a2c22, shirt: 0x111111, beard: true },
     outfit: 'a plain black T-shirt with no print, black jeans and black boots',
+    // Twitter を始めたサンフランシスコの夜の事務所で話す
+    show: {
+      stage: 'twttr',
+      props: ['twttr'],
+      lines: [
+        { text: 'just setting up my twttr', sub: 'The first tweet, 2006.', prop: 'tweet', anim: 'greet_01' },
+        { text: '細部をすべて完璧に。そして、完璧にする細部の数をしぼれ。', sub: 'Make every detail perfect and limit the number of details to perfect.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: '成功は、決して偶然ではない。', sub: 'Success is never accidental.', prop: 'squareReader', anim: 'agree' },
+      ],
+    },
   },
   {
     id: 'mikitani',
@@ -671,6 +711,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf0d2b8, hairStyle: 'side', hairColor: 0x1e1a18, shirt: 0x1f2433 },
     outfit: 'a dark navy business suit, a white collared shirt and a crimson red tie, black shoes',
+    // 楽天を始めた 1997 年の東京の小さな事務所で話す
+    show: {
+      stage: 'rakuten',
+      props: ['rakuten'],
+      lines: [
+        { text: 'インターネットで、日本を元気にしたい。', sub: 'Empower Japan through the internet.', prop: 'mallScreen', anim: 'greet_01' },
+        { text: '常に改善、常に前進。', sub: 'Always improve, always advance.', anim: 'agree' },
+        { text: 'スピード!! スピード!! スピード!!', sub: 'Speed!! Speed!! Speed!!', prop: 'baseball', anim: 'fold_arms', animFrom: 1.5 },
+      ],
+    },
   },
   {
     id: 'hassabis',
@@ -689,6 +739,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xe6c3a6, hairStyle: 'receding', hairColor: 0x2a2420, shirt: 0x223049 },
     outfit: 'a plain navy crew-neck sweater over a light blue collared shirt, dark trousers and black shoes',
+    // DeepMind のロンドンの事務所で話す
+    show: {
+      stage: 'deepmind',
+      props: ['deepmind'],
+      lines: [
+        { text: '知能の謎を解き、それでほかのすべてを解く。', sub: 'Solve intelligence, and then use that to solve everything else.', anim: 'greet_01' },
+        { text: 'あの37手目は、人には思いつかない一手だった。', sub: 'Move 37 was a move no human would have played.', prop: 'goBoard', anim: 'fold_arms', animFrom: 1.5 },
+        { text: 'AI は、人類がつくるいちばん役に立つ技術になりうる。', sub: 'AI could be the most beneficial technology humanity has ever invented.', prop: 'protein', anim: 'agree' },
+      ],
+    },
   },
   {
     id: 'shannon',
@@ -708,6 +768,16 @@ export const LEGENDS = [
     look: { skin: 0xf3d6c4, hairStyle: 'side', hairColor: 0x6a5440, shirt: 0x6b6458 },
     outfit: 'a 1950s grey tweed jacket, a white collared shirt with a narrow dark tie, grey trousers and brown shoes',
     face: 'a slim American man in his thirties with short wavy brown hair combed back, no glasses, a long narrow face and a friendly smile',
+    // 1948 年のベル研究所の研究室で話す
+    show: {
+      stage: 'shannon',
+      props: ['shannonLab'],
+      lines: [
+        { text: '情報とは、不確かさを減らすものだ。', sub: 'Information is the resolution of uncertainty.', anim: 'greet_01' },
+        { text: '私はただ、物がどう組み立てられているか不思議だったんだ。', sub: 'I just wondered how things were put together.', prop: 'theseus', anim: 'agree' },
+        { text: '役に立つかより、面白いかで研究してきた。', sub: 'I\'ve always pursued my interests without much regard for financial value or value to the world.', prop: 'juggle', anim: 'fold_arms', animFrom: 1.5 },
+      ],
+    },
   },
 ];
 

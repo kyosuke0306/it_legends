@@ -301,17 +301,17 @@ export const REP_GUARD = 0.3;
 export const REP_GUARD_MAX = 0.9;
 export const REP_HITS = [
   // テストと設計で防ぐ。月へ行くソフトを止めなかったハミルトン、C と UNIX のリッチー、部品を減らして確かに動く基板を作ったウォズニアック
-  { short: '不具合', title: '納品したシステムに不具合', pct: [3, 6], jobs: ['se', 'pg'], legends: ['hamilton', 'ritchie', 'wozniak'] },
+  { short: '不具合', title: '納品したシステムに不具合', pct: [3, 6], jobs: ['se', 'pg'], legends: ['hamilton', 'ritchie', 'wozniak', 'guido'] },
   // サーバーの守りと仕組みで防ぐ。暗号を解いたチューリング
-  { short: '個人情報流出', title: '個人情報流出', pct: [8, 14], jobs: ['infra', 'se'], legends: ['turing'] },
+  { short: '個人情報流出', title: '個人情報流出', pct: [8, 14], jobs: ['infra', 'se'], legends: ['turing', 'shannon'] },
   // 発信と説明で打ち消す。SNS を知りつくした人たち
-  { short: 'デマ', title: 'SNS でデマが広まった', pct: [2, 5], jobs: ['sales', 'data'], legends: ['zuckerberg', 'maezawa'] },
+  { short: 'デマ', title: 'SNS でデマが広まった', pct: [2, 5], jobs: ['sales', 'data'], legends: ['zuckerberg', 'maezawa', 'dorsey'] },
   // 人と組織をまとめる人が防ぐ。海軍の規律のホッパー
-  { short: '不祥事', title: '社員の不祥事が報道された', pct: [4, 8], jobs: ['gm', 'pm'], legends: ['hopper'] },
+  { short: '不祥事', title: '社員の不祥事が報道された', pct: [4, 8], jobs: ['gm', 'pm'], legends: ['hopper', 'nadella'] },
   // サーバーを止めない。AWS のベゾス、Linux のトーバルズ
-  { short: 'サービス停止', title: '自社サービスが半日止まった', pct: [3, 7], need: 'product', jobs: ['infra', 'pm'], legends: ['bezos', 'torvalds'] },
+  { short: 'サービス停止', title: '自社サービスが半日止まった', pct: [3, 7], need: 'product', jobs: ['infra', 'pm'], legends: ['bezos', 'torvalds', 'mikitani'] },
   // 使いやすさとお客さんへの説明で防ぐ。細部にこだわるジョブズ
-  { short: '炎上', title: '口コミサイトで炎上', pct: [2, 6], jobs: ['designer', 'consul'], legends: ['jobs'] },
+  { short: '炎上', title: '口コミサイトで炎上', pct: [2, 6], jobs: ['designer', 'consul'], legends: ['jobs', 'iwata'] },
 ];
 // 職種・レジェンドごとの「防ぐ」もの（画面に出す）
 export const guardsOf = (job, legend) => REP_HITS.filter((h) => (job && h.jobs.includes(job)) || (legend && h.legends.includes(legend))).map((h) => h.short);
@@ -547,6 +547,79 @@ export const LEGEND_RULES = {
     ability: { teamSpeed: 0.2, teamSuccess: 0.15 },
     abilityText: '速さ +20%  成功率 +15%',
     scene: '作業台で、基板にはんだ付けをしているひげの青年がいる…',
+  },  iwata: {
+    stats: { idea: 90, tech: 85, plan: 80, talk: 85 },
+    meet: { cat: { app: 8 }, office: 2 },
+    hint: 'アプリの仕事を 8 回こなし、小さな事務所を構えると…',
+    join: 0.3,
+    // プログラマー出身の社長。ふだん遊ばない人にもゲームを広げた
+    ability: { incomeGenre: { game: 1 }, teamQuality: 0.3 },
+    abilityText: 'ゲームの収入 2倍  製品の出来 +30%',
+    scene: 'ゲーム機を手に、うれしそうに話を聞いている男がいる…',
+  },
+  guido: {
+    stats: { idea: 80, tech: 95, plan: 80, talk: 60 },
+    meet: { cat: { ai: 8 }, staff: 5 },
+    hint: 'AI の仕事を 8 回こなし、社員を 5 人雇うと…',
+    join: 0.4,
+    // 読みやすい言語で、みんなが早く覚え、まちがいも減る
+    ability: { xpAll: 0.3, teamSuccess: 0.15 },
+    abilityText: '全員の成長 +30%  成功率 +15%',
+    // 2018 年に Python のまとめ役を自分から降りた
+    quit: 40,
+    quitText: '「もう休みたい」とまとめ役を降りた',
+    scene: 'ヘビのぬいぐるみを机に置いて、プログラムを書く男がいる…',
+  },
+  nadella: {
+    stats: { idea: 80, tech: 85, plan: 95, talk: 85 },
+    meet: { cat: { infra: 20 }, office: 4 },
+    hint: 'インフラの仕事を 20 回こなし、本社ビルを構えると…',
+    join: 0.3,
+    // Microsoft をクラウドの会社に生まれ変わらせた
+    ability: { incomeGenre: { cloud: 1, biz: 0.5 }, income: 0.1 },
+    abilityText: 'クラウド基盤 2倍  業務ソフト +50%  全製品 +10%',
+    scene: 'クリケットの話をしながら、クラウドの図を描いている男がいる…',
+  },
+  dorsey: {
+    stats: { idea: 85, tech: 80, plan: 65, talk: 70 },
+    meet: { cat: { web: 12, app: 5 } },
+    hint: 'Web の仕事を 12 回、アプリの仕事を 5 回こなすと…',
+    join: 0.4,
+    ability: { incomeGenre: { sns: 1, app: 0.3 }, offers: 0.5 },
+    abilityText: 'SNS の収入 2倍  アプリ +30%  依頼 ×1.5',
+    // 2008 年に Twitter の CEO を外され、Square を始めた
+    quit: 25,
+    quitText: '「Square に専念する」と去った',
+    scene: '鼻にピアスをしたひげの男が、短い文を打ちこんでいる…',
+  },
+  mikitani: {
+    stats: { idea: 80, tech: 55, plan: 90, talk: 90 },
+    meet: { cat: { web: 10 }, office: 3 },
+    hint: 'Web の仕事を 10 回こなし、オフィスビルを構えると…',
+    join: 0.4,
+    // 13 のお店から日本一のネット通販に
+    ability: { incomeGenre: { web: 0.5 }, offers: 0.3 },
+    abilityText: 'Web の収入 +50%  依頼 ×1.3',
+    scene: '「スピード!!」と書いた紙を貼っている男がいる…',
+  },
+  hassabis: {
+    stats: { idea: 100, tech: 95, plan: 85, talk: 70 },
+    meet: { cat: { ai: 20 }, rep: 3000 },
+    hint: 'AI の仕事を 20 回こなし、評判が 3000 を超えると…',
+    join: 0.3,
+    ability: { incomeGenre: { ai: 0.5, agi: 0.5 }, teamSuccess: 0.2, statAll: { idea: 0.15 } },
+    abilityText: 'AI・汎用AI +50%  成功率 +20%  全員の発想 +15%',
+    scene: '碁盤の前で、一手をじっと考えている男がいる…',
+  },
+  shannon: {
+    stats: { idea: 100, tech: 95, plan: 75, talk: 50 },
+    meet: { tasks: 150, legends: 5 },
+    hint: '仕事を 150 回こなし、レジェンドが 5 人集まると…',
+    join: 0.2,
+    // すべての情報を 0 と 1 で表せると示した
+    ability: { statAll: { tech: 0.15, idea: 0.15 }, teamReward: 0.2 },
+    abilityText: '全員の技術・発想 +15%  報酬 +20%',
+    scene: '一輪車に乗りながら、3つの玉でジャグリングをしている男がいる…',
   },
 };
 

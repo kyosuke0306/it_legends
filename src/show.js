@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中（壁に ZOZO の文字）。'matsue' はまつもとさんが Ruby を育てた島根・松江の夜の書斎（壁に光る Ruby の公式ロゴ）。'spacex' は SpaceX のロケット工場の夜、'stanford' は Google を始めたスタンフォードの研究室、'gtc' は NVIDIA の基調講演、'softbank' はソフトバンクを始めた 1981 年の事務所、'openai' は OpenAI の明るい事務所（どれも壁に本物のロゴ）。'victorian' はラブレスの 1840 年代のロンドンの客間、'ias' はプリンストン高等研究所、'harvard' はホッパーの Mark II の部屋、'apollo' は 1969 年の MIT の研究室（NASA のマーク）、'bell' はベル研究所、'cern' は 1990 年の CERN（WWW のマーク）、'helsinki' はトーバルズのヘルシンキの学生部屋（Linux のペンギン）、'woz' はウォズニアックが Apple I を作った 1976 年の作業部屋（虹色の Apple のマーク）
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中（壁に ZOZO の文字）。'matsue' はまつもとさんが Ruby を育てた島根・松江の夜の書斎（壁に光る Ruby の公式ロゴ）。'spacex' は SpaceX のロケット工場の夜、'stanford' は Google を始めたスタンフォードの研究室、'gtc' は NVIDIA の基調講演、'softbank' はソフトバンクを始めた 1981 年の事務所、'openai' は OpenAI の明るい事務所（どれも壁に本物のロゴ）。'victorian' はラブレスの 1840 年代のロンドンの客間、'ias' はプリンストン高等研究所、'harvard' はホッパーの Mark II の部屋、'apollo' は 1969 年の MIT の研究室（NASA のマーク）、'bell' はベル研究所、'cern' は 1990 年の CERN（WWW のマーク）、'helsinki' はトーバルズのヘルシンキの学生部屋（Linux のペンギン）、'woz' はウォズニアックが Apple I を作った 1976 年の作業部屋（虹色の Apple のマーク）、'nintendo' は岩田さんの任天堂の発表会、'amsterdam' は Python が生まれた 1989 年のアムステルダム、'redmond' は今の Microsoft、'twttr' は Twitter を始めたサンフランシスコ、'rakuten' は楽天を始めた 1997 年の東京の事務所、'deepmind' は DeepMind のロンドンの事務所、'shannon' はシャノンの 1948 年のベル研究所
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -1534,6 +1534,260 @@ const PROPS = {
     };
     return g;
   },
+  // 任天堂の発表会（Nintendo Direct のような明るい白い部屋）：壁に赤い任天堂のロゴ、ゲームの画面
+  nintendo() {
+    return room(nintendoWallTexture(), lightWoodFloorTexture(), { src: 'assets/nintendo-logo.svg', w: 1.5, h: 0.5, x: 1.7, y: 1.35 });
+  },
+
+  // ニンテンドー DS：2つの画面が開いたり閉じたりする
+  ds() {
+    const g = new THREE.Group();
+    const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f4, roughness: 0.35 });
+    const make = (top) => {
+      const h = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.26, 0.03), white);
+      body.position.y = top ? 0.13 : -0.13;
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.18), new THREE.MeshBasicMaterial({ map: dsScreenTexture(top) }));
+      scr.position.set(0, body.position.y, 0.016);
+      h.add(body, scr);
+      return h;
+    };
+    const lid = make(true);
+    const base = make(false);
+    g.add(lid, base);
+    floatAt(g, 0.95, 1.15, (p, t) => (lid.rotation.x = -0.2 - Math.max(0, Math.sin(t * 0.8)) * 0.5));
+    return g;
+  },
+
+  // Wii リモコン（白い棒）を振る
+  wiiRemote() {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.42, 0.07), new THREE.MeshStandardMaterial({ color: 0xf4f4f6, roughness: 0.3 }));
+    const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.01, 16), new THREE.MeshStandardMaterial({ color: 0x3a86ff, roughness: 0.4 }));
+    btn.rotation.x = Math.PI / 2;
+    btn.position.set(0, 0.12, 0.04);
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.01), new THREE.MeshStandardMaterial({ color: 0xd8d8dc, roughness: 0.4 }));
+    pad.position.set(0, 0.15, 0.04);
+    g.add(body, btn, pad);
+    floatAt(g, -0.9, 1.25, (p, t) => (p.rotation.z = Math.sin(t * 3) * 0.6));
+    return g;
+  },
+
+  // ヴァン・ロッサムの 1989 年のアムステルダムの研究所（クリスマスの夜）：運河と雪、壁に Python のロゴ
+  amsterdam() {
+    return room(amsterdamWallTexture(), floorTexture(), { src: 'assets/python-logo.svg', w: 0.7, h: 0.7, x: 1.8, y: 1.3, glow: true });
+  },
+
+  // Python のプログラム
+  pyCode() {
+    return codeScreen(
+      [
+        [['import ', '#c792ea'], ['this', '#e8e8ee']],
+        [['print', '#82aaff'], ['("Hello, World!")', '#7ec97a']],
+        [['# Beautiful is better', '#7f8796']],
+        [['#   than ugly.', '#7f8796']],
+      ],
+      -0.9,
+    );
+  },
+
+  // 今の Microsoft の明るい事務所：白い壁に4色のロゴ、窓の外にシアトルの木々
+  redmond() {
+    return room(redmondWallTexture(), lightWoodFloorTexture(), { src: 'assets/microsoft-logo.svg', w: 0.6, h: 0.6, x: 1.8, y: 1.3 });
+  },
+
+  // クラウド：白い雲の下にサーバーが浮かぶ
+  cloud() {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+    for (const [x, y, r] of [[-0.14, 0.02, 0.13], [0.02, 0.07, 0.17], [0.17, 0.01, 0.12], [0.03, -0.04, 0.13]]) {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat);
+      b.position.set(x, y, 0);
+      g.add(b);
+    }
+    const lamps = [];
+    for (let i = 0; i < 3; i++) {
+      const s = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.12), new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.5 }));
+      s.position.set(0.02, -0.2 - i * 0.065, 0);
+      const l = new THREE.Mesh(new THREE.SphereGeometry(0.008, 6, 4), new THREE.MeshBasicMaterial({ color: 0x05a6f0 }));
+      l.position.set(-0.07, s.position.y, 0.062);
+      g.add(s, l);
+      lamps.push(l);
+    }
+    floatAt(g, 0.95, 1.3, (p, t) => lamps.forEach((l, i) => (l.visible = Math.sin(t * 5 + i * 2) > -0.3)));
+    return g;
+  },
+
+  // クリケットのバット（ナデラはクリケットが大好き）
+  cricketBat() {
+    const g = new THREE.Group();
+    const wood = new THREE.MeshStandardMaterial({ color: 0xe0c58f, roughness: 0.6 });
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.42, 0.04), wood);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.2, 10), new THREE.MeshStandardMaterial({ color: 0x23324f, roughness: 0.7 }));
+    handle.position.y = 0.3;
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshStandardMaterial({ color: 0xa32020, roughness: 0.5 }));
+    ball.position.set(0.16, -0.1, 0);
+    g.add(blade, handle, ball);
+    floatAt(g, -0.9, 1.2, (p, t) => (p.rotation.z = -0.4 + Math.sin(t * 2) * 0.25));
+    return g;
+  },
+
+  // Twitter を始めたサンフランシスコの夜の事務所：レンガの壁、窓の外にベイブリッジ、壁で光る青い鳥
+  twttr() {
+    return room(twttrWallTexture(), floorTexture(), { src: 'assets/twitter-logo.svg', w: 0.8, h: 0.66, x: 1.8, y: 1.3, glow: true });
+  },
+
+  // 最初のつぶやき
+  tweet() {
+    const g = new THREE.Group();
+    const card = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 0.3), new THREE.MeshBasicMaterial({ map: tweetTexture() }));
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 0.3), new THREE.MeshBasicMaterial({ color: 0xdfe6ec }));
+    back.rotation.y = Math.PI;
+    g.add(card, back);
+    floatAt(g, -0.95, 1.3);
+    return g;
+  },
+
+  // Square のカード読み取り機（スマホに差す白い四角）
+  squareReader() {
+    const g = new THREE.Group();
+    const phone = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.025), new THREE.MeshStandardMaterial({ color: 0x18181c, roughness: 0.3 }));
+    const reader = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.11, 0.03), new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.4 }));
+    reader.position.set(0, 0.24, 0);
+    const card = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.2), new THREE.MeshStandardMaterial({ color: 0x2f6fde, roughness: 0.4 }));
+    g.add(phone, reader, card);
+    floatAt(g, 0.95, 1.1, (p, t) => (card.position.set(0, 0.32, Math.sin(t * 2.5) * 0.06)));
+    return g;
+  },
+
+  // 楽天を始めた 1997 年の東京の小さな事務所：机とパソコン、窓の外に昼の街、壁に楽天のロゴ
+  rakuten() {
+    return room(rakutenWallTexture(), tileFloorTexture(), { src: 'assets/rakuten-logo.svg', w: 1.5, h: 0.45, x: 1.7, y: 1.35 });
+  },
+
+  // 1997 年の楽天市場の画面（13 のお店）
+  mallScreen() {
+    const g = new THREE.Group();
+    const beige = new THREE.MeshStandardMaterial({ color: 0xd8d2c2, roughness: 0.7 });
+    const crt = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.42, 0.4), beige);
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.3), new THREE.MeshBasicMaterial({ map: mallTexture() }));
+    scr.position.z = 0.201;
+    g.add(crt, scr);
+    floatAt(g, -0.95, 1.15);
+    return g;
+  },
+
+  // 楽天イーグルスの野球のボール
+  baseball() {
+    const g = new THREE.Group();
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.12, 24, 16), new THREE.MeshStandardMaterial({ map: baseballTexture(), roughness: 0.6 }));
+    g.add(ball);
+    floatAt(g, 0.9, 1.25, (p, t) => (ball.rotation.y = t * 2));
+    return g;
+  },
+
+  // DeepMind のロンドンの事務所：明るい壁と大きな窓、壁に青い DeepMind のロゴ
+  deepmind() {
+    return room(deepmindWallTexture(), lightWoodFloorTexture(), { src: 'assets/deepmind-logo.svg', w: 1.6, h: 0.37, x: 1.65, y: 1.4 });
+  },
+
+  // 囲碁の盤：白と黒の石がひとつずつ置かれていく
+  goBoard() {
+    const g = new THREE.Group();
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.05), [
+      ...Array(4).fill(new THREE.MeshStandardMaterial({ color: 0xc9a25e, roughness: 0.6 })),
+      new THREE.MeshStandardMaterial({ map: goTexture(), roughness: 0.6 }),
+      new THREE.MeshStandardMaterial({ color: 0xc9a25e, roughness: 0.6 }),
+    ]);
+    g.add(board);
+    const stones = [];
+    const spots = [[2, 2], [6, 6], [6, 2], [2, 6], [4, 4], [3, 5], [5, 3], [4, 6], [6, 4]];
+    spots.forEach(([i, k], n) => {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 8), new THREE.MeshStandardMaterial({ color: n % 2 ? 0xf4f4f0 : 0x151515, roughness: 0.3 }));
+      s.scale.z = 0.5;
+      s.position.set(-0.2 + i * 0.05, -0.2 + k * 0.05, 0.03);
+      g.add(s);
+      stones.push(s);
+    });
+    floatAt(g, -0.95, 1.25, (p, t) => stones.forEach((s, n) => (s.visible = (t * 1.5) % (stones.length + 3) > n)));
+    return g;
+  },
+
+  // タンパク質の形（AlphaFold）：ねじれたひものような玉のつながりが回る
+  protein() {
+    const g = new THREE.Group();
+    for (let i = 0; i < 40; i++) {
+      const a = i * 0.55;
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(0.55 + i / 120, 0.7, 0.55), roughness: 0.4 }));
+      b.position.set(Math.cos(a) * 0.1 + Math.sin(i * 0.2) * 0.05, -0.3 + i * 0.015, Math.sin(a) * 0.1);
+      g.add(b);
+    }
+    floatAt(g, 0.95, 1.2, (p, t) => (p.rotation.y = t * 0.8));
+    return g;
+  },
+
+  // シャノンのベル研究所の 1948 年の研究室：黒板に情報の式と 0 と 1、隅に一輪車
+  shannonLab() {
+    const g = room(shannonWallTexture(), floorTexture(), null);
+    // 壁に立てかけた一輪車
+    const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.03, 8, 32), new THREE.MeshStandardMaterial({ color: 0x1d1d1d, roughness: 0.6 }));
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.7, 8), new THREE.MeshStandardMaterial({ color: 0xb8bcc2, metalness: 0.5, roughness: 0.4 }));
+    pole.position.y = 0.6;
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 0.22), new THREE.MeshStandardMaterial({ color: 0x8b2a20, roughness: 0.6 }));
+    seat.position.y = 0.96;
+    const uni = new THREE.Group();
+    wheel.position.y = 0.25;
+    uni.add(wheel, pole, seat);
+    uni.position.set(-2.4, 0, -2.1);
+    uni.rotation.set(0, 0.6, 0.15);
+    g.add(uni);
+    return g;
+  },
+
+  // ジャグリングの3つの玉
+  juggle() {
+    const g = new THREE.Group();
+    const balls = [0xe74c3c, 0xf1c40f, 0x3498db].map((c) => {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 12), new THREE.MeshStandardMaterial({ color: c, roughness: 0.4 }));
+      g.add(b);
+      return b;
+    });
+    floatAt(g, 0.9, 1.2, (p, t) =>
+      balls.forEach((b, i) => {
+        const a = t * 3 + (i * Math.PI * 2) / 3;
+        b.position.set(Math.cos(a) * 0.18, Math.abs(Math.sin(a)) * 0.3, 0);
+      }),
+    );
+    return g;
+  },
+
+  // 迷路を覚える機械のネズミ「テセウス」
+  theseus() {
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshBasicMaterial({ map: mazeTexture() }));
+    g.add(base);
+    const mouse = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), new THREE.MeshStandardMaterial({ color: 0x9a9da3, metalness: 0.4, roughness: 0.4 }));
+    body.scale.set(1, 1.5, 0.7);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.03, 8), new THREE.MeshStandardMaterial({ color: 0xd06a6a, roughness: 0.5 }));
+    nose.position.y = 0.06;
+    mouse.add(body, nose);
+    mouse.position.z = 0.03;
+    g.add(mouse);
+    const path = [[-0.19, -0.19], [-0.19, 0.06], [0.06, 0.06], [0.06, -0.19], [0.19, -0.19], [0.19, 0.19]];
+    floatAt(g, -0.95, 1.25, (p, t) => {
+      const u = (t * 0.6) % (path.length - 1);
+      const i = Math.floor(u);
+      const f = u - i;
+      const [ax, ay] = path[i];
+      const [bx, by] = path[i + 1];
+      mouse.position.x = ax + (bx - ax) * f;
+      mouse.position.y = ay + (by - ay) * f;
+      mouse.rotation.z = Math.atan2(bx - ax, by - ay) * -1;
+    });
+    return g;
+  },
+
 };
 
 // 寮のベッド（左奥）
@@ -3579,4 +3833,460 @@ function scopeTexture() {
   };
   draw(0);
   return { tex, draw };
+}
+
+// 壁・床・本物のロゴ（あれば光らせる）だけの部屋
+function room(wallTex, floorTex, logo) {
+  const g = new THREE.Group();
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: wallTex }));
+  wall.position.set(0, 3, -2.5);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: floorTex }));
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, 0, 1);
+  g.add(wall, floor);
+  if (logo) {
+    // 吹き出しに隠れないよう低め右寄り
+    const sign = logoPlane(logo.src, logo.w, logo.h, false);
+    sign.position.set(logo.x, logo.y, -2.46);
+    g.add(sign);
+    if (logo.glow) {
+      const glow = logoPlane(logo.src, logo.w * 1.6, logo.h * 1.6, true);
+      glow.position.set(logo.x, logo.y, -2.47);
+      g.add(glow);
+      g.userData.animate = (p, t) => (glow.material.opacity = 0.4 + Math.sin(t * 1.6) * 0.2);
+    }
+  }
+  g.renderOrder = -1;
+  return g;
+}
+
+// キャラの横（side）に浮かべてゆらゆらさせる。extra で動きを足す
+function floatAt(g, side, y, extra) {
+  g.userData.animate = (p, t, o) => {
+    p.position.set(o.position.x + side, y + Math.sin(t * 2.2) * 0.05, 0.3);
+    p.rotation.y = -Math.sign(side) * 0.35 + Math.sin(t * 1.1) * 0.15;
+    extra?.(p, t);
+  };
+}
+
+// 壁の色を上から下へ（にじむ光）塗る
+function wallBase(x, W, H, inner, outer) {
+  const g = x.createRadialGradient(W / 2, H * 0.35, 60, W / 2, H * 0.5, W * 0.6);
+  g.addColorStop(0, inner);
+  g.addColorStop(1, outer);
+  x.fillStyle = g;
+  x.fillRect(0, 0, W, H);
+}
+
+// 任天堂の発表会の壁：白い壁に薄い灰色の線
+function nintendoWallTexture() {
+  const [c, x, W, H] = wallCanvas();
+  wallBase(x, W, H, '#ffffff', '#c9ccd2');
+  x.strokeStyle = 'rgba(160,165,175,0.35)';
+  x.lineWidth = 3;
+  for (let i = 1; i < 16; i++) {
+    x.beginPath();
+    x.moveTo((i * W) / 16, 0);
+    x.lineTo((i * W) / 16, H);
+    x.stroke();
+  }
+  inView(x, W);
+  // 大きな画面（左）：草原と青い空のゲーム
+  x.fillStyle = '#26272c';
+  x.fillRect(250, 150, 620, 360);
+  const sky = x.createLinearGradient(0, 165, 0, 495);
+  sky.addColorStop(0, '#6ec6ff');
+  sky.addColorStop(1, '#c8ecff');
+  x.fillStyle = sky;
+  x.fillRect(265, 165, 590, 330);
+  x.fillStyle = '#5cc05a';
+  x.fillRect(265, 420, 590, 75);
+  x.fillStyle = '#ffffff';
+  for (const [cx, cy] of [[360, 230], [640, 260]]) {
+    x.beginPath();
+    x.arc(cx, cy, 28, 0, Math.PI * 2);
+    x.arc(cx + 34, cy - 8, 34, 0, Math.PI * 2);
+    x.arc(cx + 70, cy, 26, 0, Math.PI * 2);
+    x.fill();
+  }
+  x.fillStyle = '#ff8fb1';
+  x.beginPath();
+  x.arc(540, 395, 34, 0, Math.PI * 2);
+  x.fill();
+  return canvasTexture(c);
+}
+
+// DS の画面（上はゲーム、下はタッチの画面）
+function dsScreenTexture(top) {
+  const c = document.createElement('canvas');
+  c.width = 240;
+  c.height = 180;
+  const x = c.getContext('2d');
+  if (top) {
+    x.fillStyle = '#7fd0ff';
+    x.fillRect(0, 0, 240, 180);
+    x.fillStyle = '#5cc05a';
+    x.fillRect(0, 130, 240, 50);
+    x.fillStyle = '#ff8fb1';
+    x.beginPath();
+    x.arc(120, 110, 24, 0, Math.PI * 2);
+    x.fill();
+  } else {
+    x.fillStyle = '#f4f4f4';
+    x.fillRect(0, 0, 240, 180);
+    x.strokeStyle = '#3a86ff';
+    x.lineWidth = 6;
+    x.beginPath();
+    x.moveTo(30, 140);
+    x.quadraticCurveTo(120, 20, 210, 120);
+    x.stroke();
+  }
+  return canvasTexture(c);
+}
+
+// 1989 年のアムステルダムの研究所の壁：木の本棚、窓の外に雪の夜の運河の家
+function amsterdamWallTexture() {
+  const [c, x, W, H] = wallCanvas();
+  wallBase(x, W, H, '#4a4f5c', '#1e2028');
+  inView(x, W);
+  const wx = 300;
+  const wy = 140;
+  x.fillStyle = '#0d1630';
+  x.fillRect(wx, wy, 560, 340);
+  // 運河の家（とがった屋根）
+  const cols = ['#5a3d2e', '#3d4a5a', '#6a4a3a', '#4a3d5a', '#5a4a2e'];
+  cols.forEach((col, i) => {
+    const hx = wx + 20 + i * 108;
+    x.fillStyle = col;
+    x.fillRect(hx, wy + 140, 96, 170);
+    x.beginPath();
+    x.moveTo(hx, wy + 140);
+    x.lineTo(hx + 48, wy + 90);
+    x.lineTo(hx + 96, wy + 140);
+    x.fill();
+    x.fillStyle = '#ffd27a';
+    for (let r = 0; r < 3; r++) for (let k = 0; k < 2; k++) x.fillRect(hx + 18 + k * 40, wy + 160 + r * 45, 20, 26);
+  });
+  x.fillStyle = '#1c2c4c';
+  x.fillRect(wx, wy + 300, 560, 40);
+  x.fillStyle = '#ffffff';
+  for (let i = 0; i < 40; i++) x.fillRect(wx + ((i * 137) % 550), wy + ((i * 71) % 300), 4, 4);
+  x.strokeStyle = '#2a2016';
+  x.lineWidth = 16;
+  x.strokeRect(wx, wy, 560, 340);
+  // クリスマスの小さな電球（窓の上）
+  ['#ff5a5a', '#ffd84a', '#5aff7a', '#5ab4ff'].forEach((col, i) => {
+    for (let k = 0; k < 6; k++) {
+      x.fillStyle = col;
+      x.beginPath();
+      x.arc(wx + 20 + (k * 4 + i) * 23, wy - 10 + Math.sin(k + i) * 6, 7, 0, Math.PI * 2);
+      x.fill();
+    }
+  });
+  // 壁の紙：1989 と書いたメモ
+  x.fillStyle = '#efe9d2';
+  x.fillRect(1100, 200, 300, 200);
+  x.fillStyle = '#333';
+  x.font = 'bold 30px Menlo, Consolas, monospace';
+  x.fillText('CWI  1989', 1130, 260);
+  x.font = '24px Menlo, Consolas, monospace';
+  x.fillText('new language?', 1130, 320);
+  x.fillText('>>> _', 1130, 370);
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  return canvasTexture(c);
+}
+
+// 今の Microsoft の事務所の壁：白い壁、大きな窓の外に緑の木々
+function redmondWallTexture() {
+  const [c, x, W, H] = wallCanvas();
+  wallBase(x, W, H, '#f6f7f8', '#b9bec4');
+  inView(x, W);
+  const wx = 220;
+  const wy = 130;
+  const sky = x.createLinearGradient(0, wy, 0, wy + 360);
+  sky.addColorStop(0, '#a9cfe8');
+  sky.addColorStop(1, '#e3eef4');
+  x.fillStyle = sky;
+  x.fillRect(wx, wy, 760, 360);
+  for (let i = 0; i < 9; i++) {
+    x.fillStyle = i % 2 ? '#2f5a3a' : '#3c6e46';
+    x.beginPath();
+    const tx = wx + 30 + i * 85;
+    x.moveTo(tx, wy + 360);
+    x.lineTo(tx + 45, wy + 120 + (i % 3) * 30);
+    x.lineTo(tx + 90, wy + 360);
+    x.fill();
+  }
+  x.strokeStyle = '#e9ecef';
+  x.lineWidth = 12;
+  for (let k = 0; k <= 3; k++) {
+    x.beginPath();
+    x.moveTo(wx + (k * 760) / 3, wy);
+    x.lineTo(wx + (k * 760) / 3, wy + 360);
+    x.stroke();
+  }
+  x.strokeRect(wx, wy, 760, 360);
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  return canvasTexture(c);
+}
+
+// サンフランシスコの夜の事務所の壁：赤いレンガ、窓の外に光る橋
+function twttrWallTexture() {
+  const [c, x, W, H] = wallCanvas();
+  x.fillStyle = '#5a2c22';
+  x.fillRect(0, 0, W, H);
+  for (let r = 0; r < H / 30; r++) {
+    for (let k = 0; k < W / 80 + 1; k++) {
+      x.fillStyle = `hsl(10, 42%, ${24 + ((r * 7 + k * 13) % 9)}%)`;
+      x.fillRect(k * 80 - (r % 2) * 40 + 3, r * 30 + 3, 74, 24);
+    }
+  }
+  inView(x, W);
+  const wx = 260;
+  const wy = 140;
+  x.fillStyle = '#0b1026';
+  x.fillRect(wx, wy, 640, 330);
+  // 橋：2本の塔と吊りの光
+  x.strokeStyle = '#9ec5ff';
+  x.lineWidth = 3;
+  for (const tx of [wx + 180, wx + 460]) {
+    x.fillStyle = '#5a6a88';
+    x.fillRect(tx - 6, wy + 120, 12, 150);
+  }
+  x.beginPath();
+  x.moveTo(wx, wy + 230);
+  x.quadraticCurveTo(wx + 180, wy + 110, wx + 320, wy + 200);
+  x.quadraticCurveTo(wx + 460, wy + 110, wx + 640, wy + 230);
+  x.stroke();
+  x.fillStyle = '#ffe38a';
+  for (let i = 0; i < 32; i++) x.fillRect(wx + i * 20, wy + 262, 6, 4);
+  x.fillStyle = '#18264a';
+  x.fillRect(wx, wy + 270, 640, 60);
+  x.strokeStyle = '#2a1a14';
+  x.lineWidth = 14;
+  x.strokeRect(wx, wy, 640, 330);
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  x.fillStyle = 'rgba(6,6,12,0.3)';
+  x.fillRect(0, 0, W, H);
+  return canvasTexture(c);
+}
+
+// 最初のつぶやきのカード
+function tweetTexture() {
+  const c = document.createElement('canvas');
+  c.width = 660;
+  c.height = 300;
+  const x = c.getContext('2d');
+  x.fillStyle = '#ffffff';
+  x.fillRect(0, 0, 660, 300);
+  x.fillStyle = '#c7d3dc';
+  x.beginPath();
+  x.arc(60, 60, 34, 0, Math.PI * 2);
+  x.fill();
+  x.fillStyle = '#0f1419';
+  x.font = 'bold 30px Helvetica, Arial, sans-serif';
+  x.fillText('jack', 110, 55);
+  x.fillStyle = '#536471';
+  x.font = '24px Helvetica, Arial, sans-serif';
+  x.fillText('@jack', 110, 88);
+  x.fillStyle = '#0f1419';
+  x.font = '38px Helvetica, Arial, sans-serif';
+  x.fillText('just setting up my twttr', 30, 170);
+  x.fillStyle = '#536471';
+  x.font = '24px Helvetica, Arial, sans-serif';
+  x.fillText('Mar 21, 2006', 30, 240);
+  return canvasTexture(c);
+}
+
+// 1997 年の東京の事務所の壁：白っぽい壁、窓の外に昼のビル、ホワイトボードの「13」
+function rakutenWallTexture() {
+  const [c, x, W, H] = wallCanvas();
+  wallBase(x, W, H, '#eeeae2', '#a8a296');
+  x.fillStyle = '#8f897c';
+  x.fillRect(0, H - 170, W, 170);
+  inView(x, W);
+  const wx = 250;
+  const wy = 150;
+  x.fillStyle = '#a9d0ee';
+  x.fillRect(wx, wy, 520, 330);
+  x.fillStyle = '#8b96a2';
+  for (let i = 0; i < 8; i++) x.fillRect(wx + i * 66, wy + 120 - ((i * 37) % 80), 56, 220 + ((i * 37) % 80));
+  x.fillStyle = '#c9d6e2';
+  for (let i = 0; i < 8; i++) for (let r = 0; r < 6; r++) x.fillRect(wx + 10 + i * 66, wy + 150 + r * 28, 14, 10);
+  x.strokeStyle = '#d6d0c2';
+  x.lineWidth = 16;
+  x.strokeRect(wx, wy, 520, 330);
+  // ホワイトボード：はじめのお店の数
+  x.fillStyle = '#fbfbf8';
+  x.fillRect(1020, 170, 400, 250);
+  x.strokeStyle = '#999';
+  x.lineWidth = 6;
+  x.strokeRect(1020, 170, 400, 250);
+  x.fillStyle = '#bf0000';
+  x.font = 'bold 90px Helvetica, Arial, sans-serif';
+  x.fillText('13', 1060, 300);
+  x.fillStyle = '#333';
+  x.font = 'bold 34px sans-serif';
+  x.fillText('SHOPS', 1200, 300);
+  x.font = '28px sans-serif';
+  x.fillText('1997.5', 1060, 380);
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  return canvasTexture(c);
+}
+
+// 1997 年の楽天市場の画面（お店のボタンが並ぶ）
+function mallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 400;
+  c.height = 300;
+  const x = c.getContext('2d');
+  x.fillStyle = '#ffffff';
+  x.fillRect(0, 0, 400, 300);
+  x.fillStyle = '#bf0000';
+  x.fillRect(0, 0, 400, 50);
+  x.fillStyle = '#ffffff';
+  x.font = 'bold 28px sans-serif';
+  x.fillText('MALL  1997', 20, 36);
+  for (let i = 0; i < 13; i++) {
+    x.fillStyle = ['#ffd84a', '#7ec97a', '#82aaff', '#ff9a8a'][i % 4];
+    x.fillRect(16 + (i % 4) * 94, 66 + Math.floor(i / 4) * 56, 84, 44);
+  }
+  return canvasTexture(c);
+}
+
+// 野球のボール（白に赤い縫い目）
+function baseballTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 128;
+  const x = c.getContext('2d');
+  x.fillStyle = '#f6f3ea';
+  x.fillRect(0, 0, 256, 128);
+  x.strokeStyle = '#c0392b';
+  x.lineWidth = 4;
+  for (const off of [64, 192]) {
+    x.beginPath();
+    for (let i = 0; i <= 128; i += 4) x.lineTo(off + Math.sin(i / 20) * 30, i);
+    x.stroke();
+  }
+  return canvasTexture(c);
+}
+
+// DeepMind の事務所の壁：明るい灰色の壁、大きな窓の外にロンドンの街と空
+function deepmindWallTexture() {
+  const [c, x, W, H] = wallCanvas();
+  wallBase(x, W, H, '#eef1f5', '#aeb6c0');
+  inView(x, W);
+  const wx = 220;
+  const wy = 130;
+  const sky = x.createLinearGradient(0, wy, 0, wy + 360);
+  sky.addColorStop(0, '#9fb7d3');
+  sky.addColorStop(1, '#e7edf3');
+  x.fillStyle = sky;
+  x.fillRect(wx, wy, 760, 360);
+  x.fillStyle = '#7e8896';
+  for (let i = 0; i < 10; i++) x.fillRect(wx + i * 76, wy + 200 - ((i * 53) % 110), 64, 160 + ((i * 53) % 110));
+  // 時計塔（ビッグ・ベン）
+  x.fillStyle = '#6b6252';
+  x.fillRect(wx + 600, wy + 70, 40, 290);
+  x.beginPath();
+  x.moveTo(wx + 600, wy + 70);
+  x.lineTo(wx + 620, wy + 20);
+  x.lineTo(wx + 640, wy + 70);
+  x.fill();
+  x.fillStyle = '#f2e7c4';
+  x.beginPath();
+  x.arc(wx + 620, wy + 110, 14, 0, Math.PI * 2);
+  x.fill();
+  x.strokeStyle = '#e9ecef';
+  x.lineWidth = 12;
+  x.strokeRect(wx, wy, 760, 360);
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  return canvasTexture(c);
+}
+
+// 碁盤の線
+function goTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#d9b46c';
+  x.fillRect(0, 0, 256, 256);
+  x.strokeStyle = '#3a2a14';
+  x.lineWidth = 2;
+  for (let i = 0; i < 9; i++) {
+    const p = 26 + i * 25.5;
+    x.beginPath();
+    x.moveTo(26, p);
+    x.lineTo(230, p);
+    x.moveTo(p, 26);
+    x.lineTo(p, 230);
+    x.stroke();
+  }
+  return canvasTexture(c);
+}
+
+// 1948 年のベル研究所の壁：緑の黒板に情報の式と 0 と 1、通信の図
+function shannonWallTexture() {
+  const [c, x, W, H] = wallCanvas();
+  wallBase(x, W, H, '#7d7564', '#3a352c');
+  inView(x, W);
+  x.fillStyle = '#2f4a3a';
+  x.fillRect(250, 140, 1000, 380);
+  x.strokeStyle = '#6b5232';
+  x.lineWidth = 18;
+  x.strokeRect(250, 140, 1000, 380);
+  x.fillStyle = '#eef2e8';
+  x.font = 'italic 54px Georgia, serif';
+  x.fillText('H = − Σ p log p', 300, 230);
+  x.font = 'bold 40px Menlo, Consolas, monospace';
+  x.fillText('0 1 1 0 1 0 0 1', 300, 310);
+  // 送る人 → 線 → 受け取る人
+  x.strokeStyle = '#eef2e8';
+  x.lineWidth = 4;
+  x.font = '26px Georgia, serif';
+  [['SOURCE', 300], ['CHANNEL', 650], ['DEST.', 1010]].forEach(([t, px]) => {
+    x.strokeRect(px, 370, 190, 70);
+    x.fillText(t, px + 22, 415);
+  });
+  for (const px of [490, 840]) {
+    x.beginPath();
+    x.moveTo(px, 405);
+    x.lineTo(px + 160, 405);
+    x.lineTo(px + 145, 395);
+    x.moveTo(px + 160, 405);
+    x.lineTo(px + 145, 415);
+    x.stroke();
+  }
+  x.font = '22px Georgia, serif';
+  x.fillText('noise', 705, 480);
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  x.fillStyle = 'rgba(8,8,6,0.2)';
+  x.fillRect(0, 0, W, H);
+  return canvasTexture(c);
+}
+
+// テセウスの迷路（上から見た板）
+function mazeTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#e2dccb';
+  x.fillRect(0, 0, 256, 256);
+  x.strokeStyle = '#4a3a22';
+  x.lineWidth = 8;
+  x.strokeRect(6, 6, 244, 244);
+  x.beginPath();
+  for (const [a, b, cc, d] of [[64, 6, 64, 160], [128, 96, 128, 250], [192, 6, 192, 96], [64, 160, 128, 160], [192, 160, 250, 160]]) {
+    x.moveTo(a, b);
+    x.lineTo(cc, d);
+  }
+  x.stroke();
+  x.fillStyle = '#c0392b';
+  x.beginPath();
+  x.arc(228, 30, 10, 0, Math.PI * 2);
+  x.fill();
+  return canvasTexture(c);
 }

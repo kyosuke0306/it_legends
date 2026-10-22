@@ -595,6 +595,16 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .stage-helsinki .loading { color: #c9cbd3; }
 .stage-wrap.stage-woz { background: #2a1c12; }
 .stage-woz .loading { color: #c9cbd3; }
+.stage-wrap.stage-nintendo { background: #c9ccd2; }
+.stage-wrap.stage-amsterdam { background: #1e2028; }
+.stage-amsterdam .loading { color: #c9cbd3; }
+.stage-wrap.stage-redmond { background: #b9bec4; }
+.stage-wrap.stage-twttr { background: #3a1c16; }
+.stage-twttr .loading { color: #c9cbd3; }
+.stage-wrap.stage-rakuten { background: #a8a296; }
+.stage-wrap.stage-deepmind { background: #aeb6c0; }
+.stage-wrap.stage-shannon { background: #3a352c; }
+.stage-shannon .loading { color: #c9cbd3; }
 .stage-wrap.stage-harvard { background: #c9c4b4; }
 .spinner {
   width: 32px;
