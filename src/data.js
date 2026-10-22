@@ -570,6 +570,16 @@ export const LEGENDS = [
     ],
     look: { skin: 0xf0cfb8, hairStyle: 'short', hairColor: 0x9a948c, shirt: 0x2b2b2b },
     outfit: 'a plain dark charcoal polo shirt, dark blue jeans and black sneakers',
+    // Apple I を作った 1976 年の作業部屋（夜）で話す
+    show: {
+      stage: 'woz',
+      props: ['woz1976'],
+      lines: [
+        { text: 'お金のためじゃない。いいコンピュータを作りたかった。', sub: 'My goal wasn\'t to make a ton of money. It was to build good computers.', prop: 'appleOne', anim: 'greet_01' },
+        { text: '窓から投げ捨てられないコンピュータは、信用するな。', sub: 'Never trust a computer you can\'t throw out a window.', anim: 'fold_arms', animFrom: 1.5 },
+        { text: '賢い人が働く場所では、ドアに鍵はかかっていない。', sub: 'Wherever smart people work, doors are unlocked.', prop: 'appleII', anim: 'agree' },
+      ],
+    },
   },
 ];
 

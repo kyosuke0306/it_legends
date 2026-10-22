@@ -30,3 +30,4 @@
 - assets/git-logo.svg: https://commons.wikimedia.org/wiki/File:Git-logo.svg
 - assets/c-logo.png: ユーザーがくれた C 言語のマークの画像（Wikimedia の The_C_Programming_Language_logo.svg と同じ絵）から切り抜き
 - wozniak: https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Steve_Wozniak_by_Gage_Skidmore_3_%28cropped%29.jpg/500px-Steve_Wozniak_by_Gage_Skidmore_3_%28cropped%29.jpg (https://en.wikipedia.org/wiki/Steve_Wozniak)
+- assets/apple-rainbow-logo.svg: https://commons.wikimedia.org/wiki/File:Apple_Computer_Logo_rainbow.svg

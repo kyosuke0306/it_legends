@@ -593,6 +593,8 @@ dialog::backdrop { background: rgba(10, 10, 25, 0.5); }
 .stage-cern .loading { color: #c9cbd3; }
 .stage-wrap.stage-helsinki { background: #1d1b24; }
 .stage-helsinki .loading { color: #c9cbd3; }
+.stage-wrap.stage-woz { background: #2a1c12; }
+.stage-woz .loading { color: #c9cbd3; }
 .stage-wrap.stage-harvard { background: #c9c4b4; }
 .spinner {
   width: 32px;

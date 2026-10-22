@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // 偉人ごとの「ショー」: ステージを歩き回り、立ち止まって吹き出しでしゃべり、小物を出す。
 // 設定は data.js の show: { stage?, lines: [{ text, sub?, prop?, anim? }], props?: [...] }
-//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中（壁に ZOZO の文字）。'matsue' はまつもとさんが Ruby を育てた島根・松江の夜の書斎（壁に光る Ruby の公式ロゴ）。'spacex' は SpaceX のロケット工場の夜、'stanford' は Google を始めたスタンフォードの研究室、'gtc' は NVIDIA の基調講演、'softbank' はソフトバンクを始めた 1981 年の事務所、'openai' は OpenAI の明るい事務所（どれも壁に本物のロゴ）。'victorian' はラブレスの 1840 年代のロンドンの客間、'ias' はプリンストン高等研究所、'harvard' はホッパーの Mark II の部屋、'apollo' は 1969 年の MIT の研究室（NASA のマーク）、'bell' はベル研究所、'cern' は 1990 年の CERN（WWW のマーク）、'helsinki' はトーバルズのヘルシンキの学生部屋（Linux のペンギン）
+//   stage … 'keynote' でステージを基調講演のように暗くする。'dorm' は夜の寮の部屋。'msoffice' は初期の Microsoft の夜のオフィス。'garage' は Amazon を始めたガレージ。'studio' は Spotify を始めたストックホルムの夜のスタジオ。'iss' は前澤さんが行った国際宇宙ステーションの中（壁に ZOZO の文字）。'matsue' はまつもとさんが Ruby を育てた島根・松江の夜の書斎（壁に光る Ruby の公式ロゴ）。'spacex' は SpaceX のロケット工場の夜、'stanford' は Google を始めたスタンフォードの研究室、'gtc' は NVIDIA の基調講演、'softbank' はソフトバンクを始めた 1981 年の事務所、'openai' は OpenAI の明るい事務所（どれも壁に本物のロゴ）。'victorian' はラブレスの 1840 年代のロンドンの客間、'ias' はプリンストン高等研究所、'harvard' はホッパーの Mark II の部屋、'apollo' は 1969 年の MIT の研究室（NASA のマーク）、'bell' はベル研究所、'cern' は 1990 年の CERN（WWW のマーク）、'helsinki' はトーバルズのヘルシンキの学生部屋（Linux のペンギン）、'woz' はウォズニアックが Apple I を作った 1976 年の作業部屋（虹色の Apple のマーク）
 //   lines[i].prop … そのセリフで登場する小物   props … 最初から置いておく小物
 //   lines[i].anim … 話すときの動き（骨組み入りモデルの動きの名前。歩くときは 'walk'）
 const WALK_SPEED = 0.55; // 1秒あたりの移動量
@@ -1441,6 +1441,96 @@ const PROPS = {
     g.userData.animate = (p, t, o) => {
       p.position.set(o.position.x - 0.9, 1.3 + Math.sin(t * 2) * 0.04, 0.3);
       p.rotation.y = 0.35 + Math.sin(t * 0.9) * 0.08;
+    };
+    return g;
+  },
+  // ウォズニアックが Apple I を作った 1976 年の作業部屋（夜）：70 年代の木の壁、作業台とオシロスコープ、壁で光る虹色の Apple のマーク
+  woz1976() {
+    const g = new THREE.Group();
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), new THREE.MeshBasicMaterial({ map: wozWallTexture() }));
+    wall.position.set(0, 3, -2.5);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: floorTexture() }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, 1);
+    // 吹き出しに隠れないよう低め右寄り
+    const sign = logoPlane('assets/apple-rainbow-logo.svg', 0.6, 0.7, false);
+    const glow = logoPlane('assets/apple-rainbow-logo.svg', 1.1, 1.28, true);
+    sign.position.set(2.1, 1.3, -2.46);
+    glow.position.set(2.1, 1.3, -2.47);
+    g.add(wall, floor, glow, sign);
+    // 作業台（左奥）：はんだごてと、緑の波が動くオシロスコープ
+    const bench = new THREE.Group();
+    const wood = new THREE.MeshStandardMaterial({ color: 0x7a5432, roughness: 0.8 });
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 0.6), wood);
+    top.position.y = 0.76;
+    bench.add(top);
+    for (const [x, z] of [[-0.64, -0.25], [0.64, -0.25], [-0.64, 0.25], [0.64, 0.25]]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.76, 0.06), wood);
+      leg.position.set(x, 0.38, z);
+      bench.add(leg);
+    }
+    const scope = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.3, 0.36), new THREE.MeshStandardMaterial({ color: 0x9a968a, roughness: 0.6 }));
+    scope.position.set(-0.35, 0.94, -0.05);
+    const wave = scopeTexture();
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.17), new THREE.MeshBasicMaterial({ map: wave.tex }));
+    screen.position.set(-0.4, 0.95, 0.131);
+    const iron = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.008, 0.3, 8), new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.5 }));
+    iron.rotation.z = Math.PI / 2.3;
+    iron.position.set(0.25, 0.82, 0.05);
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.015, 0.26), new THREE.MeshStandardMaterial({ map: appleOneTexture(), roughness: 0.6 }));
+    board.position.set(0.25, 0.8, -0.1);
+    bench.add(scope, screen, iron, board);
+    bench.position.set(-2.3, 0, -1.8);
+    bench.rotation.y = 0.3;
+    g.add(bench);
+    // 作業台を照らす電気スタンドの明かり
+    const lamp = new THREE.PointLight(0xffc27a, 1.2, 3);
+    lamp.position.set(-2.2, 1.6, -1.4);
+    g.add(lamp);
+    g.renderOrder = -1;
+    g.userData.animate = (p, t) => {
+      glow.material.opacity = 0.4 + Math.sin(t * 1.6) * 0.2;
+      wave.draw(t);
+    };
+    return g;
+  },
+
+  // Apple I の基板（緑の板に黒いチップが並ぶ）：キャラの横でゆっくり回る
+  appleOne() {
+    const g = new THREE.Group();
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.4, 0.02), [
+      ...Array(4).fill(new THREE.MeshStandardMaterial({ color: 0x1f5a34, roughness: 0.6 })),
+      new THREE.MeshStandardMaterial({ map: appleOneTexture(), roughness: 0.6 }),
+      new THREE.MeshStandardMaterial({ color: 0x1f5a34, roughness: 0.6 }),
+    ]);
+    g.add(board);
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x - 0.95, 1.25 + Math.sin(t * 2.2) * 0.05, 0.3);
+      p.rotation.y = 0.4 + Math.sin(t * 1.1) * 0.3;
+      p.rotation.x = -0.15;
+    };
+    return g;
+  },
+
+  // Apple II（1977）：ベージュの本体とキーボード、上に BASIC の画面
+  appleII() {
+    const g = new THREE.Group();
+    const beige = new THREE.MeshStandardMaterial({ color: 0xd8cdb2, roughness: 0.7 });
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.42), beige);
+    base.position.set(0, -0.2, 0);
+    const keys = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 0.14), new THREE.MeshStandardMaterial({ color: 0x3a342c, roughness: 0.7 }));
+    keys.position.set(0, -0.14, 0.12);
+    keys.rotation.x = 0.15;
+    const monitor = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.34, 0.34), beige);
+    monitor.position.set(0, 0.07, -0.06);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.24), new THREE.MeshBasicMaterial({ map: appleIIScreenTexture() }));
+    screen.position.set(0, 0.08, 0.111);
+    const rainbow = logoPlane('assets/apple-rainbow-logo.svg', 0.05, 0.058, false);
+    rainbow.position.set(-0.19, -0.2, 0.212);
+    g.add(base, keys, monitor, screen, rainbow);
+    g.userData.animate = (p, t, o) => {
+      p.position.set(o.position.x + 0.95, 1.1 + Math.sin(t * 2.4) * 0.05, 0.3);
+      p.rotation.y = -0.35 + Math.sin(t * 1.2) * 0.25;
     };
     return g;
   },
@@ -3372,4 +3462,121 @@ function helsinkiWallTexture() {
   x.fillStyle = 'rgba(8,8,12,0.22)';
   x.fillRect(0, 0, W, H);
   return canvasTexture(c);
+}
+
+// 1976 年の作業部屋の壁：70 年代の茶色い木の板、窓の外にカリフォルニアの夜、貼られた回路図
+function wozWallTexture() {
+  const [c, x, W, H] = wallCanvas();
+  for (let i = 0; i < 40; i++) {
+    x.fillStyle = `hsl(26, 38%, ${22 + ((i * 7) % 6)}%)`;
+    x.fillRect((i * W) / 40, 0, W / 40, H);
+    x.fillStyle = 'rgba(0,0,0,0.3)';
+    x.fillRect((i * W) / 40, 0, 3, H);
+  }
+  inView(x, W);
+  // 窓（真ん中より左）：夜の空と丘、低い家の明かり
+  const wx = 480;
+  const wy = 150;
+  const sky = x.createLinearGradient(0, wy, 0, wy + 300);
+  sky.addColorStop(0, '#0d1430');
+  sky.addColorStop(1, '#3a2d55');
+  x.fillStyle = sky;
+  x.fillRect(wx, wy, 460, 300);
+  x.fillStyle = '#ffffff';
+  for (let i = 0; i < 18; i++) x.fillRect(wx + ((i * 97) % 450), wy + ((i * 53) % 150), 3, 3);
+  x.fillStyle = '#151a22';
+  x.beginPath();
+  x.moveTo(wx, wy + 300);
+  x.quadraticCurveTo(wx + 200, wy + 170, wx + 460, wy + 240);
+  x.lineTo(wx + 460, wy + 300);
+  x.fill();
+  x.fillStyle = '#ffcf7a';
+  for (let i = 0; i < 6; i++) x.fillRect(wx + 40 + i * 70, wy + 262 - (i % 2) * 10, 10, 8);
+  x.strokeStyle = '#4a321e';
+  x.lineWidth = 16;
+  x.strokeRect(wx, wy, 460, 300);
+  // 壁に貼った回路図（右寄り）
+  x.fillStyle = '#e8e3d0';
+  x.fillRect(1080, 170, 360, 260);
+  x.strokeStyle = '#2a4a8a';
+  x.lineWidth = 3;
+  for (let i = 0; i < 6; i++) {
+    x.strokeRect(1110 + (i % 3) * 105, 200 + Math.floor(i / 3) * 100, 70, 46);
+    x.beginPath();
+    x.moveTo(1180 + (i % 3) * 105, 223 + Math.floor(i / 3) * 100);
+    x.lineTo(1215 + (i % 3) * 105, 223 + Math.floor(i / 3) * 100);
+    x.stroke();
+  }
+  x.fillStyle = '#2a4a8a';
+  x.font = 'bold 26px Menlo, Consolas, monospace';
+  x.fillText('APPLE I  6502', 1120, 410);
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  x.fillStyle = 'rgba(8,6,4,0.25)';
+  x.fillRect(0, 0, W, H);
+  return canvasTexture(c);
+}
+
+// Apple I の基板：緑の板に黒いチップの列と金の線
+function appleOneTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 330;
+  const x = c.getContext('2d');
+  x.fillStyle = '#1f5a34';
+  x.fillRect(0, 0, 512, 330);
+  x.strokeStyle = 'rgba(214,178,90,0.55)';
+  x.lineWidth = 2;
+  for (let i = 0; i < 14; i++) {
+    x.beginPath();
+    x.moveTo(10, 20 + i * 22);
+    x.lineTo(502, 20 + i * 22);
+    x.stroke();
+  }
+  x.fillStyle = '#16161a';
+  for (let r = 0; r < 4; r++) for (let k = 0; k < 7; k++) x.fillRect(30 + k * 66, 30 + r * 70, 46, 34);
+  // いちばん大きい CPU（6502）
+  x.fillRect(180, 250, 160, 44);
+  x.fillStyle = '#e6e6e6';
+  x.font = 'bold 22px Menlo, Consolas, monospace';
+  x.fillText('6502', 228, 280);
+  return canvasTexture(c);
+}
+
+// Apple II の画面：黒に緑の文字の BASIC
+function appleIIScreenTexture() {
+  const c = document.createElement('canvas');
+  c.width = 320;
+  c.height = 240;
+  const x = c.getContext('2d');
+  x.fillStyle = '#071008';
+  x.fillRect(0, 0, 320, 240);
+  x.fillStyle = '#5dff7a';
+  x.font = 'bold 22px Menlo, Consolas, monospace';
+  ['APPLE ][', '', ']10 PRINT "HELLO"', ']20 GOTO 10', ']RUN', 'HELLO'].forEach((t, i) => x.fillText(t, 16, 36 + i * 34));
+  return canvasTexture(c);
+}
+
+// オシロスコープの画面：緑の波が流れる
+function scopeTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 96;
+  const x = c.getContext('2d');
+  const tex = canvasTexture(c);
+  const draw = (t) => {
+    x.fillStyle = '#04140a';
+    x.fillRect(0, 0, 128, 96);
+    x.strokeStyle = '#5dff7a';
+    x.lineWidth = 2;
+    x.beginPath();
+    for (let i = 0; i <= 128; i += 4) {
+      const y = 48 + Math.sin(i * 0.12 + t * 4) * 22;
+      if (i) x.lineTo(i, y);
+      else x.moveTo(i, y);
+    }
+    x.stroke();
+    tex.needsUpdate = true;
+  };
+  draw(0);
+  return { tex, draw };
 }

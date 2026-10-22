@@ -300,8 +300,8 @@ export const REP_HIT_MIN = 50;
 export const REP_GUARD = 0.3;
 export const REP_GUARD_MAX = 0.9;
 export const REP_HITS = [
-  // テストと設計で防ぐ。月へ行くソフトを止めなかったハミルトン、C と UNIX のリッチー
-  { short: '不具合', title: '納品したシステムに不具合', pct: [3, 6], jobs: ['se', 'pg'], legends: ['hamilton', 'ritchie'] },
+  // テストと設計で防ぐ。月へ行くソフトを止めなかったハミルトン、C と UNIX のリッチー、部品を減らして確かに動く基板を作ったウォズニアック
+  { short: '不具合', title: '納品したシステムに不具合', pct: [3, 6], jobs: ['se', 'pg'], legends: ['hamilton', 'ritchie', 'wozniak'] },
   // サーバーの守りと仕組みで防ぐ。暗号を解いたチューリング
   { short: '個人情報流出', title: '個人情報流出', pct: [8, 14], jobs: ['infra', 'se'], legends: ['turing'] },
   // 発信と説明で打ち消す。SNS を知りつくした人たち
@@ -537,6 +537,16 @@ export const LEGEND_RULES = {
     quit: 30,
     quitText: '取締役会に突然解任された',
     scene: 'チャット画面に話しかけながら、静かにほほえむ若者がいる…',
+  },
+  wozniak: {
+    stats: { idea: 75, tech: 100, plan: 55, talk: 65 },
+    meet: { office: 1, tasks: 30 },
+    hint: 'ガレージで仕事を 30 回こなすと…',
+    join: 0.4,
+    // Apple I をほとんど1人で、少ない部品で組み上げた
+    ability: { teamSpeed: 0.2, teamSuccess: 0.15 },
+    abilityText: '速さ +20%  成功率 +15%',
+    scene: '作業台で、基板にはんだ付けをしているひげの青年がいる…',
   },
 };
 
