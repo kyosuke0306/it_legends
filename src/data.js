@@ -553,6 +553,24 @@ export const LEGENDS = [
       ],
     },
   },
+  {
+    id: 'wozniak',
+    name: 'スティーブ・ウォズニアック',
+    nameEn: 'Steve Wozniak',
+    wiki: 'Steve_Wozniak',
+    years: '1950–',
+    rarity: 'R',
+    title: 'ガレージでApple Iを作った技術者',
+    summary:
+      'ジョブズとAppleを作り、最初のパソコンApple Iと、大ヒットしたApple IIをほとんど1人で設計しました。いたずら好きで、教えることも大好きです。',
+    achievements: [
+      'Apple Iを1人で設計し、ジョブズとAppleを創業（1976年）',
+      'カラー表示のパソコンApple IIを設計し、大ヒット（1977年）',
+      'Appleを離れたあと、子どもたちにコンピュータを教える',
+    ],
+    look: { skin: 0xf0cfb8, hairStyle: 'short', hairColor: 0x9a948c, shirt: 0x2b2b2b },
+    outfit: 'a plain dark charcoal polo shirt, dark blue jeans and black sneakers',
+  },
 ];
 
 // rarity はレジェンドの並び順だけに使う（画面にランクは出さない。ユーザー指示 2026-10-01）
