@@ -1614,7 +1614,7 @@ const PROPS = {
       g.add(s, l);
       lamps.push(l);
     }
-    floatAt(g, 0.95, 1.3, (p, t) => lamps.forEach((l, i) => (l.visible = Math.sin(t * 5 + i * 2) > -0.3)));
+    floatAt(g, -0.95, 1.3, (p, t) => lamps.forEach((l, i) => (l.visible = Math.sin(t * 5 + i * 2) > -0.3)));
     return g;
   },
 
@@ -1628,7 +1628,7 @@ const PROPS = {
     const ball = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshStandardMaterial({ color: 0xa32020, roughness: 0.5 }));
     ball.position.set(0.16, -0.1, 0);
     g.add(blade, handle, ball);
-    floatAt(g, -0.9, 1.2, (p, t) => (p.rotation.z = -0.4 + Math.sin(t * 2) * 0.25));
+    floatAt(g, 0.9, 1.2, (p, t) => (p.rotation.z = -0.4 + Math.sin(t * 2) * 0.25));
     return g;
   },
 

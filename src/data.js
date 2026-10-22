@@ -774,7 +774,7 @@ export const LEGENDS = [
       props: ['shannonLab'],
       lines: [
         { text: '情報とは、不確かさを減らすものだ。', sub: 'Information is the resolution of uncertainty.', anim: 'greet_01' },
-        { text: '私はただ、物がどう組み立てられているか不思議だったんだ。', sub: 'I just wondered how things were put together.', prop: 'theseus', anim: 'agree' },
+        { text: '物がどう組み立てられているか、ただ不思議だった。', sub: 'I just wondered how things were put together.', prop: 'theseus', anim: 'agree' },
         { text: '役に立つかより、面白いかで研究してきた。', sub: 'I\'ve always pursued my interests without much regard for financial value or value to the world.', prop: 'juggle', anim: 'fold_arms', animFrom: 1.5 },
       ],
     },
