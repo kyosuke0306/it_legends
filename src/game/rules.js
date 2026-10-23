@@ -337,8 +337,8 @@ export const MAX_CATCHUP = 30 * DAY; // 留守の間に進める最大の時間
 export const LEGEND_RULES = {
   jobs: {
     stats: { idea: 95, tech: 35, plan: 60, talk: 100 },
-    meet: { office: 1, rep: 40 },
-    hint: 'ガレージで会社をやっていると…',
+    meet: { office: 1, products: 2, rep: 120 },
+    hint: 'ガレージを構え、製品を 2 つ出し、評判が 120 を超えると…',
     join: 0.4,
     ability: { teamQuality: 0.6, income: 0.1 },
     abilityText: '製品の出来 +60%  全製品の収入 +10%',
@@ -348,8 +348,8 @@ export const LEGEND_RULES = {
   },
   gates: {
     stats: { idea: 70, tech: 75, plan: 85, talk: 80 },
-    meet: { products: 3, rep: 100 },
-    hint: '自社製品を 3 つ売り出すと…',
+    meet: { office: 2, products: 5 },
+    hint: '小さな事務所を構え、製品を 5 つ出すと…',
     join: 0.4,
     ability: { income: 0.4 },
     abilityText: '全製品の収入 +40%',
@@ -359,8 +359,8 @@ export const LEGEND_RULES = {
   },
   zuckerberg: {
     stats: { idea: 80, tech: 80, plan: 50, talk: 60 },
-    meet: { cat: { web: 10 }, rep: 60 },
-    hint: 'Web の仕事を 10 回こなすと…',
+    meet: { office: 2, cat: { web: 15 } },
+    hint: '小さな事務所を構え、Web の仕事を 15 回こなすと…',
     join: 0.4,
     ability: { incomeGenre: { web: 0.6, app: 0.3 } },
     abilityText: 'Web の収入 +60%  アプリの収入 +30%',
@@ -370,8 +370,8 @@ export const LEGEND_RULES = {
   },
   torvalds: {
     stats: { idea: 55, tech: 100, plan: 75, talk: 40 },
-    meet: { cat: { infra: 10 } },
-    hint: 'インフラの仕事を 10 回こなすと…',
+    meet: { cat: { infra: 15 }, staff: 3 },
+    hint: 'インフラの仕事を 15 回こなし、社員を 3 人雇うと…',
     join: 0.4,
     ability: { hireCost: 0.5, teamSpeed: 0.3, teamSuccess: 0.1 },
     abilityText: '雇う費用 半分  速さ +30%  成功率 +10%',
@@ -381,8 +381,8 @@ export const LEGEND_RULES = {
   },
   ritchie: {
     stats: { idea: 60, tech: 100, plan: 85, talk: 35 },
-    meet: { tasks: 120, office: 3 },
-    hint: '仕事を 120 回こなし、オフィスビルを構えると…',
+    meet: { office: 4, tasks: 130 },
+    hint: '本社ビルを構え、仕事を 130 回こなすと…',
     join: 0.3,
     ability: { statAll: { tech: 0.25 } },
     abilityText: '全員の技術 +25%',
@@ -390,8 +390,8 @@ export const LEGEND_RULES = {
   },
   bernerslee: {
     stats: { idea: 90, tech: 85, plan: 80, talk: 60 },
-    meet: { cat: { web: 30 }, rep: 1500 },
-    hint: 'Web の仕事を 30 回こなし、評判が 1500 を超えると…',
+    meet: { cat: { web: 35 }, rep: 30000 },
+    hint: 'Web の仕事を 35 回こなし、評判が 30000 を超えると…',
     join: 0.3,
     ability: { offers: 1, incomeGenre: { web: 0.5 } },
     abilityText: '依頼 ×2  Web の収入 +50%',
@@ -399,8 +399,8 @@ export const LEGEND_RULES = {
   },
   hopper: {
     stats: { idea: 75, tech: 85, plan: 80, talk: 85 },
-    meet: { staff: 8 },
-    hint: '一般社員を 8 人以上雇うと…',
+    meet: { staff: 15 },
+    hint: '社員を 15 人雇うと…',
     join: 0.3,
     ability: { xpAll: 1 },
     abilityText: '全員の成長 2倍',
@@ -408,8 +408,8 @@ export const LEGEND_RULES = {
   },
   hamilton: {
     stats: { idea: 70, tech: 90, plan: 100, talk: 55 },
-    meet: { cat: { space: 3 } },
-    hint: '宇宙の仕事を 3 回やりとげると…',
+    meet: { cat: { space: 12 } },
+    hint: '宇宙の仕事を 12 回こなすと…',
     join: 0.3,
     ability: { alwaysSuccess: 1 },
     abilityText: '担当した仕事は必ず成功',
@@ -417,8 +417,8 @@ export const LEGEND_RULES = {
   },
   vonneumann: {
     stats: { idea: 100, tech: 95, plan: 90, talk: 70 },
-    meet: { rep: 5000 },
-    hint: '評判が 5000 を超えると…',
+    meet: { rep: 150000 },
+    hint: '評判が 150000 を超えると…',
     join: 0.3,
     ability: { teamSpeed: 0.4, teamReward: 0.4 },
     abilityText: '速さ +40%  報酬 +40%',
@@ -428,8 +428,8 @@ export const LEGEND_RULES = {
   },
   turing: {
     stats: { idea: 100, tech: 100, plan: 80, talk: 40 },
-    meet: { cat: { ai: 10 } },
-    hint: 'AI の仕事を 10 回こなすと…',
+    meet: { cat: { ai: 28 } },
+    hint: 'AI の仕事を 28 回こなすと…',
     join: 0.2,
     ability: { teamSuccess: 0.3, incomeGenre: { ai: 1 } },
     abilityText: '成功率 +30%  AI の収入 2倍',
@@ -437,8 +437,8 @@ export const LEGEND_RULES = {
   },
   lovelace: {
     stats: { idea: 100, tech: 80, plan: 85, talk: 75 },
-    meet: { legends: 8 },
-    hint: 'レジェンドが 8 人以上集まると…',
+    meet: { legends: 15 },
+    hint: 'レジェンドが 15 人集まると…',
     join: 0.2,
     ability: { teamQuality: 0.8, decaySlow: 0.5 },
     abilityText: '製品の出来 +80%  収入が長持ち',
@@ -446,8 +446,8 @@ export const LEGEND_RULES = {
   },
   ek: {
     stats: { idea: 85, tech: 75, plan: 65, talk: 70 },
-    meet: { cat: { app: 10 }, products: 2 },
-    hint: 'アプリの仕事を 10 回こなし、製品を 2 つ出すと…',
+    meet: { cat: { app: 22 }, products: 6 },
+    hint: 'アプリの仕事を 22 回こなし、製品を 6 つ出すと…',
     join: 0.4,
     ability: { incomeGenre: { app: 0.5 }, decaySlow: 0.3 },
     abilityText: 'アプリの収入 +50%  収入が長持ち',
@@ -455,8 +455,8 @@ export const LEGEND_RULES = {
   },
   bezos: {
     stats: { idea: 80, tech: 70, plan: 90, talk: 80 },
-    meet: { office: 2, cat: { web: 15 } },
-    hint: '小さな事務所を構え、Web の仕事を 15 回こなすと…',
+    meet: { office: 3, cat: { web: 22 }, products: 10 },
+    hint: 'オフィスビルを構え、Web の仕事を 22 回こなし、製品を 10 個出すと…',
     join: 0.3,
     ability: { income: 0.2, offers: 1 },
     abilityText: '全製品の収入 +20%  依頼 ×2',
@@ -466,8 +466,8 @@ export const LEGEND_RULES = {
   },
   maezawa: {
     stats: { idea: 85, tech: 55, plan: 75, talk: 90 },
-    meet: { cat: { web: 20 }, products: 3 },
-    hint: 'Web の仕事を 20 回こなし、製品を 3 つ出すと…',
+    meet: { cat: { web: 30 }, products: 18 },
+    hint: 'Web の仕事を 30 回こなし、製品を 18 個出すと…',
     join: 0.4,
     // お金配りで有名なので、臨時収入が2倍
     ability: { incomeGenre: { web: 0.4 }, luck: 1 },
@@ -478,8 +478,8 @@ export const LEGEND_RULES = {
   },
   matz: {
     stats: { idea: 85, tech: 90, plan: 75, talk: 70 },
-    meet: { cat: { web: 15 }, staff: 3 },
-    hint: 'Web の仕事を 15 回こなし、社員を 3 人雇うと…',
+    meet: { cat: { web: 20 }, staff: 8 },
+    hint: 'Web の仕事を 20 回こなし、社員を 8 人雇うと…',
     join: 0.4,
     // 「プログラマーを幸せにする」言語を作った人なので、みんなが早く育ち、仕事も速くなる
     ability: { xpAll: 0.3, teamSpeed: 0.15 },
@@ -488,8 +488,8 @@ export const LEGEND_RULES = {
   },
   musk: {
     stats: { idea: 100, tech: 80, plan: 70, talk: 85 },
-    meet: { cat: { space: 5 }, office: 5 },
-    hint: '宇宙の仕事を 5 回こなし、高層タワーを構えると…',
+    meet: { office: 6, cat: { space: 25 } },
+    hint: 'テックキャンパスを構え、宇宙の仕事を 25 回こなすと…',
     join: 0.3,
     // ロケット・電気自動車・衛星インターネット
     ability: { teamSpeed: 0.3, incomeGenre: { car: 1, satnet: 1 } },
@@ -500,8 +500,8 @@ export const LEGEND_RULES = {
   },
   page: {
     stats: { idea: 95, tech: 90, plan: 75, talk: 55 },
-    meet: { cat: { web: 25 }, office: 2 },
-    hint: 'Web の仕事を 25 回こなし、小さな事務所を構えると…',
+    meet: { office: 4, cat: { web: 25 } },
+    hint: '本社ビルを構え、Web の仕事を 25 回こなすと…',
     join: 0.4,
     // 勤務時間の20%を好きな開発に使える「20%ルール」と、検索から
     ability: { statAll: { idea: 0.2 }, incomeGenre: { web: 0.3, ai: 0.3 } },
@@ -510,8 +510,8 @@ export const LEGEND_RULES = {
   },
   huang: {
     stats: { idea: 85, tech: 95, plan: 85, talk: 80 },
-    meet: { cat: { ai: 5 }, rep: 1000 },
-    hint: 'AI の仕事を 5 回こなし、評判が 1000 を超えると…',
+    meet: { cat: { ai: 15 }, rep: 6000 },
+    hint: 'AI の仕事を 15 回こなし、評判が 6000 を超えると…',
     join: 0.3,
     // ゲームの絵のための GPU が、AI を動かす力になった
     ability: { teamSpeed: 0.3, incomeGenre: { ai: 0.5, game: 0.5 } },
@@ -520,8 +520,8 @@ export const LEGEND_RULES = {
   },
   son: {
     stats: { idea: 85, tech: 50, plan: 90, talk: 95 },
-    meet: { products: 5, office: 3 },
-    hint: '製品を 5 つ出し、オフィスビルを構えると…',
+    meet: { office: 4, products: 15 },
+    hint: '本社ビルを構え、製品を 15 個出すと…',
     join: 0.4,
     // 伸びる会社に投資してきた
     ability: { income: 0.25, luck: 0.5 },
@@ -530,8 +530,8 @@ export const LEGEND_RULES = {
   },
   altman: {
     stats: { idea: 90, tech: 75, plan: 85, talk: 90 },
-    meet: { cat: { ai: 15 }, products: 2 },
-    hint: 'AI の仕事を 15 回こなし、製品を 2 つ出すと…',
+    meet: { cat: { ai: 38 }, products: 25 },
+    hint: 'AI の仕事を 38 回こなし、製品を 25 個出すと…',
     join: 0.3,
     ability: { incomeGenre: { ai: 0.6, agi: 1 }, teamQuality: 0.3 },
     abilityText: 'AI の収入 +60%  汎用AI 2倍  製品の出来 +30%',
@@ -542,17 +542,18 @@ export const LEGEND_RULES = {
   },
   wozniak: {
     stats: { idea: 75, tech: 100, plan: 55, talk: 65 },
-    meet: { office: 1, tasks: 30 },
-    hint: 'ガレージで仕事を 30 回こなすと…',
+    meet: { office: 1, tasks: 25 },
+    hint: 'ガレージを構え、仕事を 25 回こなすと…',
     join: 0.4,
     // Apple I をほとんど1人で、少ない部品で組み上げた
     ability: { teamSpeed: 0.2, teamSuccess: 0.15 },
     abilityText: '速さ +20%  成功率 +15%',
     scene: '作業台で、基板にはんだ付けをしているひげの青年がいる…',
-  },  iwata: {
+  },
+  iwata: {
     stats: { idea: 90, tech: 85, plan: 80, talk: 85 },
-    meet: { cat: { app: 8 }, office: 2 },
-    hint: 'アプリの仕事を 8 回こなし、小さな事務所を構えると…',
+    meet: { office: 3, cat: { app: 25 } },
+    hint: 'オフィスビルを構え、アプリの仕事を 25 回こなすと…',
     join: 0.3,
     // プログラマー出身の社長。ふだん遊ばない人にもゲームを広げた
     ability: { incomeGenre: { game: 1 }, teamQuality: 0.3 },
@@ -561,8 +562,8 @@ export const LEGEND_RULES = {
   },
   guido: {
     stats: { idea: 80, tech: 95, plan: 80, talk: 60 },
-    meet: { cat: { ai: 8 }, staff: 5 },
-    hint: 'AI の仕事を 8 回こなし、社員を 5 人雇うと…',
+    meet: { cat: { ai: 22 }, staff: 25 },
+    hint: 'AI の仕事を 22 回こなし、社員を 25 人雇うと…',
     join: 0.4,
     // 読みやすい言語で、みんなが早く覚え、まちがいも減る
     ability: { xpAll: 0.3, teamSuccess: 0.15 },
@@ -574,8 +575,8 @@ export const LEGEND_RULES = {
   },
   nadella: {
     stats: { idea: 80, tech: 85, plan: 95, talk: 85 },
-    meet: { cat: { infra: 20 }, office: 4 },
-    hint: 'インフラの仕事を 20 回こなし、本社ビルを構えると…',
+    meet: { office: 5, cat: { infra: 30 } },
+    hint: '高層タワーを構え、インフラの仕事を 30 回こなすと…',
     join: 0.3,
     // Microsoft をクラウドの会社に生まれ変わらせた
     ability: { incomeGenre: { cloud: 1, biz: 0.5 }, income: 0.1 },
@@ -584,8 +585,8 @@ export const LEGEND_RULES = {
   },
   dorsey: {
     stats: { idea: 85, tech: 80, plan: 65, talk: 70 },
-    meet: { cat: { web: 12, app: 5 } },
-    hint: 'Web の仕事を 12 回、アプリの仕事を 5 回こなすと…',
+    meet: { cat: { web: 20, app: 28 } },
+    hint: 'Web の仕事を 20 回こなし、アプリの仕事を 28 回こなすと…',
     join: 0.4,
     ability: { incomeGenre: { sns: 1, app: 0.3 }, offers: 0.5 },
     abilityText: 'SNS の収入 2倍  アプリ +30%  依頼 ×1.5',
@@ -596,8 +597,8 @@ export const LEGEND_RULES = {
   },
   mikitani: {
     stats: { idea: 80, tech: 55, plan: 90, talk: 90 },
-    meet: { cat: { web: 10 }, office: 3 },
-    hint: 'Web の仕事を 10 回こなし、オフィスビルを構えると…',
+    meet: { office: 3, cat: { web: 20 }, rep: 2000 },
+    hint: 'オフィスビルを構え、Web の仕事を 20 回こなし、評判が 2000 を超えると…',
     join: 0.4,
     // 13 のお店から日本一のネット通販に
     ability: { incomeGenre: { web: 0.5 }, offers: 0.3 },
@@ -606,8 +607,8 @@ export const LEGEND_RULES = {
   },
   hassabis: {
     stats: { idea: 100, tech: 95, plan: 85, talk: 70 },
-    meet: { cat: { ai: 20 }, rep: 3000 },
-    hint: 'AI の仕事を 20 回こなし、評判が 3000 を超えると…',
+    meet: { cat: { ai: 45 }, rep: 900000 },
+    hint: 'AI の仕事を 45 回こなし、評判が 900000 を超えると…',
     join: 0.3,
     ability: { incomeGenre: { ai: 0.5, agi: 0.5 }, teamSuccess: 0.2, statAll: { idea: 0.15 } },
     abilityText: 'AI・汎用AI +50%  成功率 +20%  全員の発想 +15%',
@@ -615,8 +616,8 @@ export const LEGEND_RULES = {
   },
   shannon: {
     stats: { idea: 100, tech: 95, plan: 75, talk: 50 },
-    meet: { tasks: 150, legends: 5 },
-    hint: '仕事を 150 回こなし、レジェンドが 5 人集まると…',
+    meet: { tasks: 300, legends: 10 },
+    hint: '仕事を 300 回こなし、レジェンドが 10 人集まると…',
     join: 0.2,
     // すべての情報を 0 と 1 で表せると示した
     ability: { statAll: { tech: 0.15, idea: 0.15 }, teamReward: 0.2 },
