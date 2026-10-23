@@ -1094,6 +1094,9 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .fire-prof { display: grid; justify-items: center; gap: 2px; margin-bottom: 8px; text-align: center; }
 .fire-prof .av { width: 72px; height: 72px; margin-bottom: 6px; }
 .fire-prof h2 { margin: 0; }
+.job-prof img { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: var(--bg); margin-bottom: 6px; }
+#job-back { margin-top: 12px; }
+.come-jobs span { cursor: pointer; }
 .fire-row .rival-what { flex: 1; }
 .fired-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: #ff5a5a14; color: #ff6b6b; font-weight: 700; }
 .fired-line b { flex: 1; color: var(--text, inherit); }

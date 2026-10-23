@@ -864,7 +864,7 @@ function openPromoInfo(kind) {
     <div class="promo-hero">${icon(g.icon)}<b>${g.name}</b><small>${ad ? '求人広告中' : '宣伝中'}</small></div>
     ${row(ad ? 'people' : 'task', '効果', `${bars} ${ad ? `${Math.round(G.adPerDay(S) * 10) / 10}<small>人/日</small>` : `×${g.boost}`}`)}
     ${cats.length || jobs.length ? `<div class="cmp">${icon('target')}<small>条件</small><span class="grow"></span><span class="promo-tags">${jobs.map((j) => `<span class="cat-tag job-tag">${R.JOBS[j].name}</span>`).join('')}${cats.map(catTag).join('')}</span></div>` : row('target', '条件', '<small>なし</small>')}
-    ${ad && cats.length ? `<div class="come-jobs">${comeJobs.map((j) => `<span><img src="assets/jobs/${j}.webp" alt="">${R.JOBS[j].name}</span>`).join('')}</div>` : ''}
+    ${ad && cats.length ? `<div class="come-jobs">${comeJobs.map((j) => `<span data-jinfo="${j}"><img src="assets/jobs/${j}.webp" alt="">${R.JOBS[j].name}</span>`).join('')}</div>` : ''}
     ${row('clock', '終わり', `${end.getMonth() + 1}/${end.getDate()} ${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`)}
     ${progress(start, until)}
     <button class="big ghost" id="run-close">OK</button>`;
@@ -887,6 +887,17 @@ function openPromo(kind) {
   const toggle = (set, k) => (set.has(k) ? set.delete(k) : set.add(k));
   const dlg = $('#assign');
   const bars = (n) => `<span class="power">${icon(ad ? 'people' : 'task')}${[1, 2, 3, 4].map((i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+  // 職種の顔を押すと、その職種の説明（特技・得意な依頼・防ぐもの）。戻るで元の選び方のまま（2026-10-23 ユーザー指示）
+  const jobInfo = (k) => {
+    const j = R.JOBS[k];
+    $('#assign-body').innerHTML = `<div class="fire-prof job-prof"><img src="assets/jobs/${k}.webp" alt=""><h2>${j.name}</h2><div class="sub">${j.full}</div></div>
+      <p class="job-desc">${esc(j.desc)}</p>
+      <div class="ability">${esc(j.perkText)}</div>
+      <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
+      ${guardLine(R.guardsOf(k))}
+      <button class="big ghost" id="job-back">${icon('back')}戻る</button>`;
+    $('#job-back').onclick = () => draw();
+  };
   const draw = () => {
     const cond = mode === 'cat' ? { cats: [...pickCats] } : mode === 'job' ? { jobs: [...pickJobs] } : null;
     const empty = cond && !(cond.cats ?? cond.jobs).length; // 何も選んでいないときは出せない
@@ -916,7 +927,7 @@ function openPromo(kind) {
       ${
         mode === 'job'
           ? `<div class="pjobs">${Object.entries(R.JOBS)
-              .map(([k, j]) => `<button class="pjob ${pickJobs.has(k) ? 'active' : ''}" data-job="${k}"><img src="assets/jobs/${k}.webp" alt=""><span>${j.name}</span></button>`)
+              .map(([k, j]) => `<button class="pjob ${pickJobs.has(k) ? 'active' : ''}" data-job="${k}"><img src="assets/jobs/${k}.webp" alt="" data-jinfo="${k}"><span>${j.name}</span></button>`)
               .join('')}</div>`
           : ''
       }
@@ -925,7 +936,8 @@ function openPromo(kind) {
     b.querySelectorAll('[data-grade]').forEach((x) => (x.onclick = () => ((grade = +x.dataset.grade), draw())));
     b.querySelectorAll('[data-mode]').forEach((x) => (x.onclick = () => ((mode = x.dataset.mode), draw())));
     b.querySelectorAll('[data-cat]').forEach((x) => (x.onclick = () => (toggle(pickCats, x.dataset.cat), draw())));
-    b.querySelectorAll('[data-job]').forEach((x) => (x.onclick = () => (toggle(pickJobs, x.dataset.job), draw())));
+    b.querySelectorAll('[data-job]').forEach((x) => (x.onclick = (e) => (e.target.closest('[data-jinfo]') ? null : (toggle(pickJobs, x.dataset.job), draw()))));
+    b.querySelectorAll('[data-jinfo]').forEach((x) => x.addEventListener('click', () => jobInfo(x.dataset.jinfo)));
     $('#promo-go').onclick = () => {
       if (!empty && (ad ? G.startAd : G.startPR)(S, Date.now(), grade, cond)) {
         dlg.close();
