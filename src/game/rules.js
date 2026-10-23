@@ -15,12 +15,14 @@ export const DAY = 24 * HOUR;
 // どの職種も得意な依頼は全体で18〜20件。peak は得意な依頼がいちばん多い時期（early 序盤＝自宅〜ガレージ / mid 中盤＝事務所〜本社ビル / late 後半＝その先）
 export const JOB_GOOD = 1.5;
 export const PEAK_NAMES = { early: '序盤', mid: '中盤', late: '後半' };
+// データ分析の2人目から1人ごとに、流行に乗った製品（流行1倍より上）の収入 +10%（2026-10-23 ユーザー指示。特技が人数で重ならなかったため）
+export const DATA_TREND_BONUS = 0.1;
 export const JOBS = {
   se: { name: 'SE', full: 'システムエンジニア', desc: 'お客さんの「こうしたい」を聞いて、システムの設計図を作る', w: { idea: 1, tech: 2, plan: 3, talk: 1 }, perk: { teamSuccess: 0.15 }, perkText: '成功率 +15%', goodText: '会社や店の仕組みづくり', peak: 'mid', shirt: 0x4a78c2 },
   pg: { name: 'プログラマー', full: 'プログラマー', desc: '設計図をもとにプログラムを書き、動くものを作る', w: { idea: 1, tech: 3.5, plan: 1, talk: 0.5 }, perk: { teamSpeed: 0.15 }, perkText: '速さ +15%', goodText: 'アプリやプログラムづくり', peak: 'early', shirt: 0x2f2f3a },
   infra: { name: 'インフラ', full: 'インフラエンジニア', desc: 'サーバーやネットワークなど、システムが動く土台を作って守る', w: { idea: 0.5, tech: 3, plan: 2, talk: 0.5 }, perk: { teamRep: 0.2 }, perkText: '評判 +20%', goodText: 'パソコン・ネットワーク・サーバー', peak: 'early', shirt: 0x3f8f6b },
   designer: { name: 'デザイナー', full: 'デザイナー', desc: '画面の見た目と使いやすさを考えて、形にする', w: { idea: 3.5, tech: 1, plan: 1, talk: 1.5 }, perk: { teamQuality: 0.2 }, perkText: '製品の出来 +20%', goodText: 'ホームページやアプリの見た目', peak: 'early', shirt: 0xe0607e },
-  data: { name: 'データ分析', full: 'データサイエンティスト', desc: 'たくさんのデータを分析して、次の流行や打つ手を見つける', w: { idea: 2, tech: 2.5, plan: 1.5, talk: 0.5 }, perk: { nextTrend: 1 }, perkText: '次の流行が見える', goodText: 'データ分析やAI', peak: 'late', shirt: 0x7a5cc4 },
+  data: { name: 'データ分析', full: 'データサイエンティスト', desc: 'たくさんのデータを分析して、次の流行や打つ手を見つける', w: { idea: 2, tech: 2.5, plan: 1.5, talk: 0.5 }, perk: { nextTrend: 1 }, perkText: '次の流行が見える  2人目から流行の製品 +10%', goodText: 'データ分析やAI', peak: 'late', shirt: 0x7a5cc4 },
   pm: { name: 'PM', full: 'プロジェクトマネージャー', desc: '予定・お金・人をまとめて、期限までに完成させる責任者', w: { idea: 1, tech: 1, plan: 2.5, talk: 2.5 }, perk: { teamSpeed: 0.1, teamSuccess: 0.05 }, perkText: '速さ +10%  成功率 +5%', goodText: 'チームでの開発のとりまとめ', peak: 'mid', shirt: 0x2d6ea8 },
   gm: { name: 'GM', full: 'ゼネラルマネージャー', desc: '部門全体をまとめて人を育て、事業をうまく回す', w: { idea: 2, tech: 1, plan: 2, talk: 2 }, perk: { teamXp: 0.5 }, perkText: 'チームの成長 +50%', goodText: '大きな事業や計画', peak: 'late', shirt: 0x50505a },
   consul: { name: 'コンサル', full: 'ITコンサルタント', desc: '会社の困りごとを聞いて、ITでの解決策を提案する', w: { idea: 2, tech: 1, plan: 2, talk: 3 }, perk: { teamReward: 0.2 }, perkText: '報酬 +20%', goodText: 'IT導入や戦略の相談', peak: 'late', shirt: 0x24324a },

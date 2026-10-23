@@ -100,6 +100,9 @@ export function companyEffects(s) {
     for (const [k, v] of Object.entries(p.statAll ?? {})) e.statAll[k] = (e.statAll[k] ?? 0) + v;
     for (const [k, v] of Object.entries(p.incomeGenre ?? {})) e.incomeGenre[k] = (e.incomeGenre[k] ?? 0) + v;
   }
+  // データ分析は2人目から1人ごとに、流行に乗った製品（流行1倍より上）の収入が増える
+  const data = s.members.filter((m) => m.kind !== 'legend' && m.job === 'data').length;
+  e.trendBonus = R.DATA_TREND_BONUS * Math.max(0, data - 1);
   return e;
 }
 
@@ -451,7 +454,9 @@ export function productIncome(s, p, t, ce = companyEffects(s)) {
   const g = R.GENRES[p.genre];
   const age = Math.max(0, t - p.launchedAt);
   const decay = 0.5 ** (age / (R.PRODUCT_HALF_LIFE * (1 + ce.decaySlow)));
-  return g.cost * R.PRODUCT_RATE * p.q * trendAt(s, p.genre, t) * decay * brand(s, p.genre) * (1 + ce.income + (ce.incomeGenre[p.genre] ?? 0));
+  const trend = trendAt(s, p.genre, t);
+  const ride = trend > 1 ? ce.trendBonus : 0;
+  return g.cost * R.PRODUCT_RATE * p.q * trend * decay * brand(s, p.genre) * (1 + ce.income + (ce.incomeGenre[p.genre] ?? 0) + ride);
 }
 
 // 維持費（1時間）と、維持費を引いたもうけ（赤字ならマイナス）
