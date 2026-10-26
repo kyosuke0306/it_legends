@@ -1249,3 +1249,15 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .sheet-btns #ti-back { flex: 0 0 64px; }
 .big.ghost.danger { background: transparent; color: var(--bad); border-color: var(--bad); }
 .ti-about { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--text) 4%, transparent); line-height: 1.6; font-size: 0.85rem; }
+.tool-fx .ic { width: 1.1em; height: 1.1em; color: var(--accent); }
+.tool-fx { color: var(--text); }
+.tool-logo.xs { width: 20px; height: 20px; padding: 2px; border-radius: 5px; box-shadow: none; }
+.mini-tired { display: block; width: 70px; height: 4px; margin-top: 3px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.mini-tired b { display: block; height: 100%; background: #5aa9e6; }
+.mini-tired.on b { background: var(--bad); }
+.prog .end-at { margin-left: 6px; color: var(--accent); font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+.pace { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+.ai-pick { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 0 0 8px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--text); font-weight: 700; font-size: 0.85rem; }
+.gh-works { align-items: center; gap: 10px; }
+.tool-fx { flex-wrap: nowrap; align-items: flex-start; line-height: 1.35; }
+.tool-fx .ic { flex: none; margin-top: 0.1em; }

@@ -103,7 +103,6 @@ export function companyEffects(s) {
   // データ分析は2人目から1人ごとに、流行に乗った製品（流行1倍より上）の収入が増える
   const data = s.members.filter((m) => m.kind !== 'legend' && m.job === 'data').length;
   e.trendBonus = R.DATA_TREND_BONUS * Math.max(0, data - 1);
-  for (const id of s.tools ?? []) e.xpAll += R.TOOLS[id]?.xpAll ?? 0; // ツール（Notion など）
   return e;
 }
 
@@ -120,29 +119,6 @@ export function setTool(s, id, on, now) {
   addLog(s, now, `${t.name}  ${on ? '契約' : '解約'}`);
   return true;
 }
-// その仕事・開発の人たちに効くツールの効果（jobs の職種の人が入っているときだけ。min は人数）
-export const toolWorks = (t, team) => team.length >= (t.min ?? 1) && (!t.jobs || team.some((m) => m.kind !== 'legend' && t.jobs.includes(m.job)));
-function toolTeam(s, team) {
-  const e = { success: 0, speed: 0, reward: 0, rep: 0, quality: 0 };
-  for (const id of s.tools ?? []) {
-    const t = R.TOOLS[id];
-    if (t && toolWorks(t, team)) for (const k of Object.keys(e)) e[k] += t[k] ?? 0;
-  }
-  return e;
-}
-// 仕事・開発に参加した人に効くもの（人の力＋ツール）
-function workEffects(s, team) {
-  const te = teamEffects(team);
-  const tt = toolTeam(s, team);
-  te.teamSuccess += tt.success;
-  te.teamSpeed += tt.speed;
-  te.teamReward += tt.reward;
-  te.teamRep += tt.rep;
-  te.teamQuality += tt.quality;
-  te.toolSpeed = tt.speed;
-  return te;
-}
-
 // 仕事・開発に参加した人だけに効くもの
 function teamEffects(team) {
   const e = { teamSpeed: 0, teamReward: 0, teamRep: 0, teamSuccess: 0, teamQuality: 0, teamXp: 0, alwaysSuccess: 0 };
@@ -311,18 +287,17 @@ function endHaken(s, t, ev) {
 // 見込み（画面に出す）。temps は派遣の人
 export function taskPreview(s, offer, ids, temps = offer.temps ?? []) {
   const team = [...ids.map((id) => memberById(s, id)), ...temps];
-  const te = workEffects(s, team);
+  const te = teamEffects(team);
   const power = teamPower(s, team, offer.w, goodJobs(offer));
   const chance = te.alwaysSuccess ? 1 : Math.min(0.98, Math.max(0.05, 0.9 * (power / offer.diff) + te.teamSuccess));
   const duration = (offer.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed))) / (1 + R.TEAM_SPEEDUP * (team.length - 1));
   const great = power >= offer.diff * R.REP_GREAT;
-  const early = duration <= usualTime(offer, team.length, te.toolSpeed) * R.REP_EARLY;
+  const early = duration <= usualTime(offer, team.length) * R.REP_EARLY;
   const bonus = te.teamRep; // インフラの特技
   return { power, chance, duration, reward: round(offer.reward * (1 + te.teamReward)), rep: taskRep(offer, power, early, bonus), teamRep: bonus, great, early };
 }
 // その人数ならふつうにかかる時間。早さの評判はこれより早く終えたときだけ（人数をそろえただけでは付かない。2026-10-09）
-// ツールで速くなったぶんも「ふつう」に入れる（ツールを契約しただけで早さの評判が付かないように）
-const usualTime = (offer, n, toolSpeed = 0) => (offer.hours * R.HOUR * (1 - Math.min(0.6, toolSpeed))) / (1 + R.TEAM_SPEEDUP * (Math.max(1, n) - 1));
+const usualTime = (offer, n) => (offer.hours * R.HOUR) / (1 + R.TEAM_SPEEDUP * (Math.max(1, n) - 1));
 // 成功したときの評判（出来と早さで変わる）
 // bonus はインフラの特技など（評判 +20% なら 0.2。小さな仕事でも +1 は付く）
 function taskRep(offer, power, early, bonus = 0) {
@@ -375,7 +350,7 @@ function finishTask(s, task, t, ev) {
   const money = ok ? pv.reward : round(pv.reward * 0.2);
   s.money += money;
   // 早さは実際にかかった時間で決める
-  const early = task.endsAt - (task.begunAt ?? task.startAt) <= usualTime(task, team.length + (task.temps?.length ?? 0), toolTeam(s, [...team, ...(task.temps ?? [])]).speed) * R.REP_EARLY;
+  const early = task.endsAt - (task.begunAt ?? task.startAt) <= usualTime(task, team.length + (task.temps?.length ?? 0)) * R.REP_EARLY;
   const rep = ok ? taskRep(task, pv.power, early, pv.teamRep) : -Math.min(s.rep, Math.max(1, Math.round(task.rep * R.FAIL_REP)));
   s.rep += rep;
   if (ok) {
@@ -384,7 +359,11 @@ function finishTask(s, task, t, ev) {
   }
   const xp = task.xp * (ok ? 1 : 0.4);
   giveXp(s, team, xp, t, ev);
-  for (const m of team) m.busy = null;
+  for (const m of team) {
+    m.busy = null;
+    m.works = (m.works ?? 0) + 1; // これまでの仕事の数（GitHub を契約すると見える）
+    if (ok) m.wins = (m.wins ?? 0) + 1;
+  }
   s.tasks = s.tasks.filter((x) => x !== task);
   tiredQuit(s, team, t, ev);
   addLog(s, t, ok ? `${task.title}  成功` : `${task.title}  失敗`, ok ? 'good' : 'bad');
@@ -434,7 +413,7 @@ export function trendEndsAt(s, t) {
 export function devPreview(s, genre, ids) {
   const g = R.GENRES[genre];
   const team = ids.map((id) => memberById(s, id));
-  const te = workEffects(s, team);
+  const te = teamEffects(team);
   const power = teamPower(s, team, g.w);
   const duration = (g.hours * R.HOUR * (1 - Math.min(0.6, te.teamSpeed))) / (1 + R.TEAM_SPEEDUP * (team.length - 1));
   return { power, quality: (power / g.need) * (1 + te.teamQuality), duration };
@@ -1132,6 +1111,13 @@ export function migrate(s) {
   // 喫煙所はやめた（2026-10-19 ユーザー指示）。買っていたら外して、払った30万円を返す
   if (s.furniture?.includes('smoking')) s.money += 300_000;
   if (s.furniture) s.furniture = s.furniture.filter((id) => R.FURNITURE[id]);
+  if (s.tools) s.tools = s.tools.filter((id) => R.TOOLS[id]); // 数字が上がるツール（Figma・Zoom・AWS）はやめた（2026-10-26）
+  // これまでの仕事の数がまだない人は、残っている記録から数える
+  for (const m of s.members.filter((m) => m.works == null)) {
+    const mine = (s.history ?? []).filter((h) => h.ids?.includes(m.id));
+    m.works = mine.length;
+    m.wins = mine.filter((h) => h.ok).length;
+  }
   for (const p of s.products) delete p.look; // 製品の色と絵を選ぶ機能もやめた
   s.log = s.log.filter((l) => l.kind !== 'note');
   backfillHistory(s);

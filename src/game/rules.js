@@ -632,18 +632,21 @@ export const LEGEND_RULES = {
 
 // ---------- ツール（2026-10-26 ユーザー指示「実際にあるものだとより良い。使う場合は継続的にお金を払う。例えば git」） ----------
 // 本物の仕事の道具。契約している間、1人1日 h 時間ぶんの仕事の報酬（今の会社の平均）× 人数 を払い続ける（本物と同じ1人いくらの料金）
-// 効果は jobs の職種の人が入った仕事・開発だけ（jobs が無ければどの仕事も）。min は何人以上で動く仕事か
-// desc は本物で何をする道具か（押すと出る詳しい画面に1行）、about は本物の説明（2026-10-26 ユーザー指示「実際のツールの説明も」）
-// success 成功率・speed 速さ・reward 報酬・rep 評判・quality 製品の出来（仕事に入った人だけに効く）／xpAll 全員の成長・roster 仲間タブに職種ごとの人数
+// 効果は「見えるようになる・便利になる」だけ（2026-10-26 ユーザー指示「職種の人数が見える、みたいなものに。報酬が増えるとかはやめて」）
+// desc は本物で何をする道具か、about は本物の説明（「実際のツールの説明も」）、shows は契約すると見えるもの（icon とともに詳しい画面と一覧に出す）
 export const TOOLS = {
-  notion: { name: 'Notion', logo: 'notion', desc: '社内の名簿やメモをまとめる', about: 'アメリカの会社が2016年に公開したメモのアプリ。文書・表・社員の名簿・やることを1か所にまとめられ、多くの会社が社内の資料置き場に使う', office: 0, h: 0.3, roster: true, xpAll: 0.1 },
-  github: { name: 'GitHub', logo: 'github', desc: 'プログラムを保存して、みんなで直す', about: 'Git というしくみでプログラムの変更の歴史を残し、ほかの人の直しを確かめてから取り込める。2008年に始まり、2018年に Microsoft が買った。世界で1億人以上の開発者が使う', office: 0, h: 0.5, jobs: ['pg', 'se'], success: 0.1 },
-  slack: { name: 'Slack', logo: 'slack', desc: '社内のチャット', about: '仕事の話題ごとに部屋を分けて話せるチャット。2013年にゲームを作っていた会社が社内用に作ったのが始まりで、メールより早く相談できる。今は Salesforce の製品', office: 1, h: 0.5, min: 2, speed: 0.1 },
-  figma: { name: 'Figma', logo: 'figma', desc: '画面のデザインをみんなで作る', about: 'ブラウザで動くデザインの道具。1つの画面を何人もで同時に描けて、アプリや Web の画面の設計図をそのままエンジニアに渡せる。2016年に公開', office: 1, h: 0.6, jobs: ['designer'], rep: 0.2, quality: 0.15 },
-  zoom: { name: 'Zoom', logo: 'zoom', desc: 'お客さんとオンラインで会議', about: 'パソコンやスマホでつなぐビデオ会議。2011年に生まれ、2020年に人が集まれなくなった時期に世界中に広まった。遠くのお客さんとも顔を見て打ち合わせできる', office: 2, h: 0.6, jobs: ['sales', 'consul'], reward: 0.15 },
-  aws: { name: 'AWS', logo: 'aws', desc: 'Amazon のクラウドでサーバーを借りる', about: 'Amazon Web Services。自分でサーバーを買わず、Amazon の大きなデータセンターの計算機を使ったぶんだけ借りられる。2006年に始まり、クラウドで世界一の大きさ', office: 2, h: 1, jobs: ['infra'], speed: 0.2 },
-  jira: { name: 'Jira', logo: 'jira', desc: '仕事の進み具合を管理する', about: 'オーストラリアの Atlassian が2002年に作った、仕事の管理の道具。やることをカードにして「やる前・やっている・終わった」と動かし、遅れやバグを見つける', office: 3, h: 0.8, jobs: ['pm'], success: 0.1, speed: 0.1 },
-  chatgpt: { name: 'ChatGPT', logo: 'chatgpt', desc: 'AI に聞いて手伝ってもらう', about: 'OpenAI が2022年に公開した、文章で話しかけると答える AI。文章の下書き・プログラム・調べものを手伝い、2か月で1億人が使った', office: 4, h: 1.2, speed: 0.15 },
+  notion: { name: 'Notion', logo: 'notion', office: 0, h: 0.2, icon: 'people', shows: '仲間タブに職種ごとの人数',
+    desc: '社内の名簿やメモをまとめる', about: 'アメリカの会社が2016年に公開したメモのアプリ。文書・表・社員の名簿・やることを1か所にまとめられ、多くの会社が社内の資料置き場に使う' },
+  slack: { name: 'Slack', logo: 'slack', office: 0, h: 0.2, icon: 'drop', shows: '仲間の一覧にみんなの疲れ',
+    desc: '社内のチャット', about: '仕事の話題ごとに部屋を分けて話せるチャット。2013年にゲームを作っていた会社が社内用に作ったのが始まりで、メールより早く相談できる。今は Salesforce の製品' },
+  github: { name: 'GitHub', logo: 'github', office: 1, h: 0.3, icon: 'check', shows: '仲間の詳しい画面に、これまでの仕事の数',
+    desc: 'プログラムを保存して、みんなで直す', about: 'Git というしくみでプログラムの変更の歴史を残し、ほかの人の直しを確かめてから取り込める。2008年に始まり、2018年に Microsoft が買った。世界で1億人以上の開発者が使う' },
+  jira: { name: 'Jira', logo: 'jira', office: 1, h: 0.3, icon: 'clock', shows: '仕事中の欄に終わる時刻',
+    desc: '仕事の進み具合を管理する', about: 'オーストラリアの Atlassian が2002年に作った、仕事の管理の道具。やることをカードにして「やる前・やっている・終わった」と動かし、遅れやバグを見つける' },
+  analytics: { name: 'Google Analytics', logo: 'analytics', office: 2, h: 0.3, icon: 'chart', shows: '依頼が届くペース',
+    desc: 'Web サイトに来た人を数える', about: 'Google が2005年に始めた、Web サイトに何人来て、どこから来て、何を見たかを数える道具。無料で使え、世界のとても多くのサイトが入れている' },
+  chatgpt: { name: 'ChatGPT', logo: 'chatgpt', office: 3, h: 0.5, icon: 'spark', shows: '人選びで「おすすめ」を押すと人を選んでくれる',
+    desc: 'AI に聞いて手伝ってもらう', about: 'OpenAI が2022年に公開した、文章で話しかけると答える AI。文章の下書き・プログラム・調べものを手伝い、2か月で1億人が使った' },
 };
 
 // ---------- 待ち時間の楽しみ（2026-10-19 ユーザー指示「仕事を任せている間、暇になる」） ----------

@@ -198,8 +198,14 @@ function prodIcon(genre, cls = '') {
   const [ic, a, b] = GENRE_LOOK[genre] ?? GENRE_LOOK.web;
   return `<span class="prod-ic ${cls}" style="--g1:${a};--g2:${b}">${icon(ic)}</span>`;
 }
-function progress(start, end) {
-  return `<div class="prog"><div class="bar" data-start="${start}" data-ends="${end}"><i></i></div><span class="left" data-left="${end}">${dur(end - Date.now())}</span></div>`;
+function progress(start, end, at = false) {
+  return `<div class="prog"><div class="bar" data-start="${start}" data-ends="${end}"><i></i></div><span class="left" data-left="${end}">${dur(end - Date.now())}</span>${at ? `<span class="end-at">${clockAt(end)}</span>` : ''}</div>`;
+}
+// 終わる時刻（Jira を契約すると仕事中の欄に出る）。今日でなければ日付も
+function clockAt(t) {
+  const d = new Date(t);
+  const hm = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return new Date().toDateString() === d.toDateString() ? hm : `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
 }
 // 偉人の小さな絵をあとから差し込む
 function fillThumbs(root) {
@@ -683,16 +689,6 @@ function openDecor() {
 }
 
 // ツール（2026-10-26 ユーザー指示）: 本物の仕事の道具を契約する。契約中は1人いくらの料金を払い続ける。次の会社の分まで（鍵つき）見せる
-const TOOL_FX = { success: 'target', speed: 'clock', reward: 'coin', rep: 'star', quality: 'box', xpAll: 'level' };
-const TOOL_FX_NAME = { success: '成功率', speed: '速さ', reward: '報酬', rep: '評判', quality: '製品の出来', xpAll: '全員の成長' };
-function toolFx(t) {
-  const who = t.jobs ? t.jobs.map((j) => `<img class="tool-job" src="assets/jobs/${j}.webp" alt="${R.JOBS[j].name}">`).join('') : t.min ? val('people', `${t.min}+`) : '';
-  const fx = Object.entries(TOOL_FX)
-    .filter(([k]) => t[k])
-    .map(([k, ic]) => val(ic, `+${Math.round(t[k] * 100)}%`, 'ok'))
-    .join('');
-  return `${who}${fx}${t.roster ? val('people', '職種') : ''}`;
-}
 function openTools() {
   const dlg = $('#assign');
   const list = Object.entries(R.TOOLS).filter(([, t]) => t.office <= S.office + 1);
@@ -708,7 +704,7 @@ function openTools() {
           : `<button class="btn ${on ? 'ghost' : ''}" data-tool="${id}">${on ? '解約' : '契約'}</button>`;
         return `<div class="tool ${on ? 'on' : ''} ${locked ? 'locked' : ''}" data-tinfo="${id}">
           <span class="tool-logo"><img src="assets/tools/${t.logo}.svg" alt=""></span>
-          <span class="tool-main"><b>${t.name}</b><span class="tool-fx">${toolFx(t)}</span><small>${icon('people')}1人 ${yen(G.toolUnit(S, id))}/日</small></span>${end}
+          <span class="tool-main"><b>${t.name}</b><span class="tool-fx">${icon(t.icon)}${t.shows}</span><small>${icon('people')}1人 ${yen(G.toolUnit(S, id))}/日</small></span>${end}
         </div>`;
       })
       .join('')}</div>
@@ -729,22 +725,11 @@ function openToolInfo(id) {
   const t = R.TOOLS[id];
   const on = G.hasTool(S, id);
   const locked = S.office < t.office;
-  // 効く仕事（その職種の人がいる仕事・何人以上・すべて）
-  const who = t.jobs
-    ? `${t.jobs.map((j) => `<img class="tool-job" src="assets/jobs/${j}.webp" alt="">`).join('')}<span>${t.jobs.map((j) => R.JOBS[j].name).join('・')}がいる仕事</span>`
-    : t.min
-      ? `${icon('people')}<span>${t.min}人以上の仕事</span>`
-      : t.roster ? '' : `${icon('task')}<span>すべての仕事</span>`;
-  const fx = Object.entries(TOOL_FX_NAME)
-    .filter(([k]) => t[k])
-    .map(([k, n]) => `<div class="ti-fx">${icon(TOOL_FX[k])}<span>${n}</span><b>+${Math.round(t[k] * 100)}%</b></div>`)
-    .join('');
   const unit = G.toolUnit(S, id);
   $('#assign-body').innerHTML = `
     <div class="tool-prof"><span class="tool-logo lg"><img src="assets/tools/${t.logo}.svg" alt=""></span><h2>${t.name}</h2><div class="sub">${t.desc}</div></div>
     <p class="job-desc ti-about">${t.about}</p>
-    ${who ? `<div class="ti-who">${who}</div>` : ''}
-    <div class="ti-list">${fx}${t.roster ? `<div class="ti-fx">${icon('people')}<span>仲間タブに職種ごとの人数</span></div>` : ''}</div>
+    <div class="ti-list"><div class="ti-fx">${icon(t.icon)}<span>${t.shows}</span></div></div>
     <div class="ti-cost">${icon('wallet')}<span>${yen(unit)} × ${S.members.length}人</span><b>${yen(unit * S.members.length)}/日</b></div>
     <div class="sheet-btns"><button class="big ghost" id="ti-back">${icon('back')}</button>${
       locked
@@ -1039,7 +1024,7 @@ function renderWork() {
     .map(
       // タップすると、選ぶ前の仕事と同じように下から詳しいシートが出る（openRunning）
       (t) => `<button class="panel run cat-${t.cat}" data-run="${t.id}"><div class="row1"><b>${catTag(t.cat)}${esc(t.title)}</b>${avStack([...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])])}</div>
-        ${progress(t.startAt, t.endsAt)}</button>`,
+        ${progress(t.startAt, t.endsAt, G.hasTool(S, 'jira'))}</button>`,
     )
     .join('');
   const canWork = G.freeMembers(S).length > 0;
@@ -1057,7 +1042,7 @@ function renderWork() {
     <div class="work-top"><button class="hist-btn" id="open-history">${icon('check')}${S.counts.tasks}</button></div>
     ${crewHtml()}
     ${S.tasks.length ? `<div class="work-box running"><div class="sec work-sec">${icon('task')}<b>仕事中</b><span class="count">${S.tasks.length}</span></div>${running}</div>` : ''}
-    <div class="sec work-sec">${icon('paper')}<b>依頼</b><span class="count">${S.offers.length}</span></div>
+    <div class="sec work-sec">${icon('paper')}<b>依頼</b><span class="count">${S.offers.length}</span>${offerPace()}</div>
     ${prRow()}
     ${offers || `<p class="empty">${icon('task')}</p>`}`;
   fillThumbs($('#view-work'));
@@ -1067,6 +1052,14 @@ function renderWork() {
   $('#view-work').querySelectorAll('[data-crew]').forEach((b) => (b.onclick = () => openProfile(S.members.find((m) => m.id === +b.dataset.crew))));
   $('#pr') && ($('#pr').onclick = () => openPromo('pr'));
   $('#pr-on') && ($('#pr-on').onclick = () => openPromoInfo('pr'));
+}
+
+// Google Analytics を契約すると、依頼が届くペース（評判・宣伝・営業などを入れた1時間の確率から）
+function offerPace() {
+  if (!G.hasTool(S, 'analytics')) return '';
+  const c = G.offerChance(S, Date.now());
+  const text = c >= 1 ? `${Math.round(c * 10) / 10}件/時` : `1件/${Math.round(10 / c) / 10}時間`;
+  return `<span class="pace"><span class="tool-logo xs"><img src="assets/tools/analytics.svg" alt=""></span>${text}</span>`;
 }
 
 // 仲間の手の空き具合（2026-10-12 ユーザー指示「手が空いてる人、空いてない人」）。顔を押すとその人の詳しい画面
@@ -1291,6 +1284,7 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
     const scrolled = [dlg, $('#assign-body'), $('#assign-body .pick')].map((el) => el?.scrollTop ?? 0);
     $('#assign-body').innerHTML = `
       <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${icon('people')}${size}/${max > 20 ? free.length : base.length + max}</span></div>
+      ${G.hasTool(S, 'chatgpt') && free.length ? `<button class="ai-pick" id="ai-pick"><span class="tool-logo xs"><img src="assets/tools/chatgpt.svg" alt=""></span>おすすめ</button>` : ''}
       ${extra}
       <div class="need ${sum >= need ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / need))}"></i></span><span class="need-num"><b>${sum}</b>/${need}</span></div>
       <div class="pick">${free
@@ -1321,6 +1315,18 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
           draw();
         }),
     );
+    // ChatGPT のおすすめ: 力の強い人から、必要な力の1.5倍（出来がいい）に届くまで選ぶ
+    $('#ai-pick') &&
+      ($('#ai-pick').onclick = () => {
+        chosen.clear();
+        let sum = [...temps, ...base].reduce((a, m) => a + power(m), 0);
+        for (const m of free) {
+          if (chosen.size >= max || (chosen.size >= Math.max(minOwn, 1) && sum >= need * R.REP_GREAT)) break;
+          chosen.add(m.id);
+          sum += power(m);
+        }
+        draw();
+      });
     $('#assign-body').querySelectorAll('[data-temp]').forEach(
       (b) =>
         (b.onclick = () => {
@@ -1360,7 +1366,7 @@ function memberRow(m, { candidate = false } = {}) {
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
       <span class="pname">${candidate && (m.at ?? 0) > seenSnap.team ? newTag : ''}${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${hakenTag(m)}${G.isTired(m) ? icon('drop', 'tired-ic') : ''}${
         m.haken ? `<span class="haken-left">${icon('hourglass')}<span data-left="${m.haken.until}">${dur(m.haken.until - Date.now())}</span></span>` : ''
-      }</small></span>
+      }</small>${!candidate && G.hasTool(S, 'slack') && G.canTire(m) ? `<span class="mini-tired ${G.isTired(m) ? 'on' : ''}"><b style="width:${pct((m.tired ?? 0) / 100)}"></b></span>` : ''}</span>
       ${statBars(st)}
     </button>
     ${
@@ -1432,6 +1438,7 @@ function openMember(m, candidate = false, preview = null) {
     <div class="lvrow">Lv${m.level} ${statBars(st)}</div>
     ${m.salary ? `<div class="vals">${val('wallet', `${yen(m.salary)}/日`)}</div>` : ''}
     ${preview ? `<div class="vals">${val('wallet', `${yen(preview.daily)}/日`)}</div>` : ''}
+    ${!candidate && !preview && G.hasTool(S, 'github') ? `<div class="vals gh-works"><span class="tool-logo xs"><img src="assets/tools/github.svg" alt=""></span>${val('task', m.works ?? 0)}${val('check', m.wins ?? 0, 'ok')}</div>` : ''}
     ${!candidate && !preview && G.canTire(m) ? tiredBar(m) + treatBtn(m) : ''}
     ${!candidate && !preview && G.canTrain(m) && S.members.includes(m) ? trainHtml(m) : ''}
     ${m.haken ? hakenInfo(m) : ''}
@@ -1638,7 +1645,7 @@ function renderProduct() {
   // 開発中の製品：タップすると担当者・出来の見込み・稼ぎの見込みが下から出る（openDevRunning）
   const devs = S.devs
     .map(
-      (d) => `<button class="panel run" data-dev="${d.id}"><div class="row1"><b>${R.GENRES[d.genre].name}</b>${avStack(d.members.map((id) => S.members.find((m) => m.id === id)).filter(Boolean))}</div>${progress(d.startAt, d.endsAt)}</button>`,
+      (d) => `<button class="panel run" data-dev="${d.id}"><div class="row1"><b>${R.GENRES[d.genre].name}</b>${avStack(d.members.map((id) => S.members.find((m) => m.id === id)).filter(Boolean))}</div>${progress(d.startAt, d.endsAt, G.hasTool(S, 'jira'))}</button>`,
     )
     .join('');
   // 発売した製品：アプリのアイコンのような絵・名前・出来・1時間のもうけ（維持費を引いたもの）・これまでの稼ぎ（新しい順）
@@ -1830,7 +1837,7 @@ function openDevRunning(devId) {
       .join('')}</div>
     <div class="preview">${rating(p.quality * 0.6)}<span class="muted">〜</span>${rating(p.quality * 1.4)}${trendIcon(G.trendAt(S, d.genre, now))}</div>
     <div class="preview">${val('coin', `${signYen(income(p.quality * 0.6))}〜${signYen(income(p.quality * 1.4))}/時`)}${val('box', yen(g.cost))}</div>
-    ${progress(d.startAt, d.endsAt)}
+    ${progress(d.startAt, d.endsAt, G.hasTool(S, 'jira'))}
     <button class="big ghost" id="run-close">OK</button>`;
   fillThumbs($('#assign-body'));
   updateTimers();

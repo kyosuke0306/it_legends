@@ -49,8 +49,6 @@
 - github.svg: https://commons.wikimedia.org/wiki/File:Octicons-mark-github.svg
 - notion.svg: https://commons.wikimedia.org/wiki/File:Notion-logo.svg
 - slack.svg: https://commons.wikimedia.org/wiki/File:Slack_icon_2019.svg
-- figma.svg: https://commons.wikimedia.org/wiki/File:Figma-logo.svg
-- zoom.svg: https://commons.wikimedia.org/wiki/File:Zoom_Logo_2022.svg
-- aws.svg: https://commons.wikimedia.org/wiki/File:Amazon_Web_Services_Logo.svg
 - jira.svg: https://commons.wikimedia.org/wiki/File:Jira_Logo.svg
 - chatgpt.svg: https://commons.wikimedia.org/wiki/File:ChatGPT-Logo.svg
+- analytics.svg: https://commons.wikimedia.org/wiki/File:GAnalytics.svg
