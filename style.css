@@ -333,6 +333,9 @@ button.panel:disabled { opacity: 0.45; }
 .cat-ai { --c: #7a5cc4; }
 .cat-space { --c: #23324a; }
 .run b { font-size: 0.92rem; }
+.run .row1 > b { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.run .row1 > .avs { flex: none; }
+.avs .av-more { background: var(--line); color: var(--text); font-size: 0.62rem; letter-spacing: -0.02em; }
 
 /* 人選び（下から出るシート） */
 dialog.sheet { margin: auto auto 0; width: 100%; max-width: 560px; border-radius: 22px 22px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); max-height: 85vh; }

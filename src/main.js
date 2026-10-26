@@ -955,7 +955,7 @@ function renderWork() {
   const running = S.tasks
     .map(
       // タップすると、選ぶ前の仕事と同じように下から詳しいシートが出る（openRunning）
-      (t) => `<button class="panel run cat-${t.cat}" data-run="${t.id}"><div class="row1"><b>${catTag(t.cat)}${esc(t.title)}</b><span class="avs">${[...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])].map((m) => avatar(m)).join('')}</span></div>
+      (t) => `<button class="panel run cat-${t.cat}" data-run="${t.id}"><div class="row1"><b>${catTag(t.cat)}${esc(t.title)}</b>${avStack([...t.members.map(byIdM).filter(Boolean), ...(t.temps ?? [])])}</div>
         ${progress(t.startAt, t.endsAt)}</button>`,
     )
     .join('');
@@ -1562,11 +1562,7 @@ function renderProduct() {
   // 開発中の製品：タップすると担当者・出来の見込み・稼ぎの見込みが下から出る（openDevRunning）
   const devs = S.devs
     .map(
-      (d) => `<button class="panel run" data-dev="${d.id}"><div class="row1"><b>${R.GENRES[d.genre].name}</b><span class="avs">${d.members
-        .map((id) => S.members.find((m) => m.id === id))
-        .filter(Boolean)
-        .map((m) => avatar(m))
-        .join('')}</span></div>${progress(d.startAt, d.endsAt)}</button>`,
+      (d) => `<button class="panel run" data-dev="${d.id}"><div class="row1"><b>${R.GENRES[d.genre].name}</b>${avStack(d.members.map((id) => S.members.find((m) => m.id === id)).filter(Boolean))}</div>${progress(d.startAt, d.endsAt)}</button>`,
     )
     .join('');
   // 発売した製品：アプリのアイコンのような絵・名前・出来・1時間のもうけ（維持費を引いたもの）・これまでの稼ぎ（新しい順）
@@ -1728,6 +1724,12 @@ function openProduct(id) {
 }
 
 // 開発中の製品のくわしい様子（担当者と力・ゲージ・出来の見込み・1時間の稼ぎの見込み・残り時間）
+// 仕事中・開発中の欄の顔の並び。多いと名前がつぶれるので、5人まで並べて残りは +数
+function avStack(list, max = 5) {
+  const more = list.length > max ? `<span class="av av-more">+${list.length - max + 1}</span>` : '';
+  return `<span class="avs">${list.slice(0, more ? max - 1 : max).map((m) => avatar(m)).join('')}${more}</span>`;
+}
+
 function openDevRunning(devId) {
   const d = S.devs.find((x) => x.id === devId);
   if (!d) return;
