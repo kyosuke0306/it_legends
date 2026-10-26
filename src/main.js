@@ -755,6 +755,10 @@ function openRoster(job) {
   const legend = job === 'legend';
   const list = S.members.filter((m) => (legend ? m.kind === 'legend' : m.kind !== 'legend' && m.job === job));
   const j = R.JOBS[job];
+  // 左右の矢印・横にすべらせると、となりの職種へ（2026-10-26 ユーザー指示「左右に切り替えれるように」）
+  const order = [...Object.keys(R.JOBS), 'legend'];
+  const at = order.indexOf(job);
+  const go = (d) => openRoster(order[(at + d + order.length) % order.length]);
   const head = legend
     ? `<div class="fire-prof job-prof"><span class="ro-crown">${icon('crown')}</span><h2>レジェンド</h2></div>`
     : `<div class="fire-prof job-prof"><img src="assets/jobs/${job}.webp" alt=""><h2>${j.name}</h2>${j.full !== j.name ? `<div class="sub">${j.full}</div>` : ''}</div>
@@ -762,7 +766,9 @@ function openRoster(job) {
       <div class="ability">${esc(j.perkText)}</div>
       <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
       ${guardLine(R.guardsOf(job))}`;
-  $('#assign-body').innerHTML = `${head}
+  $('#assign-body').innerHTML = `<div class="ro-sheet"><div class="ro-nav"><button class="ro-arrow" id="ro-prev" aria-label="前">${icon('back')}</button><span class="ro-dots">${order
+    .map((k, i) => `<i class="${i === at ? 'on' : ''}"></i>`)
+    .join('')}</span><button class="ro-arrow" id="ro-next" aria-label="次">${icon('back', 'flip')}</button></div>${head}
     <div class="sec">${icon('people')}<b>${list.length}人</b><span class="grow"></span>${val('check', list.filter((m) => !m.busy).length, 'ok')}${val('task', list.filter((m) => m.busy).length)}</div>
     <div class="pick">${list
       .map(
@@ -771,10 +777,24 @@ function openRoster(job) {
         }</button>`,
       )
       .join('') || `<p class="empty">${icon('people')}</p>`}</div>
-    <button class="big ghost" id="run-close">OK</button>`;
+    <button class="big ghost" id="run-close">OK</button></div>`;
   fillThumbs($('#assign-body'));
   if (!dlg.open) dlg.showModal();
   $('#run-close').onclick = () => dlg.close();
+  $('#ro-prev').onclick = () => go(-1);
+  $('#ro-next').onclick = () => go(1);
+  // 横にすべらせても切り替え（縦のスクロールとは、横の動きが大きいときだけ区別する）
+  const box = $('#assign-body .ro-sheet');
+  let sx = null;
+  let sy = 0;
+  box.addEventListener('touchstart', (e) => ((sx = e.touches[0].clientX), (sy = e.touches[0].clientY)), { passive: true });
+  box.addEventListener('touchend', (e) => {
+    if (sx == null) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    sx = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
+  });
   $('#assign-body').querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => openProfile(S.members.find((m) => m.id === +b.dataset.rm))));
 }
 
