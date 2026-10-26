@@ -1274,3 +1274,9 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .ro-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); }
 .ro-dots i.on { background: var(--accent); width: 12px; border-radius: 99px; }
 .ro-arrow .flip { opacity: 1; }
+.fire-head + .roster { border: 1px solid var(--line); }
+.fire-head + .roster { gap: 2px; padding: 5px 6px; }
+.fire-head + .roster .tool-logo.sm { width: 22px; height: 22px; padding: 3px; border-radius: 6px; }
+.fire-head + .roster .ro { min-width: 20px; font-size: 0.7rem; }
+.fire-head + .roster .ro img { width: 20px; height: 20px; }
+.fire-head + .roster .ro .ic { width: 17px; height: 20px; }

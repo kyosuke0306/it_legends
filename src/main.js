@@ -740,13 +740,15 @@ function openToolInfo(id) {
   $('#ti-go') && ($('#ti-go').onclick = () => G.setTool(S, id, !on, Date.now()) && (commit(), openTools()));
 }
 // Notion を契約していると、仲間タブのいちばん上に職種ごとの人数（CEO・社員・派遣。レジェンドは冠で数だけ）
-function rosterHtml() {
+// tap: 職種を押して詳しく見られる（FIRE する人を選ぶ画面の中では数を見るだけ。2026-10-26 ユーザー指示）
+function rosterHtml(tap = true) {
   if (!G.hasTool(S, 'notion')) return '';
+  const el = tap ? 'button' : 'span';
   const n = (j) => S.members.filter((m) => m.kind !== 'legend' && m.job === j).length;
   const legends = S.members.filter((m) => m.kind === 'legend').length;
   return `<div class="roster"><span class="tool-logo sm"><img src="assets/tools/notion.svg" alt=""></span>${Object.keys(R.JOBS)
-    .map((j) => `<button class="ro ${n(j) ? '' : 'zero'}" data-roster="${j}"><img src="assets/jobs/${j}.webp" alt="${R.JOBS[j].name}"><b>${n(j)}</b></button>`)
-    .join('')}<button class="ro ${legends ? '' : 'zero'}" data-roster="legend">${icon('crown')}<b>${legends}</b></button></div>`;
+    .map((j) => `<${el} class="ro ${n(j) ? '' : 'zero'}" data-roster="${j}"><img src="assets/jobs/${j}.webp" alt="${R.JOBS[j].name}"><b>${n(j)}</b></${el}>`)
+    .join('')}<${el} class="ro ${legends ? '' : 'zero'}" data-roster="legend">${icon('crown')}<b>${legends}</b></${el}></div>`;
 }
 // Notion の職種を押すと（2026-10-26 ユーザー指示「タップしたら何か見れるように」）: その職種の説明と、その職種の仲間の一覧（空き・仕事中）
 // 冠はレジェンドの仲間。行を押すとその人の詳しい画面
@@ -2014,6 +2016,7 @@ function pickFire() {
   const staff = S.members.filter((m) => m.kind === 'staff');
   const ok = new Set(G.fireable(S));
   const list = () => `<div class="fire-head"><b>FIRE</b>${val('people', `${G.seatsUsed(S)}/${G.capacity(S)}`, 'bad')}</div>
+    ${rosterHtml(false)}
     <div class="fire-list">${staff
       .map(
         (m, i) => `<button class="fire-row ${ok.has(m) ? '' : 'off'}" data-id="${m.id}"><span class="fire-face" data-prof="${i}">${avatar(m)}</span><span class="rival-what"><b>${esc(m.name)}</b><small>${jobShort(m)} Lv${m.level}${
