@@ -742,6 +742,7 @@ function openToolInfo(id) {
   const unit = G.toolUnit(S, id);
   $('#assign-body').innerHTML = `
     <div class="tool-prof"><span class="tool-logo lg"><img src="assets/tools/${t.logo}.svg" alt=""></span><h2>${t.name}</h2><div class="sub">${t.desc}</div></div>
+    <p class="job-desc ti-about">${t.about}</p>
     ${who ? `<div class="ti-who">${who}</div>` : ''}
     <div class="ti-list">${fx}${t.roster ? `<div class="ti-fx">${icon('people')}<span>仲間タブに職種ごとの人数</span></div>` : ''}</div>
     <div class="ti-cost">${icon('wallet')}<span>${yen(unit)} × ${S.members.length}人</span><b>${yen(unit * S.members.length)}/日</b></div>

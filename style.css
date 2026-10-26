@@ -1248,3 +1248,4 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .ti-cost b { margin-left: auto; color: var(--text); font-size: 0.95rem; }
 .sheet-btns #ti-back { flex: 0 0 64px; }
 .big.ghost.danger { background: transparent; color: var(--bad); border-color: var(--bad); }
+.ti-about { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--text) 4%, transparent); line-height: 1.6; font-size: 0.85rem; }
