@@ -1297,12 +1297,11 @@ const openProfile = (m) => (m.kind === 'legend' ? openLegend(m.legend) : openMem
 // 派遣の人の契約（残り・1日の料金・更新・紹介予定派遣なら社員にする）
 function hakenInfo(m) {
   const h = m.haken;
-  const cost = G.hireCost(S, { ...m, salary: m.wage, intro: true });
   return `<div class="haken-info">
     <div class="vals">${hakenTag(m)}${val('hourglass', `<span data-left="${h.until}">${dur(h.until - Date.now())}</span>`)}${val('wallet', `${yen(h.daily)}/日`)}</div>
     <div class="sec">${icon('back', 'flip')}<b>更新</b></div>
     <div class="seg">${R.HAKEN_DAYS.map((d) => `<button data-renew="${d}" ${S.money >= h.daily * d ? '' : 'disabled'}>${d}日<small>${yen(h.daily * d)}</small></button>`).join('')}</div>
-    ${h.intro ? `<button class="big" id="m-intro" ${S.money >= cost ? '' : 'disabled'}>${icon('people')}社員にする ${yen(cost)}</button>` : ''}
+    ${h.intro ? `<button class="big" disabled>${icon('people')}社員に ${icon('hourglass')}<span data-left="${h.until}">${dur(h.until - Date.now())}</span></button>` : ''}
   </div>`;
 }
 // 差し入れ（2026-10-19 ユーザー指示「個人にできるように」）: 社員の詳しい画面の疲れの棒の下。疲れが抜ける。同じ人には8時間に1回
@@ -1398,13 +1397,6 @@ function openMember(m, candidate = false, preview = null) {
           }
         }),
     );
-  $('#m-intro') &&
-    ($('#m-intro').onclick = () => {
-      if (G.hireHaken(S, m.id, Date.now())) {
-        commit();
-        openMember(m);
-      }
-    });
   $('#m-fire') &&
     ($('#m-fire').onclick = async () => {
       if ((await ask({ head: personHead(m), text: 'FIRE しますか？', ok: 'FIRE' })) && G.dismiss(S, m.id, Date.now())) {
@@ -1443,7 +1435,7 @@ function openHaken() {
         .join('')}</div>
       <button class="haken-who" id="haken-who">${avatar(m)}<span class="pname">${esc(m.name)}<small>${jobShort(m)} Lv${m.level}</small></span>${statBars(m.stats)}</button>
       <div class="sec">${icon('clock')}<b>期間</b></div>
-      <div class="seg">${R.HAKEN_DAYS.map((d) => `<button class="${d === days ? 'active' : ''}" data-days="${d}">${d}日</button>`).join('')}</div>
+      <div class="seg">${R.HAKEN_DAYS.map((d) => `<button class="${d === days ? 'active' : ''}" data-days="${d}" ${intro && d < R.INTRO_MIN_DAYS ? 'disabled' : ''}>${d}日</button>`).join('')}</div>
       <div class="seg haken-kind">
         <button class="${intro ? '' : 'active'}" data-intro="0">派遣</button>
         <button class="${intro ? 'active' : ''}" data-intro="1">紹介予定派遣<small>${icon('coin')}+${Math.round((R.HAKEN_INTRO - 1) * 100)}%</small></button>
@@ -1456,7 +1448,7 @@ function openHaken() {
     b.querySelectorAll('[data-job]').forEach((x) => (x.onclick = () => ((job = x.dataset.job), draw())));
     b.querySelectorAll('[data-days]').forEach((x) => (x.onclick = () => ((days = +x.dataset.days), draw())));
     $('#haken-who').onclick = () => openMember(m, false, { daily }); // 来る人の詳しい画面（2026-10-10 ユーザー指示）
-    b.querySelectorAll('[data-intro]').forEach((x) => (x.onclick = () => ((intro = x.dataset.intro === '1'), draw())));
+    b.querySelectorAll('[data-intro]').forEach((x) => (x.onclick = () => ((intro = x.dataset.intro === '1'), intro && (days = Math.max(days, R.INTRO_MIN_DAYS)), draw())));
     $('#haken-go').onclick = () => {
       if (G.startHaken(S, job, days, intro, Date.now())) {
         dlg.close();

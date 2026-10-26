@@ -232,7 +232,7 @@ export function hakenPerson(s, job) {
 }
 export const hakenDaily = (m, intro) => round(m.wage * R.HAKEN_RATE * (intro ? R.HAKEN_INTRO : 1), 500);
 export function startHaken(s, job, days, intro, now) {
-  if (seatsUsed(s) >= capacity(s)) return false;
+  if (seatsUsed(s) >= capacity(s) || (intro && days < R.INTRO_MIN_DAYS)) return false;
   const m = hakenPerson(s, job);
   const daily = hakenDaily(m, intro);
   if (s.money < daily * days) return false;
@@ -250,19 +250,6 @@ export function renewHaken(s, id, days, now) {
   if (!m?.haken || s.money < m.haken.daily * days) return false;
   s.money -= m.haken.daily * days;
   m.haken.until = Math.max(m.haken.until, now) + days * R.DAY;
-  return true;
-}
-// 紹介予定派遣の人を社員にする（期間中）
-export function hireHaken(s, id, now) {
-  const m = memberById(s, id);
-  if (!m?.haken?.intro) return false;
-  const cost = hireCost(s, { ...m, salary: m.wage, intro: true });
-  if (s.money < cost) return false;
-  s.money -= cost;
-  m.salary = m.wage;
-  delete m.wage;
-  delete m.haken;
-  addLog(s, now, `${m.name}  入社`, 'good');
   return true;
 }
 // 期限が来た派遣の人は帰る（仕事中なら終わってから）。紹介予定派遣の人は、社員になるか返事を待つ面接の人になる

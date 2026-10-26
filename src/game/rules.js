@@ -217,6 +217,9 @@ export const HAKEN_DAYS = [3, 7, 14];
 export const HAKEN_RATE = 1.5;
 export const HAKEN_INTRO = 1.2;
 export const INTRO_HIRE = 3;
+// 紹介予定派遣は7日から。社員にできるのは期間が終わってから（2026-10-26 ユーザー「強すぎる」。前は3日ぶん払ってすぐ社員にでき、
+// 選んだ職種のいちばん育った人を面接を待たずに何人でも雇えた）
+export const INTRO_MIN_DAYS = 7;
 export const INTRO_WAIT = 1; // 紹介予定派遣の期間が終わったあと、社員になるか返事を待ってくれる日数
 // 人数が多いほど早く終わる。1人増えるごとに TEAM_SPEEDUP ぶん速くなる（2人で 1.3倍、3人で 1.6倍…）
 export const TEAM_SPEEDUP = 0.3;
