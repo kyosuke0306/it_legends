@@ -1261,3 +1261,9 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .gh-works { align-items: center; gap: 10px; }
 .tool-fx { flex-wrap: nowrap; align-items: flex-start; line-height: 1.35; }
 .tool-fx .ic { flex: none; margin-top: 0.1em; }
+.ro { border: 0; padding: 2px 0; background: none; color: var(--text); cursor: pointer; }
+.ro-crown { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: var(--bg); color: var(--gold); margin-bottom: 6px; }
+.ro-crown .ic { width: 44px; height: 44px; }
+.ro-st { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; color: var(--ok); font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+.ro-st.busy { color: var(--accent); }
+.ro-st .ic { width: 1em; height: 1em; }

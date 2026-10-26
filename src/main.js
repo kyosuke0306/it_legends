@@ -745,8 +745,37 @@ function rosterHtml() {
   const n = (j) => S.members.filter((m) => m.kind !== 'legend' && m.job === j).length;
   const legends = S.members.filter((m) => m.kind === 'legend').length;
   return `<div class="roster"><span class="tool-logo sm"><img src="assets/tools/notion.svg" alt=""></span>${Object.keys(R.JOBS)
-    .map((j) => `<span class="ro ${n(j) ? '' : 'zero'}"><img src="assets/jobs/${j}.webp" alt="${R.JOBS[j].name}"><b>${n(j)}</b></span>`)
-    .join('')}<span class="ro ${legends ? '' : 'zero'}">${icon('crown')}<b>${legends}</b></span></div>`;
+    .map((j) => `<button class="ro ${n(j) ? '' : 'zero'}" data-roster="${j}"><img src="assets/jobs/${j}.webp" alt="${R.JOBS[j].name}"><b>${n(j)}</b></button>`)
+    .join('')}<button class="ro ${legends ? '' : 'zero'}" data-roster="legend">${icon('crown')}<b>${legends}</b></button></div>`;
+}
+// Notion の職種を押すと（2026-10-26 ユーザー指示「タップしたら何か見れるように」）: その職種の説明と、その職種の仲間の一覧（空き・仕事中）
+// 冠はレジェンドの仲間。行を押すとその人の詳しい画面
+function openRoster(job) {
+  const dlg = $('#assign');
+  const legend = job === 'legend';
+  const list = S.members.filter((m) => (legend ? m.kind === 'legend' : m.kind !== 'legend' && m.job === job));
+  const j = R.JOBS[job];
+  const head = legend
+    ? `<div class="fire-prof job-prof"><span class="ro-crown">${icon('crown')}</span><h2>レジェンド</h2></div>`
+    : `<div class="fire-prof job-prof"><img src="assets/jobs/${job}.webp" alt=""><h2>${j.name}</h2>${j.full !== j.name ? `<div class="sub">${j.full}</div>` : ''}</div>
+      <p class="job-desc">${esc(j.desc)}</p>
+      <div class="ability">${esc(j.perkText)}</div>
+      <div class="good-line">${icon('bolt')}${esc(j.goodText)}の依頼が得意</div>
+      ${guardLine(R.guardsOf(job))}`;
+  $('#assign-body').innerHTML = `${head}
+    <div class="sec">${icon('people')}<b>${list.length}人</b><span class="grow"></span>${val('check', list.filter((m) => !m.busy).length, 'ok')}${val('task', list.filter((m) => m.busy).length)}</div>
+    <div class="pick">${list
+      .map(
+        (m) => `<button class="person" data-rm="${m.id}">${avatar(m)}<span class="pname">${esc(G.displayName(m))}<small>Lv${m.level}${hakenTag(m)}</small></span>${
+          m.busy ? `<span class="ro-st busy">${icon('task')}仕事中</span>` : `<span class="ro-st">${icon('check')}空き</span>`
+        }</button>`,
+      )
+      .join('') || `<p class="empty">${icon('people')}</p>`}</div>
+    <button class="big ghost" id="run-close">OK</button>`;
+  fillThumbs($('#assign-body'));
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
+  $('#assign-body').querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => openProfile(S.members.find((m) => m.id === +b.dataset.rm))));
 }
 
 // チェア・ソファに座る人を選ぶ（2026-10-19 ユーザー指示「座らせれるように」）。3Dの家具を押しても開く
@@ -1567,6 +1596,7 @@ function renderTeam() {
         : `<button class="panel hint-meetup" id="go-meetup">${icon('seminar')}<span>${R.ACTIVITIES.meetup.name}</span></button>`
     }</div>`;
   fillThumbs(v);
+  v.querySelectorAll('[data-roster]').forEach((b) => (b.onclick = () => openRoster(b.dataset.roster)));
   v.querySelectorAll('[data-open]').forEach(
     (b) =>
       (b.onclick = (e) => {
