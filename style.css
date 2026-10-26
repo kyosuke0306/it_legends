@@ -1231,3 +1231,20 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .ro img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: color-mix(in srgb, var(--text) 8%, transparent); }
 .ro .ic { width: 20px; height: 24px; color: var(--gold); }
 .ro.zero { opacity: 0.35; }
+.tool { cursor: pointer; }
+.tool-prof { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0 12px; text-align: center; }
+.tool-prof h2 { margin: 4px 0 0; font-size: 1.3rem; }
+.tool-prof .sub { color: var(--muted); font-size: 0.85rem; }
+.tool-logo.lg { width: 84px; height: 84px; padding: 14px; border-radius: 20px; }
+.ti-who { display: flex; align-items: center; gap: 6px; padding: 8px 12px; margin-bottom: 8px; border-radius: 12px; background: color-mix(in srgb, var(--text) 5%, transparent); font-size: 0.85rem; font-weight: 700; }
+.ti-who .tool-job { margin-right: 0; }
+.ti-who .ic { width: 1.2em; height: 1.2em; }
+.ti-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.ti-fx { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--ok); font-weight: 700; font-size: 0.9rem; }
+.ti-fx .ic { width: 1.2em; height: 1.2em; }
+.ti-fx b { margin-left: auto; font-size: 1.05rem; }
+.ti-cost { display: flex; align-items: center; gap: 6px; padding: 8px 12px; margin-bottom: 12px; color: var(--muted); font-size: 0.85rem; }
+.ti-cost .ic { width: 1.1em; height: 1.1em; }
+.ti-cost b { margin-left: auto; color: var(--text); font-size: 0.95rem; }
+.sheet-btns #ti-back { flex: 0 0 64px; }
+.big.ghost.danger { background: transparent; color: var(--bad); border-color: var(--bad); }

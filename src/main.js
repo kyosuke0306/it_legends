@@ -684,6 +684,7 @@ function openDecor() {
 
 // ツール（2026-10-26 ユーザー指示）: 本物の仕事の道具を契約する。契約中は1人いくらの料金を払い続ける。次の会社の分まで（鍵つき）見せる
 const TOOL_FX = { success: 'target', speed: 'clock', reward: 'coin', rep: 'star', quality: 'box', xpAll: 'level' };
+const TOOL_FX_NAME = { success: '成功率', speed: '速さ', reward: '報酬', rep: '評判', quality: '製品の出来', xpAll: '全員の成長' };
 function toolFx(t) {
   const who = t.jobs ? t.jobs.map((j) => `<img class="tool-job" src="assets/jobs/${j}.webp" alt="${R.JOBS[j].name}">`).join('') : t.min ? val('people', `${t.min}+`) : '';
   const fx = Object.entries(TOOL_FX)
@@ -705,7 +706,7 @@ function openTools() {
         const end = locked
           ? `<span class="furn-lock">${icon('lock')}${R.OFFICES[t.office].name}</span>`
           : `<button class="btn ${on ? 'ghost' : ''}" data-tool="${id}">${on ? '解約' : '契約'}</button>`;
-        return `<div class="tool ${on ? 'on' : ''} ${locked ? 'locked' : ''}">
+        return `<div class="tool ${on ? 'on' : ''} ${locked ? 'locked' : ''}" data-tinfo="${id}">
           <span class="tool-logo"><img src="assets/tools/${t.logo}.svg" alt=""></span>
           <span class="tool-main"><b>${t.name}</b><span class="tool-fx">${toolFx(t)}</span><small>${icon('people')}1人 ${yen(G.toolUnit(S, id))}/日</small></span>${end}
         </div>`;
@@ -716,10 +717,41 @@ function openTools() {
   $('#run-close').onclick = () => dlg.close();
   $('#assign-body').querySelectorAll('[data-tool]').forEach(
     (b) =>
-      (b.onclick = () => {
+      (b.onclick = (e) => {
+        e.stopPropagation();
         if (G.setTool(S, b.dataset.tool, !G.hasTool(S, b.dataset.tool), Date.now())) commit(), openTools();
       }),
   );
+  // 行を押すと、何をする道具で何に効くかの詳しい画面（2026-10-26 ユーザー指示「何ができるか分かりづらい」）
+  $('#assign-body').querySelectorAll('[data-tinfo]').forEach((b) => (b.onclick = () => openToolInfo(b.dataset.tinfo)));
+}
+function openToolInfo(id) {
+  const t = R.TOOLS[id];
+  const on = G.hasTool(S, id);
+  const locked = S.office < t.office;
+  // 効く仕事（その職種の人がいる仕事・何人以上・すべて）
+  const who = t.jobs
+    ? `${t.jobs.map((j) => `<img class="tool-job" src="assets/jobs/${j}.webp" alt="">`).join('')}<span>${t.jobs.map((j) => R.JOBS[j].name).join('・')}がいる仕事</span>`
+    : t.min
+      ? `${icon('people')}<span>${t.min}人以上の仕事</span>`
+      : t.roster ? '' : `${icon('task')}<span>すべての仕事</span>`;
+  const fx = Object.entries(TOOL_FX_NAME)
+    .filter(([k]) => t[k])
+    .map(([k, n]) => `<div class="ti-fx">${icon(TOOL_FX[k])}<span>${n}</span><b>+${Math.round(t[k] * 100)}%</b></div>`)
+    .join('');
+  const unit = G.toolUnit(S, id);
+  $('#assign-body').innerHTML = `
+    <div class="tool-prof"><span class="tool-logo lg"><img src="assets/tools/${t.logo}.svg" alt=""></span><h2>${t.name}</h2><div class="sub">${t.desc}</div></div>
+    ${who ? `<div class="ti-who">${who}</div>` : ''}
+    <div class="ti-list">${fx}${t.roster ? `<div class="ti-fx">${icon('people')}<span>仲間タブに職種ごとの人数</span></div>` : ''}</div>
+    <div class="ti-cost">${icon('wallet')}<span>${yen(unit)} × ${S.members.length}人</span><b>${yen(unit * S.members.length)}/日</b></div>
+    <div class="sheet-btns"><button class="big ghost" id="ti-back">${icon('back')}</button>${
+      locked
+        ? `<button class="big" disabled>${icon('lock')}${R.OFFICES[t.office].name}</button>`
+        : `<button class="big ${on ? 'ghost danger' : ''}" id="ti-go">${on ? '解約' : '契約'}</button>`
+    }</div>`;
+  $('#ti-back').onclick = openTools;
+  $('#ti-go') && ($('#ti-go').onclick = () => G.setTool(S, id, !on, Date.now()) && (commit(), openTools()));
 }
 // Notion を契約していると、仲間タブのいちばん上に職種ごとの人数（CEO・社員・派遣。レジェンドは冠で数だけ）
 function rosterHtml() {
