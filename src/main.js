@@ -592,8 +592,9 @@ function renderOffice() {
   $('#office-chips').innerHTML = `<button class="chip chip-office o${Math.min(S.office, 9)}" id="chip-office">${icon(S.office ? 'building' : 'home')}<span class="o-name">${o.name}${floors}</span><span class="o-seats">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${icon('back', 'flip')}</button>`; // 製品の数と稼ぎは会社の画面には出さない（2026-10-04 ユーザー指示。製品タブで見る）
   $('#chip-office').onclick = openOffice;
   // 右上：模様替え
-  $('#office-tools').innerHTML = `<button class="tool-btn" id="open-decor" aria-label="模様替え">${icon('sofa')}</button>`;
+  $('#office-tools').innerHTML = `<button class="tool-btn" id="open-tools" aria-label="ツール">${icon('wrench')}</button><button class="tool-btn" id="open-decor" aria-label="模様替え">${icon('sofa')}</button>`;
   $('#open-decor').onclick = openDecor;
+  $('#open-tools').onclick = openTools;
   const enc = S.encounter;
   $('#encounter').innerHTML = enc
     ? `<button class="encounter" id="go-encounter">${icon('spark', 'spin')}<span>誰かが現れた</span><span class="left" data-left="${enc.until}">${dur(enc.until - Date.now())}</span></button>`
@@ -679,6 +680,55 @@ function openDecor() {
         commit();
       }),
   );
+}
+
+// ツール（2026-10-26 ユーザー指示）: 本物の仕事の道具を契約する。契約中は1人いくらの料金を払い続ける。次の会社の分まで（鍵つき）見せる
+const TOOL_FX = { success: 'target', speed: 'clock', reward: 'coin', rep: 'star', quality: 'box', xpAll: 'level' };
+function toolFx(t) {
+  const who = t.jobs ? t.jobs.map((j) => `<img class="tool-job" src="assets/jobs/${j}.webp" alt="${R.JOBS[j].name}">`).join('') : t.min ? val('people', `${t.min}+`) : '';
+  const fx = Object.entries(TOOL_FX)
+    .filter(([k]) => t[k])
+    .map(([k, ic]) => val(ic, `+${Math.round(t[k] * 100)}%`, 'ok'))
+    .join('');
+  return `${who}${fx}${t.roster ? val('people', '職種') : ''}`;
+}
+function openTools() {
+  const dlg = $('#assign');
+  const list = Object.entries(R.TOOLS).filter(([, t]) => t.office <= S.office + 1);
+  const daily = G.toolsDaily(S);
+  $('#assign-body').innerHTML = `
+    <div class="sheet-head"><b>${icon('wrench')}ツール</b><span class="muted">${daily ? val('wallet', `${yen(daily)}/日`) : ''}</span></div>
+    <div class="tool-list">${list
+      .map(([id, t]) => {
+        const on = G.hasTool(S, id);
+        const locked = S.office < t.office;
+        const end = locked
+          ? `<span class="furn-lock">${icon('lock')}${R.OFFICES[t.office].name}</span>`
+          : `<button class="btn ${on ? 'ghost' : ''}" data-tool="${id}">${on ? '解約' : '契約'}</button>`;
+        return `<div class="tool ${on ? 'on' : ''} ${locked ? 'locked' : ''}">
+          <span class="tool-logo"><img src="assets/tools/${t.logo}.svg" alt=""></span>
+          <span class="tool-main"><b>${t.name}</b><span class="tool-fx">${toolFx(t)}</span><small>${icon('people')}1人 ${yen(G.toolUnit(S, id))}/日</small></span>${end}
+        </div>`;
+      })
+      .join('')}</div>
+    <button class="big ghost" id="run-close">OK</button>`;
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
+  $('#assign-body').querySelectorAll('[data-tool]').forEach(
+    (b) =>
+      (b.onclick = () => {
+        if (G.setTool(S, b.dataset.tool, !G.hasTool(S, b.dataset.tool), Date.now())) commit(), openTools();
+      }),
+  );
+}
+// Notion を契約していると、仲間タブのいちばん上に職種ごとの人数（CEO・社員・派遣。レジェンドは冠で数だけ）
+function rosterHtml() {
+  if (!G.hasTool(S, 'notion')) return '';
+  const n = (j) => S.members.filter((m) => m.kind !== 'legend' && m.job === j).length;
+  const legends = S.members.filter((m) => m.kind === 'legend').length;
+  return `<div class="roster"><span class="tool-logo sm"><img src="assets/tools/notion.svg" alt=""></span>${Object.keys(R.JOBS)
+    .map((j) => `<span class="ro ${n(j) ? '' : 'zero'}"><img src="assets/jobs/${j}.webp" alt="${R.JOBS[j].name}"><b>${n(j)}</b></span>`)
+    .join('')}<span class="ro ${legends ? '' : 'zero'}">${icon('crown')}<b>${legends}</b></span></div>`;
 }
 
 // チェア・ソファに座る人を選ぶ（2026-10-19 ユーザー指示「座らせれるように」）。3Dの家具を押しても開く
@@ -1466,6 +1516,7 @@ function renderTeam() {
   renderHeader();
   const v = $('#view-team');
   v.innerHTML = `
+    ${rosterHtml()}
     <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
     <div class="sec interview">${icon('people')}<b>面接</b><span class="grow"></span>${val('home', `${G.seatsUsed(S)}/${G.capacity(S)}`)}${val('clock', `<span data-left="${S.candAt + R.CANDIDATE_EVERY}">${dur(S.candAt + R.CANDIDATE_EVERY - Date.now())}</span>`)}</div>
     ${adRow()}
@@ -2432,7 +2483,7 @@ function welcomeBack(ev, away) {
   const rows = [];
   // お金の増減の合計（製品の収入・給料・臨時収入・仕事の報酬）
   const gained = ev.filter((e) => e.type === 'luck' || e.type === 'task').reduce((a, e) => a + e.money, 0) - ev.filter((e) => e.type === 'rival').reduce((a, e) => a + (e.money ?? 0), 0);
-  const net = (ev.income ?? 0) - (ev.salary ?? 0) + gained;
+  const net = (ev.income ?? 0) - (ev.salary ?? 0) - (ev.tools ?? 0) + gained;
   if (Math.abs(net) >= 1) rows.push(val('coin', `${net >= 0 ? '+' : ''}${yen(net)}`, net >= 0 ? 'ok' : 'bad'));
   // 増減のわけ（仕事の報酬・製品の収入・臨時収入・給料・冷やかし）。0 のものは出さない
   const sum = (type) => ev.filter((e) => e.type === type).reduce((a, e) => a + (e.money ?? 0), 0);
@@ -2441,6 +2492,7 @@ function welcomeBack(ev, away) {
     ['box', '製品', ev.income ?? 0],
     ['globe', '臨時収入', sum('luck')],
     ['wallet', '給料', -(ev.salary ?? 0)],
+    ['wrench', 'ツール', -(ev.tools ?? 0)],
     ['error', '冷やかし', -sum('rival')],
   ].filter(([, , v]) => Math.abs(v) >= 1);
   const breakdown = parts.length

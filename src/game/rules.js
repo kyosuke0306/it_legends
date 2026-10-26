@@ -630,6 +630,21 @@ export const LEGEND_RULES = {
 };
 
 
+// ---------- ツール（2026-10-26 ユーザー指示「実際にあるものだとより良い。使う場合は継続的にお金を払う。例えば git」） ----------
+// 本物の仕事の道具。契約している間、1人1日 h 時間ぶんの仕事の報酬（今の会社の平均）× 人数 を払い続ける（本物と同じ1人いくらの料金）
+// 効果は jobs の職種の人が入った仕事・開発だけ（jobs が無ければどの仕事も）。min は何人以上で動く仕事か
+// success 成功率・speed 速さ・reward 報酬・rep 評判・quality 製品の出来（仕事に入った人だけに効く）／xpAll 全員の成長・roster 仲間タブに職種ごとの人数
+export const TOOLS = {
+  notion: { name: 'Notion', logo: 'notion', office: 0, h: 0.3, roster: true, xpAll: 0.1 },
+  github: { name: 'GitHub', logo: 'github', office: 0, h: 0.5, jobs: ['pg', 'se'], success: 0.1 },
+  slack: { name: 'Slack', logo: 'slack', office: 1, h: 0.5, min: 2, speed: 0.1 },
+  figma: { name: 'Figma', logo: 'figma', office: 1, h: 0.6, jobs: ['designer'], rep: 0.2, quality: 0.15 },
+  zoom: { name: 'Zoom', logo: 'zoom', office: 2, h: 0.6, jobs: ['sales', 'consul'], reward: 0.15 },
+  aws: { name: 'AWS', logo: 'aws', office: 2, h: 1, jobs: ['infra'], speed: 0.2 },
+  jira: { name: 'Jira', logo: 'jira', office: 3, h: 0.8, jobs: ['pm'], success: 0.1, speed: 0.1 },
+  chatgpt: { name: 'ChatGPT', logo: 'chatgpt', office: 4, h: 1.2, speed: 0.15 },
+};
+
 // ---------- 待ち時間の楽しみ（2026-10-19 ユーザー指示「仕事を任せている間、暇になる」） ----------
 // 模様替え: 家具を買って部屋に置く（1つずつ、置いたままになる）。見た目だけで効果はない（2026-10-19 ユーザー指示「効果をつけないで」）
 // 長押しで部屋の中を動かせる。sit はチェア・ソファのように人を座らせられるもの。office はその会社から買える。見た目は furniture.js

@@ -44,3 +44,13 @@
 - assets/twitter-logo.svg: https://commons.wikimedia.org/wiki/File:Logo_of_Twitter.svg
 - assets/deepmind-logo.svg: https://commons.wikimedia.org/wiki/File:DeepMind_new_logo.svg
 - assets/rakuten-logo.svg: https://commons.wikimedia.org/wiki/File:Rakuten_Global_Brand_Logo.svg
+
+## ツールのロゴ（assets/tools/。Wikimedia Commons から、2026-10-26）
+- github.svg: https://commons.wikimedia.org/wiki/File:Octicons-mark-github.svg
+- notion.svg: https://commons.wikimedia.org/wiki/File:Notion-logo.svg
+- slack.svg: https://commons.wikimedia.org/wiki/File:Slack_icon_2019.svg
+- figma.svg: https://commons.wikimedia.org/wiki/File:Figma-logo.svg
+- zoom.svg: https://commons.wikimedia.org/wiki/File:Zoom_Logo_2022.svg
+- aws.svg: https://commons.wikimedia.org/wiki/File:Amazon_Web_Services_Logo.svg
+- jira.svg: https://commons.wikimedia.org/wiki/File:Jira_Logo.svg
+- chatgpt.svg: https://commons.wikimedia.org/wiki/File:ChatGPT-Logo.svg
