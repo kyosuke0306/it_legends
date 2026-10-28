@@ -52,3 +52,7 @@
 - jira.svg: https://commons.wikimedia.org/wiki/File:Jira_Logo.svg
 - chatgpt.svg: https://commons.wikimedia.org/wiki/File:ChatGPT-Logo.svg
 - analytics.svg: https://commons.wikimedia.org/wiki/File:GAnalytics.svg
+- calendar.svg: https://commons.wikimedia.org/wiki/File:Google_Calendar_icon_(2020).svg （2026-10-28）
+- salesforce.svg: https://commons.wikimedia.org/wiki/File:Salesforce.com_logo.svg （2026-10-28）
+- datadog.svg: https://en.wikipedia.org/wiki/File:Datadog_logo.svg （2026-10-28）
+- linkedin.svg: https://commons.wikimedia.org/wiki/File:LinkedIn_icon.svg （2026-10-28）

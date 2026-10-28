@@ -854,6 +854,14 @@ function rollPoach(s, t, ev) {
   addLog(s, t, `${m.name}  引き抜かれた`, 'bad');
   ev.push({ type: 'staffQuit', why: 'poach', t, m: leaver(m) });
 }
+// LinkedIn で見せる、1週間のうちにその人が引き抜かれる確率（手が空いているかは考えない見込み）
+export function poachOdds(s, m) {
+  const staff = s.members.filter(canTire);
+  const pool = staff.filter((x) => x.level >= R.POACH_LV);
+  if (staff.length < 2 || !pool.includes(m)) return 0;
+  const week = 1 - Math.exp(-7 / R.POACH_DAYS); // 会社のだれかが引き抜かれる確率
+  return (week * m.level) / pool.reduce((a, x) => a + x.level, 0);
+}
 // 席がいっぱいのとき、レジェンドの代わりに FIRE できる人（手の空いた社員。派遣の人は除く）
 export const fireable = (s) => s.members.filter((m) => m.kind === 'staff' && !m.busy && !m.haken);
 // 席を空ける。fireId の人を FIRE する（席が空いていれば何もしない）。できなければ false
@@ -864,14 +872,22 @@ function makeRoom(s, fireId, now) {
 }
 
 // ---------- 評判が下がる出来事（不具合・個人情報流出・デマ・不祥事など） ----------
+const guardersOf = (s, h) => ({
+  legend: s.members.find((m) => m.kind === 'legend' && h.legends.includes(m.legend)),
+  staff: s.members.filter((m) => m.kind !== 'legend' && h.jobs.includes(m.job)),
+});
+// Datadog で見せる、出来事ごとの防げる確率
+export const guardChance = (s, h) => {
+  const { legend, staff } = guardersOf(s, h);
+  return legend ? 1 : Math.min(R.REP_GUARD_MAX, R.REP_GUARD * staff.length);
+};
 function rollRepHit(s, t, ev) {
   if (t - s.createdAt < R.RIVAL_GRACE || s.rep < R.REP_HIT_MIN) return;
   if (rand(s) >= 1 / (R.REP_HIT_DAYS * 24)) return;
   const pool = R.REP_HITS.filter((h) => h.need !== 'product' || s.products.length);
   const h = pick(s, pool);
   // 防げる職種の人・レジェンドがいれば防ぐ（レジェンドは必ず、職種は1人ごとに REP_GUARD）
-  const legend = s.members.find((m) => m.kind === 'legend' && h.legends.includes(m.legend));
-  const staff = s.members.filter((m) => m.kind !== 'legend' && h.jobs.includes(m.job));
+  const { legend, staff } = guardersOf(s, h);
   if (legend || rand(s) < Math.min(R.REP_GUARD_MAX, R.REP_GUARD * staff.length)) {
     const g = legend ?? pick(s, staff);
     addLog(s, t, `${h.title}を${g.name}が防いだ`, 'good');

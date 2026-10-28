@@ -1280,3 +1280,26 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .fire-head + .roster .ro { min-width: 20px; font-size: 0.7rem; }
 .fire-head + .roster .ro img { width: 20px; height: 20px; }
 .fire-head + .roster .ro .ic { width: 17px; height: 20px; }
+/* 2026-10-28 に足したツール */
+.tool-btn.cal-btn img { width: 24px; height: 24px; }
+.cal-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.cal-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 12px; background: color-mix(in srgb, var(--text) 4%, transparent); color: var(--text); font: inherit; text-align: left; }
+.cal-row:disabled { opacity: 1; }
+.cal-row > .ic { width: 18px; height: 18px; flex: none; color: var(--muted); }
+.cal-at { flex: none; min-width: 5.4em; font-weight: 800; font-size: 0.85rem; }
+.cal-text { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.88rem; }
+.cal-text .av { width: 24px; height: 24px; flex: none; }
+.cal-left { flex: none; color: var(--muted); font-size: 0.78rem; }
+.odds { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-weight: 800; font-size: 0.85rem; }
+.odds.ok { color: var(--ok); }
+.odds.bad { color: var(--bad); }
+.guards { display: flex; align-items: center; justify-content: space-between; gap: 3px; padding: 6px 8px; margin-bottom: 10px; border-radius: 14px; background: var(--panel); overflow-x: auto; scrollbar-width: none; }
+.guards::-webkit-scrollbar { display: none; }
+.gd { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 40px; color: #5aa9e6; }
+.gd .ic { width: 18px; height: 18px; }
+.gd small { color: var(--muted); font-size: 0.6rem; white-space: nowrap; }
+.gd b { font-size: 0.78rem; }
+.gd.full { color: var(--gold); }
+.gd.zero { opacity: 0.4; }
+.poach { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; color: var(--bad); font-weight: 800; }
+.poach .tool-logo.xs { width: 16px; height: 16px; }

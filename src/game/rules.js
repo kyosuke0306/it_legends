@@ -635,18 +635,27 @@ export const LEGEND_RULES = {
 // 効果は「見えるようになる・便利になる」だけ（2026-10-26 ユーザー指示「職種の人数が見える、みたいなものに。報酬が増えるとかはやめて」）
 // desc は本物で何をする道具か、about は本物の説明（「実際のツールの説明も」）、shows は契約すると見えるもの（icon とともに詳しい画面と一覧に出す）
 export const TOOLS = {
+  // Google カレンダー・Salesforce・Datadog・LinkedIn は 2026-10-28 ユーザー指示「ツールを増やして」で足した
   notion: { name: 'Notion', logo: 'notion', office: 0, h: 0.2, icon: 'people', shows: '仲間タブに職種ごとの人数',
     desc: '社内の名簿やメモをまとめる', about: 'アメリカの会社が2016年に公開したメモのアプリ。文書・表・社員の名簿・やることを1か所にまとめられ、多くの会社が社内の資料置き場に使う' },
   slack: { name: 'Slack', logo: 'slack', office: 0, h: 0.2, icon: 'drop', shows: '仲間の一覧にみんなの疲れ',
     desc: '社内のチャット', about: '仕事の話題ごとに部屋を分けて話せるチャット。2013年にゲームを作っていた会社が社内用に作ったのが始まりで、メールより早く相談できる。今は Salesforce の製品' },
+  calendar: { name: 'Google カレンダー', logo: 'calendar', office: 0, h: 0.2, icon: 'calendar', shows: '会社の画面から、これから終わることの予定表',
+    desc: '予定をみんなで共有する', about: 'Google が2006年に始めた予定表。会議や締め切りを書きこむと、同じ会社の人の予定も重ねて見られ、時間が来ると知らせてくれる' },
   github: { name: 'GitHub', logo: 'github', office: 1, h: 0.3, icon: 'check', shows: '仲間の詳しい画面に、これまでの仕事の数',
     desc: 'プログラムを保存して、みんなで直す', about: 'Git というしくみでプログラムの変更の歴史を残し、ほかの人の直しを確かめてから取り込める。2008年に始まり、2018年に Microsoft が買った。世界で1億人以上の開発者が使う' },
   jira: { name: 'Jira', logo: 'jira', office: 1, h: 0.3, icon: 'clock', shows: '仕事中の欄に終わる時刻',
     desc: '仕事の進み具合を管理する', about: 'オーストラリアの Atlassian が2002年に作った、仕事の管理の道具。やることをカードにして「やる前・やっている・終わった」と動かし、遅れやバグを見つける' },
   analytics: { name: 'Google Analytics', logo: 'analytics', office: 2, h: 0.3, icon: 'chart', shows: '依頼が届くペース',
     desc: 'Web サイトに来た人を数える', about: 'Google が2005年に始めた、Web サイトに何人来て、どこから来て、何を見たかを数える道具。無料で使え、世界のとても多くのサイトが入れている' },
+  salesforce: { name: 'Salesforce', logo: 'salesforce', office: 2, h: 0.3, icon: 'target', shows: '依頼の一覧に、今の仲間で受けたときの成功率',
+    desc: 'お客さんと商談をまとめる', about: 'アメリカの Salesforce が1999年に始めた、お客さんと商談を管理する道具。どの話がどこまで進み、どれくらい決まりそうかを営業みんなで見られる。ネットで使うソフトの先がけ' },
   chatgpt: { name: 'ChatGPT', logo: 'chatgpt', office: 3, h: 0.5, icon: 'spark', shows: '人選びで「おすすめ」を押すと人を選んでくれる',
     desc: 'AI に聞いて手伝ってもらう', about: 'OpenAI が2022年に公開した、文章で話しかけると答える AI。文章の下書き・プログラム・調べものを手伝い、2か月で1億人が使った' },
+  datadog: { name: 'Datadog', logo: 'datadog', office: 3, h: 0.4, icon: 'shield', shows: '仲間タブに、評判が下がる出来事を防げる確率',
+    desc: 'サーバーやサービスを見張る', about: 'ニューヨークの Datadog が2010年に始めた、サーバーとアプリを見張る道具。動きの遅れや止まりそうな所をグラフで見せ、おかしくなるとすぐ知らせる' },
+  linkedin: { name: 'LinkedIn', logo: 'linkedin', office: 4, h: 0.4, icon: 'people', shows: '仲間の一覧に、1週間で引き抜かれる確率',
+    desc: '仕事のつながりと転職の SNS', about: '2003年に始まった、仕事の経歴をのせる SNS。会社は人を探し、人は転職先を探す。よその会社の採用担当が、腕のいい人に声をかける場所でもある。2016年に Microsoft が買った' },
 };
 
 // ---------- 待ち時間の楽しみ（2026-10-19 ユーザー指示「仕事を任せている間、暇になる」） ----------

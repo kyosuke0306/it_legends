@@ -598,8 +598,11 @@ function renderOffice() {
   $('#office-chips').innerHTML = `<button class="chip chip-office o${Math.min(S.office, 9)}" id="chip-office">${icon(S.office ? 'building' : 'home')}<span class="o-name">${o.name}${floors}</span><span class="o-seats">${icon('people')}${G.seatsUsed(S)}/${G.capacity(S)}</span>${icon('back', 'flip')}</button>`; // 製品の数と稼ぎは会社の画面には出さない（2026-10-04 ユーザー指示。製品タブで見る）
   $('#chip-office').onclick = openOffice;
   // 右上：模様替え
-  $('#office-tools').innerHTML = `<button class="tool-btn" id="open-tools" aria-label="ツール">${icon('wrench')}</button><button class="tool-btn" id="open-decor" aria-label="模様替え">${icon('sofa')}</button>`;
+  $('#office-tools').innerHTML = `<button class="tool-btn" id="open-tools" aria-label="ツール">${icon('wrench')}</button><button class="tool-btn" id="open-decor" aria-label="模様替え">${icon('sofa')}</button>${
+    G.hasTool(S, 'calendar') ? `<button class="tool-btn cal-btn" id="open-cal" aria-label="予定"><img src="assets/tools/calendar.svg" alt=""></button>` : ''
+  }`;
   $('#open-decor').onclick = openDecor;
+  $('#open-cal') && ($('#open-cal').onclick = openCalendar);
   $('#open-tools').onclick = openTools;
   const enc = S.encounter;
   $('#encounter').innerHTML = enc
@@ -739,6 +742,42 @@ function openToolInfo(id) {
   $('#ti-back').onclick = openTools;
   $('#ti-go') && ($('#ti-go').onclick = () => G.setTool(S, id, !on, Date.now()) && (commit(), openTools()));
 }
+// Google カレンダー: これから終わること（仕事・開発・研修・派遣・広告・面接の辞退・レジェンドに会えるようになる）を早い順に
+function openCalendar() {
+  const dlg = $('#assign');
+  const now = Date.now();
+  const who = (id) => S.members.find((m) => m.id === id);
+  const face = (m) => (m ? avatar(m) : '');
+  const items = [
+    ...S.tasks.map((t) => ({ at: t.endsAt, ic: 'task', text: `${catTag(t.cat)}${esc(t.title)}`, open: () => openRunning(t.id) })),
+    ...S.devs.map((d) => ({ at: d.endsAt, ic: 'box', text: R.GENRES[d.genre].name, open: () => openDevRunning(d.id) })),
+    ...(S.trains ?? []).map((x) => ({ at: x.endsAt, ic: 'seminar', text: `${face(who(x.member))}${R.TRAININGS[x.kind].name}` })),
+    ...S.members.filter((m) => m.haken).map((m) => ({ at: m.haken.until, ic: 'hourglass', text: `${face(m)}${m.haken.intro ? '紹介予定派遣' : '派遣'}  終了` })),
+    ...S.candidates.filter((m) => m.until).map((m) => ({ at: m.until, ic: 'face', text: `${face(m)}面接  辞退` })),
+    ...((S.adUntil ?? 0) > now ? [{ at: S.adUntil, ic: 'ad', text: '求人広告  終了' }] : []),
+    ...((S.prUntil ?? 0) > now ? [{ at: S.prUntil, ic: 'tv', text: '宣伝  終了' }] : []),
+    ...Object.entries(S.met ?? {})
+      .filter(([, v]) => (v.cooldown ?? 0) > now)
+      .map(([id, v]) => ({ at: v.cooldown, ic: 'crown', text: `${esc((v.left ? byId[id]?.name : byId[id]?.title) ?? '')}  また会える` })),
+  ]
+    .filter((x) => x.at > now)
+    .sort((a, b) => a.at - b.at);
+  $('#assign-body').innerHTML = `
+    <div class="sheet-head"><b><span class="tool-logo xs"><img src="assets/tools/calendar.svg" alt=""></span>予定</b><span class="muted">${items.length}</span></div>
+    <div class="cal-list">${
+      items
+        .map((x, i) => `<button class="cal-row" data-cal="${i}"><span class="cal-at">${clockAt(x.at)}</span>${icon(x.ic)}<span class="cal-text">${x.text}</span><span class="cal-left" data-left="${x.at}">${dur(x.at - now)}</span></button>`)
+        .join('') || `<p class="empty">${icon('calendar')}</p>`
+    }</div>
+    <button class="big ghost" id="run-close">OK</button>`;
+  if (!dlg.open) dlg.showModal();
+  $('#run-close').onclick = () => dlg.close();
+  $('#assign-body').querySelectorAll('[data-cal]').forEach((b) => {
+    const x = items[+b.dataset.cal];
+    if (x.open) b.onclick = x.open;
+    else b.disabled = true;
+  });
+}
 // Notion を契約していると、仲間タブのいちばん上に職種ごとの人数（CEO・社員・派遣。レジェンドは冠で数だけ）
 // tap: 職種を押して詳しく見られる（FIRE する人を選ぶ画面の中では数を見るだけ。2026-10-26 ユーザー指示）
 function rosterHtml(tap = true) {
@@ -749,6 +788,14 @@ function rosterHtml(tap = true) {
   return `<div class="roster"><span class="tool-logo sm"><img src="assets/tools/notion.svg" alt=""></span>${Object.keys(R.JOBS)
     .map((j) => `<${el} class="ro ${n(j) ? '' : 'zero'}" data-roster="${j}"><img src="assets/jobs/${j}.webp" alt="${R.JOBS[j].name}"><b>${n(j)}</b></${el}>`)
     .join('')}<${el} class="ro ${legends ? '' : 'zero'}" data-roster="legend">${icon('crown')}<b>${legends}</b></${el}></div>`;
+}
+// Datadog を契約すると、仲間タブに評判が下がる出来事ごとの防げる確率（レジェンドがいれば 100%）
+function guardHtml() {
+  if (!G.hasTool(S, 'datadog')) return '';
+  return `<div class="guards"><span class="tool-logo sm"><img src="assets/tools/datadog.svg" alt=""></span>${R.REP_HITS.map((h) => {
+    const c = G.guardChance(S, h);
+    return `<span class="gd ${c >= 1 ? 'full' : c ? '' : 'zero'}">${icon('shield')}<small>${h.short}</small><b>${pct(c)}</b></span>`;
+  }).join('')}</div>`;
 }
 // Notion の職種を押すと（2026-10-26 ユーザー指示「タップしたら何か見れるように」）: その職種の説明と、その職種の仲間の一覧（空き・仕事中）
 // 冠はレジェンドの仲間。行を押すとその人の詳しい画面
@@ -1083,7 +1130,7 @@ function renderWork() {
     .map(
       (o) => `<button class="panel offer cat-${o.cat} ${canWork ? '' : 'off'}" data-offer="${o.id}">
         <span class="offer-top"><b>${o.expiresAt - R.OFFER_LIFE > seenSnap.work ? newTag : ''}${catTag(o.cat)}${esc(o.title)}</b><span class="expire ${o.expiresAt - Date.now() < R.OFFER_SOON ? 'soon' : ''}" data-expire="${o.expiresAt}">${icon('hourglass')}あと<span data-left="${o.expiresAt}">${dur(o.expiresAt - Date.now())}</span></span></span>
-        <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}</span>
+        <span class="vals">${val('clock', dur(o.hours * R.HOUR))}${val('people', o.team)}${val('coin', yen(o.reward), 'strong')}${val('star', `+${o.rep}`)}${offerOdds(o)}</span>
       </button>`,
     )
     .join('');
@@ -1105,6 +1152,18 @@ function renderWork() {
   $('#pr-on') && ($('#pr-on').onclick = () => openPromoInfo('pr'));
 }
 
+// Salesforce を契約すると、依頼ごとに今の手の空いた仲間（力の強い人から人数まで）で受けたときの成功率
+function offerOdds(o) {
+  if (!G.hasTool(S, 'salesforce')) return '';
+  const power = (m) => G.teamPower(S, [m], o.w, G.goodJobs(o));
+  const ids = G.freeMembers(S)
+    .sort((a, b) => power(b) - power(a))
+    .slice(0, o.team)
+    .map((m) => m.id);
+  if (!ids.length) return '';
+  const c = G.taskPreview(S, o, ids, []).chance;
+  return `<span class="odds ${c < 0.5 ? 'bad' : c >= 0.8 ? 'ok' : ''}"><span class="tool-logo xs"><img src="assets/tools/salesforce.svg" alt=""></span>${pct(c)}</span>`;
+}
 // Google Analytics を契約すると、依頼が届くペース（評判・宣伝・営業などを入れた1時間の確率から）
 function offerPace() {
   if (!G.hasTool(S, 'analytics')) return '';
@@ -1417,7 +1476,7 @@ function memberRow(m, { candidate = false } = {}) {
     <button class="mrow" data-open="${m.id}">${avatar(m)}${status}
       <span class="pname">${candidate && (m.at ?? 0) > seenSnap.team ? newTag : ''}${esc(G.displayName(m))}<small>${jobShort(m)} Lv${m.level}${hakenTag(m)}${G.isTired(m) ? icon('drop', 'tired-ic') : ''}${
         m.haken ? `<span class="haken-left">${icon('hourglass')}<span data-left="${m.haken.until}">${dur(m.haken.until - Date.now())}</span></span>` : ''
-      }</small>${!candidate && G.hasTool(S, 'slack') && G.canTire(m) ? `<span class="mini-tired ${G.isTired(m) ? 'on' : ''}"><b style="width:${pct((m.tired ?? 0) / 100)}"></b></span>` : ''}</span>
+      }${!candidate && G.hasTool(S, 'linkedin') && G.poachOdds(S, m) ? `<span class="poach"><span class="tool-logo xs"><img src="assets/tools/linkedin.svg" alt=""></span>${pct(G.poachOdds(S, m))}</span>` : ''}</small>${!candidate && G.hasTool(S, 'slack') && G.canTire(m) ? `<span class="mini-tired ${G.isTired(m) ? 'on' : ''}"><b style="width:${pct((m.tired ?? 0) / 100)}"></b></span>` : ''}</span>
       ${statBars(st)}
     </button>
     ${
@@ -1608,6 +1667,7 @@ function renderTeam() {
   const v = $('#view-team');
   v.innerHTML = `
     ${rosterHtml()}
+    ${guardHtml()}
     <div class="list">${S.members.map((m) => memberRow(m)).join('')}</div>
     <div class="sec interview">${icon('people')}<b>面接</b><span class="grow"></span>${val('home', `${G.seatsUsed(S)}/${G.capacity(S)}`)}${val('clock', `<span data-left="${S.candAt + R.CANDIDATE_EVERY}">${dur(S.candAt + R.CANDIDATE_EVERY - Date.now())}</span>`)}</div>
     ${adRow()}
