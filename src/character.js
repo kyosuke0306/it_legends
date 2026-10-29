@@ -255,8 +255,31 @@ function addHair(head, style, hair, R) {
 
 // 一度読み込んだ GLB は覚えておき、2回目からは複製して使う（読み直さないので一瞬で出る）
 const glbCache = {};
+// 画面が裏に回っている間は読まない（iPhone は裏で画像を読むと空の画像になることがあり、全員が真っ黒のまま覚えてしまった。2026-10-29）
+function whenVisible() {
+  if (!document.hidden) return null;
+  return new Promise((r) => {
+    const f = () => {
+      if (document.hidden) return;
+      document.removeEventListener('visibilitychange', f);
+      r();
+    };
+    document.addEventListener('visibilitychange', f);
+  });
+}
+async function loadOnce(url, tries = 3) {
+  for (let i = 1; ; i++) {
+    await whenVisible();
+    try {
+      return prepareGltf(await loader.loadAsync(url));
+    } catch (e) {
+      if (i >= tries) throw e;
+      await new Promise((r) => setTimeout(r, 1000 * i));
+    }
+  }
+}
 function loadGltf(url) {
-  glbCache[url] ??= loader.loadAsync(url).then(prepareGltf);
+  glbCache[url] ??= loadOnce(url);
   glbCache[url].catch(() => delete glbCache[url]); // 失敗したら次回やり直す
   return glbCache[url];
 }
@@ -287,8 +310,20 @@ function keepImage(tex) {
   c.height = img.height;
   c.getContext('2d').drawImage(img, 0, 0);
   img.close();
+  if (blank(c)) throw new Error('模様の画像が空');
   tex.image = c;
   tex.needsUpdate = true;
+}
+
+// 画像が空（どこも透明か真っ黒）か。小さく縮めて調べる
+function blank(c) {
+  const t = document.createElement('canvas');
+  t.width = t.height = 8;
+  const g = t.getContext('2d', { willReadFrequently: true });
+  g.drawImage(c, 0, 0, 8, 8);
+  const d = g.getImageData(0, 0, 8, 8).data;
+  for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 0 && d[i] + d[i + 1] + d[i + 2] > 0) return false;
+  return true;
 }
 
 // GLB（Gemini + Tripo で作ったモデル）を、全長2・足元y=0にそろえる
