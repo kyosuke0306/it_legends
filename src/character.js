@@ -277,6 +277,20 @@ export async function thumbnailUrl(legend) {
   return manifest.includes(legend.id) ? `models/${legend.id}.webp` : null;
 }
 
+// 模様の画像を canvas に写して持っておく。iPhone は画面が裏に回ると 3D の描画を捨てることがあり、
+// ImageBitmap のままだと描き直すときに画像が空で、レジェンドが真っ黒になった（開き直すと直る。2026-10-29）
+function keepImage(tex) {
+  const img = tex.image;
+  if (typeof ImageBitmap === 'undefined' || !(img instanceof ImageBitmap)) return;
+  const c = document.createElement('canvas');
+  c.width = img.width;
+  c.height = img.height;
+  c.getContext('2d').drawImage(img, 0, 0);
+  img.close();
+  tex.image = c;
+  tex.needsUpdate = true;
+}
+
 // GLB（Gemini + Tripo で作ったモデル）を、全長2・足元y=0にそろえる
 function prepareGltf(gltf) {
   const model = gltf.scene;
@@ -291,6 +305,7 @@ function prepareGltf(gltf) {
       m.metalness = 0;
       m.roughness = 1;
       m.metalnessMap = m.roughnessMap = null;
+      if (m.map) keepImage(m.map);
     }
   });
   const box = new THREE.Box3().setFromObject(model);
