@@ -1997,6 +1997,7 @@ async function showOnDetail(legend, { reveal = false } = {}) {
   detailStage ??= new Stage($('#detail-canvas'));
   detailStage.setCharacter(null);
   const token = (detailToken = {});
+  $('#detail-canvas').parentElement.querySelector('.silhouette')?.remove();
   const p = createCharacter(legend);
   if (reveal) return detailStage.reveal(p, LEGEND_COLOR);
   const obj = await p;
@@ -2010,8 +2011,10 @@ function legendHead(legend, { secret = false } = {}) {
 function showSilhouette(legend) {
   const wrap = $('#detail-canvas').parentElement;
   wrap.querySelector('.silhouette')?.remove();
+  // 絵ができる前に別の画面（仲間になった・仲間のレジェンド）に変わっていたら出さない
+  const token = (detailToken = {});
   thumbnailFor(legend).then((src) => {
-    if (!$('#detail').open) return;
+    if (!$('#detail').open || token !== detailToken) return;
     const img = new Image();
     img.src = src;
     img.className = 'silhouette';
