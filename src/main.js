@@ -1364,7 +1364,7 @@ const askReject = (m) => ask({ head: personHead(m), text: '不採用にします
 // 人を選ぶ（仕事・開発で共通）。下から出るシート
 // temp があれば要員派遣の人も選べる（自分の会社から minOwn 人は出す）
 // base は仕事中に人を足すときの、もう働いている人（max は足せる人数）
-function openAssign({ title, max, w, good = [], need, preview, confirm, temp = null, base = [], minOwn = 1, go = '任せる', extra = '', decline = null }) {
+function openAssign({ title, max, w, good = [], need, preview, confirm, temp = null, base = [], minOwn = 1, go = '任せる', extra = '', decline = null, all = false }) {
   const dlg = $('#assign');
   const chosen = new Set();
   let nTemps = 0;
@@ -1395,6 +1395,7 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
     $('#assign-body').innerHTML = `
       <div class="sheet-head"><b>${esc(title)}</b><span class="muted">${icon('people')}${size}/${max > 20 ? free.length : base.length + max}</span></div>
       ${G.hasTool(S, 'chatgpt') && free.length ? `<button class="ai-pick" id="ai-pick"><span class="tool-logo xs"><img src="assets/tools/chatgpt.svg" alt=""></span>おすすめ</button>` : ''}
+      ${all && free.length > 1 ? `<button class="ai-pick all-pick ${chosen.size === Math.min(max, free.length) ? 'on' : ''}" id="all-pick">${icon('people')}全員</button>` : ''}
       ${extra}
       <div class="need ${sum >= need ? 'full' : ''}">${icon('bolt')}<span class="need-bar"><i style="width:${pct(Math.min(1, sum / need))}"></i></span><span class="need-num"><b>${sum}</b>/${need}</span></div>
       <div class="pick">${free
@@ -1435,6 +1436,14 @@ function openAssign({ title, max, w, good = [], need, preview, confirm, temp = n
           chosen.add(m.id);
           sum += power(m);
         }
+        draw();
+      });
+    // 全員: 手の空いた人をまとめて選ぶ。全員選んでいるときに押すと外す（製品の開発。2026-11-04 ユーザー指示）
+    $('#all-pick') &&
+      ($('#all-pick').onclick = () => {
+        const every = chosen.size === Math.min(max, free.length);
+        chosen.clear();
+        if (!every) for (const m of free.slice(0, max)) chosen.add(m.id);
         draw();
       });
     $('#assign-body').querySelectorAll('[data-temp]').forEach(
@@ -1855,6 +1864,7 @@ function assignDev(genre) {
     max: 99,
     w: g.w,
     need: g.need,
+    all: true,
     extra: `<div class="vals center">${val('coin', yen(g.cost))}${trendIcon(G.trendAt(S, genre, Date.now()))}</div>`,
     preview: (ids) => {
       const p = G.devPreview(S, genre, ids);

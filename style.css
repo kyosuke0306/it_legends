@@ -1257,6 +1257,7 @@ button.ad-row.on { width: 100%; border: 0; text-align: left; }
 .mini-tired.on b { background: var(--bad); }
 .prog .end-at { margin-left: 6px; color: var(--accent); font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
 .pace { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+.all-pick.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .ai-pick { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 0 0 8px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--text); font-weight: 700; font-size: 0.85rem; }
 .gh-works { align-items: center; gap: 10px; }
 .tool-fx { flex-wrap: nowrap; align-items: flex-start; line-height: 1.35; }
