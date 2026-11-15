@@ -7,28 +7,28 @@
     <meta name="theme-color" content="#04060d" />
     <link rel="icon" href="assets/favicon.png?v=4" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=4" />
-    <link rel="stylesheet" href="style.css?v=1.8.14" />
+    <link rel="stylesheet" href="style.css?v=1.9.0" />
     <script type="importmap">
       {
         "imports": {
           "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-          "./src/character.js": "./src/character.js?v=1.8.14",
-          "./src/cloud.js": "./src/cloud.js?v=1.8.14",
-          "./src/data.js": "./src/data.js?v=1.8.14",
-          "./src/firebase-config.js": "./src/firebase-config.js?v=1.8.14",
-          "./src/furniture.js": "./src/furniture.js?v=1.8.14",
-          "./src/game/names.js": "./src/game/names.js?v=1.8.14",
-          "./src/game/rules.js": "./src/game/rules.js?v=1.8.14",
-          "./src/game/state.js": "./src/game/state.js?v=1.8.14",
-          "./src/icons.js": "./src/icons.js?v=1.8.14",
-          "./src/main.js": "./src/main.js?v=1.8.14",
-          "./src/office-decor.js": "./src/office-decor.js?v=1.8.14",
-          "./src/office.js": "./src/office.js?v=1.8.14",
-          "./src/outfits.js": "./src/outfits.js?v=1.8.14",
-          "./src/show.js": "./src/show.js?v=1.8.14",
-          "./src/stage.js": "./src/stage.js?v=1.8.14",
-          "./src/version.js": "./src/version.js?v=1.8.14"
+          "./src/character.js": "./src/character.js?v=1.9.0",
+          "./src/cloud.js": "./src/cloud.js?v=1.9.0",
+          "./src/data.js": "./src/data.js?v=1.9.0",
+          "./src/firebase-config.js": "./src/firebase-config.js?v=1.9.0",
+          "./src/furniture.js": "./src/furniture.js?v=1.9.0",
+          "./src/game/names.js": "./src/game/names.js?v=1.9.0",
+          "./src/game/rules.js": "./src/game/rules.js?v=1.9.0",
+          "./src/game/state.js": "./src/game/state.js?v=1.9.0",
+          "./src/icons.js": "./src/icons.js?v=1.9.0",
+          "./src/main.js": "./src/main.js?v=1.9.0",
+          "./src/office-decor.js": "./src/office-decor.js?v=1.9.0",
+          "./src/office.js": "./src/office.js?v=1.9.0",
+          "./src/outfits.js": "./src/outfits.js?v=1.9.0",
+          "./src/show.js": "./src/show.js?v=1.9.0",
+          "./src/stage.js": "./src/stage.js?v=1.9.0",
+          "./src/version.js": "./src/version.js?v=1.9.0"
         }
       }
     </script>
@@ -37,7 +37,7 @@
     <!-- タイトル → 名前 → 会社 → 職種（main.js の showTitle / initStart） -->
     <section id="start" class="start hidden">
       <div class="step title-step active" data-step="0">
-        <div class="title-art"><svg class="title-grid" id="title-grid" viewBox="0 0 400 400" preserveAspectRatio="none" aria-hidden="true"></svg><div class="title-legends" id="title-legends"></div></div>
+        <div class="title-art"><div class="title-bg"></div></div>
         <div class="title-text">
           <svg class="title-emblem" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="tneon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ef0ff"/><stop offset="1" stop-color="#8b5cff"/></linearGradient></defs><g fill="none" stroke="url(#tneon)" stroke-width="2.6"><circle cx="60" cy="60" r="50"/><ellipse cx="60" cy="60" rx="21" ry="50"/><ellipse cx="60" cy="60" rx="39" ry="50" opacity="0.6"/><path d="M10 60h100"/><path d="M17 35h86M17 85h86" opacity="0.6"/></g><g stroke="#e9fbff" stroke-width="1.8" fill="none" opacity="0.9"><path d="M33 25L80 45L94 85L44 99L24 63Z"/><path d="M80 45L44 99M33 25L94 85" opacity="0.5"/></g><g fill="#e9fbff"><circle cx="33" cy="25" r="5"/><circle cx="80" cy="45" r="5"/><circle cx="94" cy="85" r="5"/><circle cx="44" cy="99" r="5"/><circle cx="24" cy="63" r="5"/></g></svg>
           <h1>IT LEGENDS</h1>
@@ -167,6 +167,6 @@
         }, 8000);
       })();
     </script>
-    <script type="module" src="src/main.js?v=1.8.14"></script>
+    <script type="module" src="src/main.js?v=1.9.0"></script>
   </body>
 </html>

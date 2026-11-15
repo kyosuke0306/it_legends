@@ -212,53 +212,21 @@ function fillThumbs(root) {
   root.querySelectorAll('img[data-thumb]').forEach((img) => thumbnailFor(byId[img.dataset.thumb]).then((src) => (img.src = src)));
 }
 
-// ---------- タイトルの背景：奥へ流れる光の格子（タイトルが見えている間だけ動かす） ----------
-(function titleGrid() {
-  const svg = $('#title-grid');
-  if (!svg) return;
-  const NS = 'http://www.w3.org/2000/svg';
-  const line = (x1, y1, x2, y2) => {
-    const l = document.createElementNS(NS, 'line');
-    l.setAttribute('x1', x1);
-    l.setAttribute('y1', y1);
-    l.setAttribute('x2', x2);
-    l.setAttribute('y2', y2);
-    svg.append(l);
-    return l;
-  };
-  // 地平線の真ん中から手前に広がる線
-  for (let i = -10; i <= 10; i++) line(200, 0, 200 + i * 90, 400);
-  // 横の線（奥ほどつまって見えるように2乗で並べる）。少しずつ手前に流す
-  const rows = Array.from({ length: 12 }, () => line(0, 0, 400, 0));
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const draw = (t) => {
-    const phase = still ? 0 : (t / 2600) % 1;
-    rows.forEach((l, i) => {
-      const y = 400 * ((i + phase) / rows.length) ** 2;
-      l.setAttribute('y1', y);
-      l.setAttribute('y2', y);
-    });
-    if (!$('#start').classList.contains('hidden')) requestAnimationFrame(draw);
-    else setTimeout(() => requestAnimationFrame(draw), 1000);
-  };
-  requestAnimationFrame(draw);
-})();
-
 let modelIds = new Set(); // 3Dのできているレジェンド（models/manifest.json）
-// タイトルに、3Dのできているレジェンドを並べる。仲間にした人だけ姿を見せ、ほかは影（シークレット）
+// タイトルの文字の下の端を CSS の --tb に入れる（背景のビルをその下に収めるため）
+function fitTitle() {
+  const step = $('#start .title-step');
+  const text = step?.querySelector('.title-text');
+  if (text?.offsetParent) step.style.setProperty('--tb', `${Math.round(text.getBoundingClientRect().bottom - step.getBoundingClientRect().top)}px`);
+}
+addEventListener('resize', fitTitle);
+document.fonts?.ready.then(fitTitle);
+
+// 3Dのできているレジェンドの一覧を読む（タイトルに並べていた影は、背景の絵に変えたのでやめた。2026-11-15）
 async function titleLegends() {
-  const box = $('#title-legends');
-  if (!box) return;
-  let ids = [];
   try {
-    ids = await (await fetch(`models/manifest.json?${VERSION}`)).json();
+    modelIds = new Set(await (await fetch(`models/manifest.json?${VERSION}`)).json());
   } catch {}
-  modelIds = new Set(ids);
-  const owned = new Set((S ?? loadLocal())?.members.filter((m) => m.kind === 'legend').map((m) => m.legend) ?? []);
-  const mid = (ids.length - 1) / 2;
-  box.innerHTML = ids
-    .map((id, i) => `<img src="models/${id}.webp" alt="" class="${owned.has(id) ? 'own' : ''} ${Math.abs(i - mid) < 1 ? 'mid' : ''}" style="animation-delay:${(i * 0.37).toFixed(2)}s">`)
-    .join('');
 }
 
 // ---------- タイトル → 名前 → 会社 → 職種 ----------
@@ -281,6 +249,7 @@ function refreshTitle() {
 // タイトル画面。記録があれば「つづきから」を大きく
 function showTitle() {
   $('#start').classList.remove('hidden');
+  fitTitle();
   $('#game').classList.add('hidden');
   $('#title-msg').textContent = '';
   closeSlots();

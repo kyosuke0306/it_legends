@@ -77,21 +77,24 @@ button:disabled { cursor: default; }
 /* タイトル */
 .title-step { max-width: none; padding: 0; position: relative; color: #fff; }
 .title-step { background: #04060d; }
-/* タイトルの背景（コードで描く。近未来的に）：紫と水色のにじむ光、奥へ流れる光の格子、地平線の光の線 */
+/* タイトルの背景（Gemini の絵 assets/title-bg.webp。2026-11-15）：小さな部屋から大きな会社へ。
+   絵の地面の線（下から 23.66%）がボタンのすぐ上に来るように置く。画面が短くても小さな部屋がボタンに隠れない */
 .title-art {
   position: absolute; inset: 0; overflow: hidden;
-  background:
-    radial-gradient(ellipse 70% 45% at 50% 28%, rgba(139, 92, 255, 0.32), transparent 70%),
-    radial-gradient(ellipse 60% 30% at 50% 58%, rgba(62, 240, 255, 0.16), transparent 70%),
-    #04060d;
+  background: linear-gradient(#6b85b8, #6a6db8 calc(100% - 226px), #1a184e calc(100% - 226px));
 }
-.title-grid { position: absolute; left: 0; right: 0; bottom: 0; height: 52%; width: 100%; -webkit-mask-image: linear-gradient(to top, #000 35%, transparent 100%); mask-image: linear-gradient(to top, #000 35%, transparent 100%); }
-.title-grid line { stroke: #3ef0ff; stroke-opacity: 0.5; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
-.title-art::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: 52%; height: 2px;
-  background: linear-gradient(90deg, transparent, #3ef0ff 30%, #8b5cff 70%, transparent);
-  box-shadow: 0 0 22px 2px rgba(62, 240, 255, 0.6);
+.title-bg {
+  /* 大きさ：画面の幅を覆う大きさにするが、ビルの先（地面から絵の高さの 33.5% 上）がタイトルの文字（--tb、main.js の fitTitle）より下に来るまで小さくする */
+  --h: min(max(100%, 175vw), calc((100% - 226px - var(--tb, 330px) - 24px) / 0.335));
+  position: absolute; left: 50%; transform: translateX(-50%);
+  height: var(--h); aspect-ratio: 768 / 1344;
+  bottom: calc(226px - 0.2366 * var(--h));
+  background: url(assets/title-bg.webp) center / 100% 100% no-repeat;
+  /* 絵が画面より細いとき（パソコン）に、左右の端を空の色になじませる */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
+@media (max-height: 720px) { .title-step .title-emblem { display: none; } }
 .title-emblem { display: block; width: 84px; height: 84px; margin: 0 auto 22px; filter: drop-shadow(0 0 14px rgba(62, 240, 255, 0.55)); }
 .title-text { position: relative; text-align: center; padding-top: max(16vh, calc(env(safe-area-inset-top) + 60px)); }
 .title-text h1 {
@@ -657,13 +660,8 @@ p.small .ic { width: 1em; height: 1em; }
 .mw-row b.bad { color: var(--bad); }
 
 /* タイトルに並ぶレジェンド。まだ仲間でない人は影（シークレット）、仲間にした人は姿を見せる */
-.title-legends { position: absolute; left: 0; right: 0; bottom: calc(52% - 70px); display: flex; justify-content: center; align-items: flex-end; pointer-events: none; }
-.title-legends img { width: clamp(62px, 18vw, 104px); margin: 0 -9px; filter: brightness(0) drop-shadow(0 0 1.5px #3ef0ff) drop-shadow(0 0 8px rgba(62, 240, 255, 0.45)); opacity: 0.9; animation: title-float 4s ease-in-out infinite; }
-.title-legends img.mid { width: clamp(74px, 22vw, 122px); }
-.title-legends img.own { filter: drop-shadow(0 0 10px rgba(62, 240, 255, 0.5)); opacity: 1; }
 @keyframes title-float { 50% { transform: translateY(-5px); } }
-@media (prefers-reduced-motion: reduce) { .title-legends img { animation: none; } }
-
+@media (prefers-reduced-motion: reduce) { 
 /* これまでの仕事（仕事タブの右上のボタン → 下から出るシート） */
 .work-top { display: flex; justify-content: flex-end; margin: -2px 0 8px; }
 .hist-btn { display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: var(--panel); padding: 6px 12px; font-weight: 800; font-size: 0.85rem; color: var(--ok); font-variant-numeric: tabular-nums; }
