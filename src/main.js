@@ -1103,10 +1103,8 @@ function renderWork() {
       </button>`,
     )
     .join('');
-  // これまでの仕事：成功した数だけ出し、押すと下からくわしく出る（openHistory）
   // 仕事中と、受けているだけの依頼は分けて出す（2026-10-04 ユーザー指示「分けてわかりやすく」）
   $('#view-work').innerHTML = `
-    <div class="work-top"><button class="hist-btn" id="open-history">${icon('check')}${S.counts.tasks}</button></div>
     ${crewHtml()}
     ${S.tasks.length ? `<div class="work-box running"><div class="sec work-sec">${icon('task')}<b>仕事中</b><span class="count">${S.tasks.length}</span></div>${running}</div>` : ''}
     <div class="sec work-sec">${icon('paper')}<b>依頼</b><span class="count">${S.offers.length}</span>${offerPace()}</div>
@@ -1115,7 +1113,6 @@ function renderWork() {
   fillThumbs($('#view-work'));
   $('#view-work').querySelectorAll('[data-offer]').forEach((b) => (b.onclick = () => assignTask(+b.dataset.offer)));
   $('#view-work').querySelectorAll('[data-run]').forEach((el) => (el.onclick = () => openRunning(+el.dataset.run)));
-  $('#open-history').onclick = () => openHistory();
   $('#view-work').querySelectorAll('[data-crew]').forEach((b) => (b.onclick = () => openProfile(S.members.find((m) => m.id === +b.dataset.crew))));
   $('#pr') && ($('#pr').onclick = () => openPromo('pr'));
   $('#pr-on') && ($('#pr-on').onclick = () => openPromoInfo('pr'));
@@ -1150,38 +1147,7 @@ function crewHtml() {
   return `<div class="panel crew">${line('free', 'check', '空き', free)}${line('busy', 'task', '仕事中', busy)}</div>`;
 }
 
-// これまでの仕事。上に種類ごとの成功した回数（レジェンドの出会いの条件と同じ数）、押すとその種類だけにしぼる。下に最近の仕事
-function openHistory(cat = null) {
-  const dlg = $('#assign');
-  const list = (S.history ?? []).filter((h) => !cat || h.cat === cat);
-  const ago = (t) => dur(Date.now() - t);
-  $('#assign-body').innerHTML = `
-    <div class="sheet-head"><b>${icon('check')}${S.counts.tasks}</b><span class="muted">${icon('star')}${S.rep}</span></div>
-    <div class="hist-cats">${Object.entries(R.CAT_NAMES)
-      .map(([c, name]) => `<button class="hist-cat cat-${c} ${cat === c ? 'on' : ''}" data-cat="${c}"><i></i>${name}<b>${S.counts.cat[c] ?? 0}</b></button>`)
-      .join('')}</div>
-    <div class="hist-list">${
-      list.length
-        ? list
-            .slice(0, 50)
-            .map(
-              (h, i) => `<button class="hist-row cat-${h.cat} ${h.ok ? '' : 'ng'}" data-h="${i}"><i></i>
-                <span class="hist-main"><b>${esc(h.title)}</b><small>${[...h.who, `${ago(h.t)}前`].map(esc).join('・')}</small></span>
-                <span class="hist-vals">${h.ok ? icon('check', 'ok') : icon('error', 'bad')}${h.great ? icon('bolt', 'res-great') : ''}${h.early ? icon('clock', 'res-early') : ''}<b>${h.money == null ? '—' : yen(h.money)}</b>${
-                  h.rep == null ? '' : `<small class="${h.rep < 0 ? 'bad' : ''}">${icon('star')}${h.rep > 0 ? '+' : ''}${h.rep}</small>`
-                }</span>
-              </button>`,
-            )
-            .join('')
-        : `<p class="empty">${icon('task')}</p>`
-    }</div>
-    <button class="big ghost" id="hist-close">OK</button>`;
-  if (!dlg.open) dlg.showModal();
-  $('#assign-body').querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => openHistory(cat === b.dataset.cat ? null : b.dataset.cat)));
-  $('#hist-close').onclick = () => dlg.close();
-  $('#assign-body').querySelectorAll('[data-h]').forEach((b) => (b.onclick = () => openDone(list[+b.dataset.h], () => openHistory(cat))));
-}
-// 終わった依頼のくわしいシート（2026-10-04 ユーザー指示）。back があれば「戻る」で一覧へ
+// 終わった依頼のくわしいシート（2026-10-04 ユーザー指示。完了のポップアップの行から）
 // 担当・力・成功率・かかった時間はこの機能のあとに終わった依頼だけ（前のものは出せる分だけ）
 function openDone(h, back = null) {
   if (!h) return;
