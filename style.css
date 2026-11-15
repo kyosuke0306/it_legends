@@ -659,9 +659,10 @@ p.small .ic { width: 1em; height: 1em; }
 .mw-row b.ok { color: var(--ok); }
 .mw-row b.bad { color: var(--bad); }
 
-/* タイトルに並ぶレジェンド。まだ仲間でない人は影（シークレット）、仲間にした人は姿を見せる */
+/* ストーリーの影がゆっくり上下に揺れる */
 @keyframes title-float { 50% { transform: translateY(-5px); } }
-@media (prefers-reduced-motion: reduce) { 
+@media (prefers-reduced-motion: reduce) { .st-legends img { animation: none; } }
+
 /* これまでの仕事（仕事タブの右上のボタン → 下から出るシート） */
 .work-top { display: flex; justify-content: flex-end; margin: -2px 0 8px; }
 .hist-btn { display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: var(--panel); padding: 6px 12px; font-weight: 800; font-size: 0.85rem; color: var(--ok); font-variant-numeric: tabular-nums; }
