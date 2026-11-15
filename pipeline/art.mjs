@@ -70,8 +70,9 @@ async function publish(id, src) {
     await sharp(src).resize(720).webp({ quality: 78 }).toFile(path.join(dir, 'title.webp'));
   } else if (id === 'icon') {
     await sharp(src).resize(512).png({ palette: true }).toFile(path.join(dir, 'icon-512.png'));
-    await sharp(src).resize(180).png({ palette: true }).toFile(path.join(dir, 'apple-touch-icon.png'));
-    await sharp(src).resize(64).png().toFile(path.join(dir, 'favicon.png'));
+    await sharp(src).resize(180).png({ palette: true }).toFile(path.join(dir, 'app-icon-180.png'));
+    await sharp(src).resize(64).png().toFile(path.join(dir, 'app-icon-64.png'));
+    await sharp(src).resize(32).png().toFile(path.join(dir, 'app-icon-32.png'));
   } else {
     await fs.mkdir(path.join(dir, 'jobs'), { recursive: true });
     await sharp(src).resize(256).webp({ quality: 80 }).toFile(path.join(dir, 'jobs', `${id}.webp`));
